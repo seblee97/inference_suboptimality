@@ -19,6 +19,6 @@ From then, all python prerequisites should be satisfied by running
 
 ## Datasets
 
-We do not provide the datasets directly in this repository. However we are using standard datasets that can be loaded with the torchvision datasets module. To retrive the datasets, run
+We do not provide the datasets directly in this repository. However we are using standard datasets (e.g. MNIST, CIFAR10) that can be loaded with the torchvision datasets module. To retrive the datasets, run:
 
 ```python data/get_datasets.py```
