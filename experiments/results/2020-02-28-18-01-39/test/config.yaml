@@ -1,0 +1,28 @@
+checkpoint_path: /Users/sebastianlee/Dropbox/Documents/Research/Projects/Oxford2020AdvML/experiments/results//2020-02-28-18-01-39/test/
+decoder:
+  hidden_dimensions:
+  - 64
+  - 64
+  network_type: feedbackward
+device: cpu
+encoder:
+  hidden_dimensions:
+  - 64
+  - 64
+  network_type: feedforward
+experiment_name: test
+experiment_timestamp: 2020-02-28-18-01-39
+model:
+  approximate_posterior: gaussian
+relative_data_path: ../data/
+seed: 5
+training:
+  batch_size: 32
+  dataset: mnist
+  initialisation_std: 0.001
+  input_dimension: 784
+  latent_dimension: 32
+  learning_rate: 0.1
+  nonlinearity: relu
+  optimiser: adam
+use_gpu: true

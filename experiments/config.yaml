@@ -1,0 +1,25 @@
+experiment_name:                    test             
+use_gpu:                            True                      # whether to use a gpu if it is available on the device          
+seed:                               5                         # random seed 
+relative_data_path:                 ../data/
+
+model:
+  approximate_posterior:            gaussian                  # family of functions to use for approximate posterior (q_\phi(z | x))
+
+encoder:
+  network_type:                     feedforward               # encoder type i.e. feedforward or convolutional              
+  hidden_dimensions:                [64, 64]                  # layer dimensions in network (excludes input dimension and final latent dimension)
+
+decoder:
+  network_type:                     feedbackward              # encoder type i.e. feedforward or (de)convolutional              
+  hidden_dimensions:                [64, 64]                  # layer dimensions in network (excludes output dimension)
+
+training:
+  learning_rate:                    0.1
+  optimiser:                        adam                      
+  dataset:                          mnist                     # which dataset to use (mnist, fashion_mnist or cifar)
+  input_dimension:                  784
+  latent_dimension:                 32
+  nonlinearity:                     relu
+  initialisation_std:               0.001
+  batch_size:                       32
