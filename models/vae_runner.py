@@ -15,7 +15,7 @@ from utils import mnist_dataloader
 from typing import Dict
 import os
 
-class VAERunner:
+class VAERunner():
 
     def __init__(self, config: Dict) -> None:
         """
@@ -28,11 +28,12 @@ class VAERunner:
         self._extract_parameters(config)
 
         # initialise encoder, decoder
+        # This should also give activation functions !!
         encoder = self._setup_encoder(config)
         decoder = self._setup_decoder(config)
 
         # construct vae from encoder and decoder
-        self.vae = VAE(encoder=encoder, decoder=decoder)
+        self.vae = VAE(encoder=encoder, decoder=decoder, param) # param should contain more parameters
 
         self.dataloader = self._setup_dataset(config)
 

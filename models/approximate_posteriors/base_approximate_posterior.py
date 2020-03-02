@@ -9,4 +9,7 @@ class approximatePosterior(ABC):
         raise NotImplementedError("Base class method")
 
     def sample(self):
+        #approximate_posterior.sample should return the latent and a log-probability
+        
+        #return z, logp
         pass
