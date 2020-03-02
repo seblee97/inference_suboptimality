@@ -34,8 +34,9 @@
         * The bias of `𝓛ₖ(x)` vanishes at a rate that is inversely proportional to `k`.
         * The variance of `𝓛ₖ(x)` vanishes at a rate that is inversely proportional to `k`.
     * Conceptually, `p(x,zᵢ) / q(zᵢ,x)` can be viewed as an *importance weight*.
-        * Recall that importance sampling estimates `𝔼 [f(x)]` by `1/k * Σᵢ f(xᵢ)` where the expectation is taken over `g(x)` and `xᵢ ~ g(x)`.
-            * Note that `g(x)` is assumed to be a probability distribution.
+        * Recall that `𝔼ₚ[x] ~ 1/k * Σᵢ wᵢ` using importance sampling.
+            * Suppose the desired expectation is taken with respect to `p(x)`.
+            * Then, `wᵢ = xᵢ * p(xᵢ) / q(xᵢ)` where `xᵢ ~ q(xᵢ)` for some arbitrary probability distribution `q(x)`.
         * Let `pₙ(x,z) = p(x,z) / p(x)` be the probability distribution for a fixed `x`.
         * Then,
             ```
@@ -47,7 +48,7 @@
                  = 𝔼 [p(x,z) / q(z|x)]
                  ~ 1/k * Σᵢ p(x,zᵢ) / q(zᵢ|x)     // zᵢ ~ q(z|x)
             ```
-        * Therefore, `wᵢ = p(x,zᵢ) / q(zᵢ|x)` is an importance weight which estimates the normalization factor `p(x)` that scales `p(x,z)` to `pₙ(x,z)` for a fixed `x`.
+        * Therefore, `wᵢ = p(x,zᵢ) / q(zᵢ|x)` is an importance weight which estimates the normalization factor `p(x)` that scales `pₙ(x,z)` to `p(x,z)` for a fixed `x`.
 
 ### Annealed Importance Sampling
 * **Annealed Importance Sampling** (AIS) uses Markov chain transitions for an annealing sequence to define an importance sampler.
