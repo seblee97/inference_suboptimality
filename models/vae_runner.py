@@ -14,6 +14,9 @@ from utils import mnist_dataloader
 
 from typing import Dict
 import os
+import copy
+
+import torch
 
 class VAERunner:
 
@@ -27,6 +30,9 @@ class VAERunner:
         # extract relevant parameters from config
         self._extract_parameters(config)
 
+        # initialise loss function and optimiser
+        self.loss_function = torch.nn.MSELoss()
+
         # initialise encoder, decoder
         encoder = self._setup_encoder(config)
         decoder = self._setup_decoder(config)
@@ -34,7 +40,12 @@ class VAERunner:
         # construct vae from encoder and decoder
         self.vae = VAE(encoder=encoder, decoder=decoder)
 
+        # setup loss
+        self._setup_loss()
+
         self.dataloader = self._setup_dataset(config)
+
+        self.optimiser = torch.optim.Adam(self.vae.parameters(), lr=self.learning_rate)
 
     def _extract_parameters(self, config: Dict) -> None:
         """
@@ -47,6 +58,10 @@ class VAERunner:
         self.relative_data_path = config.get(["relative_data_path"])
         self.dataset = config.get(["training", "dataset"])
         self.batch_size = config.get(["training", "batch_size"])
+
+        self.num_epochs = config.get(["training", "num_epochs"])
+        self.loss_type = config.get(["training", "loss_function"])
+        self.learning_rate = config.get(["training", "learning_rate"])
 
     def _setup_encoder(self, config: Dict):
         
@@ -72,6 +87,10 @@ class VAERunner:
 
         return network
 
+    def _setup_loss(self):
+        if self.loss_type == "bce":
+            self.loss_function = nn.BCELoss()
+
     def _setup_dataset(self, config: Dict):
         file_path = os.path.dirname(__file__)
         if self.dataset == "mnist":
@@ -81,4 +100,24 @@ class VAERunner:
         return dataloader
 
     def train(self):
-        raise NotImplementedError
+
+        for e in range(self.num_epochs):
+
+            for batch_input, batch_labels in self.dataloader:
+
+                resized_input = batch_input.view((-1, 784))
+                
+                encoder_reconstruction, plogqz, logpz = self.vae(resized_input)
+
+                reconstruction_loss = F.binary_cross_entropy(encoder_reconstruction, resized_input, size_average=False)
+                
+                elbo = reconstruction_loss + logpz - plogqz
+                loss = -elbo
+
+                self.optimiser.zero_grad()
+
+                loss.backward()
+
+                self.optimiser.step()
+
+                print(float(loss))
