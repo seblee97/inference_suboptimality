@@ -14,6 +14,14 @@ class Encoder(nn.Module, ABC):
     def forward(self, x):
 
         approximate_posterior_parameters = self.network(x)
-        latent_vector, plogqz, logpz = self.approximate_posterior.sample(approximate_posterior_parameters)
+        latent_vector, params = self.approximate_posterior.sample(approximate_posterior_parameters)
 
-        return latent_vector, plogqz, logpz
+        return {'z': latent_vector, 'params': params}
+
+# # compute probability of sample under q
+#         log_pqz = log_normal(latent_vector, mu, var)
+
+#         import pdb; pdb.set_trace()
+
+#         # compute prior probability p(z)
+#         logpz = log_normal(latent_vector, torch.zeros(latent_vector.shape), torch.ones(latent_vector.shape[0]))
