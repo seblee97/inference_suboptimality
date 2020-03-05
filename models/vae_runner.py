@@ -1,14 +1,14 @@
 from .vae import VAE
 
-from .networks.convolutional import convNetwork
-from .networks.feedforward import feedForwardNetwork
-from .networks.deconvolutional import deconvNetwork
-from .networks.feedbackward import feedBackwardNetwork
+from .networks import feedForwardNetwork
+from .networks import feedBackwardNetwork
 
 from .encoder import Encoder
 from .decoder import Decoder
 
-from .approximate_posteriors.gaussian import gaussianPosterior
+from .approximate_posteriors import gaussianPosterior
+
+from .loss_modules import gaussianLoss
 
 from utils import mnist_dataloader
 
@@ -41,7 +41,7 @@ class VAERunner:
         self.vae = VAE(encoder=encoder, decoder=decoder)
 
         # setup loss
-        self._setup_loss()
+        self._setup_loss_module()
 
         self.dataloader = self._setup_dataset(config)
 
@@ -87,9 +87,11 @@ class VAERunner:
 
         return network
 
-    def _setup_loss(self):
-        if self.loss_type == "bce":
-            self.loss_function = nn.BCELoss()
+    def _setup_loss_module(self):
+        if self.approximate_posterior_type == "gaussian":
+            self.loss_module = gaussianLoss()
+        else:
+            raise ValueError("Loss module not correctly specified")
 
     def _setup_dataset(self, config: Dict):
         file_path = os.path.dirname(__file__)
@@ -104,15 +106,10 @@ class VAERunner:
         for e in range(self.num_epochs):
 
             for batch_input, batch_labels in self.dataloader:
-
-                resized_input = batch_input.view((-1, 784))
                 
-                encoder_reconstruction, plogqz, logpz = self.vae(resized_input)
+                vae_output = self.vae(batch_input)
 
-                reconstruction_loss = F.binary_cross_entropy(encoder_reconstruction, resized_input, size_average=False)
-                
-                elbo = reconstruction_loss + logpz - plogqz
-                loss = -elbo
+                loss = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output)
 
                 self.optimiser.zero_grad()
 
