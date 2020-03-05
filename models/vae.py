@@ -14,9 +14,10 @@ class VAE(nn.Module):
         
     def forward(self, x):
 
-        latent_vector = self.encoder(x)
-        
+        encoder_output = self.encoder(x)
+
+        latent_vector = encoder_output['z']
         decoding = self.decoder(latent_vector)
-        
-        return decoding
+
+        return {**encoder_output, **{'x_hat': decoding}}
         
