@@ -20,8 +20,8 @@ training:
   dataset:                          mnist                     # which dataset to use (mnist, fashion_mnist or cifar)
   input_dimension:                  784
   latent_dimension:                 32
-  nonlinearity:                     relu
-  initialisation_std:               0.001
+  nonlinearity:                     sigmoid
+  initialisation_std:               1
   batch_size:                       32
   loss_function:
   num_epochs:                       10
