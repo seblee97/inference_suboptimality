@@ -1,3 +1,5 @@
+import torch
+
 def log_normal(x, mean, var):
     """Implementation WITHOUT constant, since the constants in p(z) 
     and q(z|x) cancel out.
