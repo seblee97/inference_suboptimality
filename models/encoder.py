@@ -14,6 +14,6 @@ class Encoder(nn.Module, ABC):
     def forward(self, x):
 
         approximate_posterior_parameters = self.network(x)
-        latent_vector = self.approximate_posterior.sample(approximate_posterior_parameters)
+        latent_vector, plogqz, logpz = self.approximate_posterior.sample(approximate_posterior_parameters)
 
-        return latent_vector
+        return latent_vector, plogqz, logpz
