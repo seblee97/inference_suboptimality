@@ -16,17 +16,14 @@ class gaussianPosterior(approximatePosterior):
 
     def sample(self, parameters):
 
-        mu = parameters[:0.5*len(parameters)]
-        var = parameters[0.5*len(parameters):]
+        cutoff = int(0.5 * len(parameters))
+
+        mu = parameters[:, :cutoff]
+        var = parameters[:, cutoff:]
         
-        noise = torch.flatten(self.noise_distribution.sample((var.shape)))
+        # sample noise (reparameterisation trick), unsqueeze to match dimensions
+        noise = self.noise_distribution.sample(var.shape).squeeze()
         
         latent_vector = mu + torch.sqrt(var) * noise
-
-        # compute probability of sample under q
-        log_pqz = log_normal(latent_vector, mu, var)
-
-        # compute prior probability p(z)
-        logpz = log_normal(latent_vector, torch.zeros(latent_vector.shape), torch.ones(latent_vector.shape[0]))
         
-        return latent_vector, log_pqz, logpz
+        return latent_vector, [mu, var]
