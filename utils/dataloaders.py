@@ -1,6 +1,8 @@
 import torch
 import torchvision
 
+from .custom_torch_transforms import TensorFlatten
+
 def mnist_dataloader(data_path: str, batch_size: int, train:bool=True):
     """
     Load mnist image data from specified, convert to grayscaled tensors, flatten, return dataloader
@@ -13,7 +15,8 @@ def mnist_dataloader(data_path: str, batch_size: int, train:bool=True):
     # transforms to add to data
     transform = torchvision.transforms.Compose([
         torchvision.transforms.Grayscale(),
-        torchvision.transforms.ToTensor()
+        torchvision.transforms.ToTensor(),
+        TensorFlatten()
     ])
 
     mnist_data = torchvision.datasets.MNIST(data_path, transform=transform, train=train)
