@@ -15,7 +15,7 @@ decoder:
   hidden_dimensions:                [64, 64]                  # layer dimensions in network (excludes output dimension)
 
 training:
-  learning_rate:                    0.1
+  learning_rate:                    0.001
   optimiser:                        adam                      
   dataset:                          mnist                     # which dataset to use (mnist, fashion_mnist or cifar)
   input_dimension:                  784
@@ -25,3 +25,7 @@ training:
   batch_size:                       32
   loss_function:
   num_epochs:                       10
+
+testing:
+  test_frequency:                   1000
+  visualise:                        True
