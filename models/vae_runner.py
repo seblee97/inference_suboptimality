@@ -44,7 +44,7 @@ class VAERunner():
         decoder = self._setup_decoder(config)
 
         # construct vae from encoder and decoder
-        self.vae = VAE(encoder=encoder, decoder=decoder, param) # param should contain more parameters
+        self.vae = VAE(encoder=encoder, decoder=decoder) # param should contain more parameters
 
         # setup loss
         self._setup_loss_module()
