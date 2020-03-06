@@ -16,7 +16,7 @@ class gaussianPosterior(approximatePosterior):
 
     def sample(self, parameters):
 
-        cutoff = int(0.5 * len(parameters))
+        cutoff = int(0.5 * parameters.shape[1])
 
         mu = parameters[:, :cutoff]
         var = parameters[:, cutoff:]
