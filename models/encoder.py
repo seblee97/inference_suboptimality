@@ -42,7 +42,15 @@ class Encoder(nn.Module, ABC):
         # should define a run through the network and return approximate parameters
         approximate_posterior_parameters = self.network.forward(x)
 
-        latent_vector, log_pz, log_qz = sample(approximate_posterior_parameters)
-        
+        approximate_posterior_parameters = self.network(x)
+        latent_vector, params = self.approximate_posterior.sample(approximate_posterior_parameters)
 
-        return latent_vector, log_pz, log_qz
+        return {'z': latent_vector, 'params': params}
+
+# # compute probability of sample under q
+#         log_pqz = log_normal(latent_vector, mu, var)
+
+#         import pdb; pdb.set_trace()
+
+#         # compute prior probability p(z)
+#         logpz = log_normal(latent_vector, torch.zeros(latent_vector.shape), torch.ones(latent_vector.shape[0]))

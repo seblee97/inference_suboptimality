@@ -3,6 +3,8 @@ from .base_approximate_posterior import approximatePosterior
 import torch
 import torch.distributions as tdist
 
+from utils import log_normal
+
 class gaussianPosterior(approximatePosterior):
 
     def __init__(self):
@@ -14,12 +16,14 @@ class gaussianPosterior(approximatePosterior):
 
     def sample(self, parameters):
 
-        mu = parameters[:0.5*len(parameters)]
-        sigma = parameters[0.5*len(parameters):]
-        
-        noise = torch.flatten(self.noise_distribution.sample((sigma.shape)))
-        
-        latent_vector = mu + sigma * noise
-        
-        return latent_vector
+        cutoff = int(0.5 * parameters.shape[1])
 
+        mu = parameters[:, :cutoff]
+        var = parameters[:, cutoff:]
+        
+        # sample noise (reparameterisation trick), unsqueeze to match dimensions
+        noise = self.noise_distribution.sample(var.shape).squeeze()
+        
+        latent_vector = mu + torch.sqrt(var) * noise
+        
+        return latent_vector, [mu, var]

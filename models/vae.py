@@ -23,26 +23,11 @@ class VAE(nn.Module):
     
     
     def forward(self, x):
-        """
-        Performs the encoding-decoding step.
-        """
-        # Sampling for the latent
-        z, logpz, logqz = self.encoder.forward(x) # samples
+
+        encoder_output = self.encoder(x)
+
+        latent_vector = encoder_output['z']
+        decoding = self.decoder(latent_vector)
+
+        return {**encoder_output, **{'x_hat': decoding}}
         
-        decoding = self.decoder.forward(latent_vector)
-        
-        
-        return decoding
-
-    def Compute_ELBO(self, x, k=1):
-        """
-        Performs the ELBO computation as well as other elements.
-        It receives the latent as sampled by the forward in VAE (encoded-decoded)
-        """
-
-
-
-
-
-
-

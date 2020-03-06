@@ -1,7 +1,8 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 import numpy as np
 
@@ -12,11 +13,22 @@ class baseNetwork(nn.Module, ABC):
     def __init__(self, config: Dict):
         super(baseNetwork, self).__init__()
 
-        self.nonlinear_function = config.get(["training", "nonlinearity"])
+        self.nonlinearity_name = config.get(["training", "nonlinearity"])
+
+        if self.nonlinearity_name == 'relu':
+            self.nonlinear_function = F.relu
+        elif self.nonlinearity_name == 'elu':
+            self.nonlinear_function = F.elu 
+        elif self.nonlinearity_name == 'sigmoid':
+            self.nonlinear_function = F.sigmoid
+        else:
+            raise ValueError("Invalid nonlinearity name")
+
         self.initialisation_std = config.get(["training", "initialisation_std"])
 
         self._construct_layers()
 
+    @abstractmethod
     def _construct_layers(self):
         raise NotImplementedError("Base class method")
 
@@ -24,17 +36,12 @@ class baseNetwork(nn.Module, ABC):
         """
         Weight initialisation method for given layer
         """
-        if self.nonlinear_function == 'relu':
-            # maybe change this to initialisation rather than dependent on nonlinearity?
-            torch.nn.init.normal_(layer.weight, std=self.initialisation_std)    
-            torch.nn.init.normal_(layer.bias, std=self.initialisation_std)
-        else:
-            raise ValueError("Non linearity type unknown")
-        
+        # TODO: make initialisation part of config to allow for other methods
+        torch.nn.init.normal_(layer.weight, std=self.initialisation_std)    
+        torch.nn.init.normal_(layer.bias, std=self.initialisation_std)
         return layer
 
-
-    def forward(self, x):
+    def forward(self, x):   
         """
         Forward pass
 
