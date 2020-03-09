@@ -29,13 +29,7 @@ if __name__ == "__main__":
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
     experiment_name = inference_gap_parameters.get("experiment_name")
-
-    results_folder_base = 'results/'
-        
-    if experiment_name:
-        checkpoint_path = '{}/{}/{}/{}/'.format(main_file_path, results_folder_base, exp_timestamp, experiment_name)
-    else:
-        checkpoint_path = '{}/{}/{}/'.format(main_file_path, results_folder_base, exp_timestamp)
+    checkpoint_path = os.path.join(main_file_path, 'results', exp_timestamp, experiment_name)
 
     inference_gap_parameters.set_property("checkpoint_path", checkpoint_path)
     inference_gap_parameters.set_property("experiment_timestamp", exp_timestamp)
