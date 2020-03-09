@@ -85,8 +85,10 @@ class InferenceGapParameters(object):
         :param save_path: path to folder in which to save configuration
         """
         os.makedirs(save_path, exist_ok=True)
-        with open(os.path.join(save_path, "config.yaml"), "w") as f:
+        filepath = os.path.join(save_path, "config.yaml")
+        with open(filepath, "w") as f:
             yaml.dump(self._config, f)
+        print(f'Saved configuration to "{filepath}".')
 
     def update(self, specific_params: dict) -> None:
         """
