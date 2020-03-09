@@ -18,7 +18,7 @@ class gaussianLoss(baseLoss):
         mu = params[0]
         var = params[1]
 
-        reconstruction_loss = F.binary_cross_entropy(vae_reconstruction, x, size_average=False)
+        reconstruction_loss = F.binary_cross_entropy(vae_reconstruction, x, reduction='sum')
 
         kl_loss = 0.5 * torch.sum(torch.exp(var) + mu**2 - 1.0 - var)
 
