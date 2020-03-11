@@ -58,9 +58,9 @@ class convNetwork(baseNetwork):
         :param x: input tensor to network
         :return x: output of network
         """
-            for level, layer in enumerate(self.layers[:-1]):
-                x = self.nonlinear_function(self.bn_layers[level](layer(x)))
-            x = x.view(x.size(0), -1)
-            x = self.layers[-1](x)  # the last fully connected layer has no activation function
-            return x
+        for level, layer in enumerate(self.layers[:-1]):
+            x = self.nonlinear_function(self.bn_layers[level](layer(x)))
+        x = x.view(x.size(0), -1)
+        x = self.layers[-1](x)  # the last fully connected layer has no activation function
+        return x
 
