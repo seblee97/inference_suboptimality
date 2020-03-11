@@ -1,31 +1,31 @@
-experiment_name:                    test             
-use_gpu:                            True                      # whether to use a gpu if it is available on the device          
-seed:                               5                         # random seed 
-relative_data_path:                 ../data/
+experiment_name:                    test                      # Name of the experiment.
+use_gpu:                            True                      # Use a gpu if one is available.
+seed:                               1                         # Random seed to ensure reproducibility.
+relative_data_path:                 ../data/                  # Path to the dataset directory.
 
 model:
-  approximate_posterior:            gaussian                  # family of functions to use for approximate posterior (q_\phi(z | x))
+  approximate_posterior:            gaussian                  # Family of functions to use for approximate posterior (q_\phi(z | x)).
 
 encoder:
-  network_type:                     feedforward               # encoder type i.e. feedforward or convolutional              
-  hidden_dimensions:                [64, 64]                  # layer dimensions in network (excludes input dimension and final latent dimension)
+  network_type:                     feedforward               # Type of encoder network (i.e., feedforward or convolutional).
+  hidden_dimensions:                [200, 200]                # Layer dimensions in the encoder network (excluding the input dimensions and final latent dimensions).
 
 decoder:
-  network_type:                     feedbackward              # encoder type i.e. feedforward or (de)convolutional              
-  hidden_dimensions:                [64, 64]                  # layer dimensions in network (excludes output dimension)
+  network_type:                     feedbackward              # Type of decoder network (i.e. feedforward or (de)convolutional)
+  hidden_dimensions:                [200, 200]                # Layer dimensions in the decoder network (excluding output dimensions).
 
 training:
-  learning_rate:                    0.001
-  optimiser:                        adam                      
-  dataset:                          mnist                     # which dataset to use (mnist, fashion_mnist or cifar)
-  input_dimension:                  784
-  latent_dimension:                 32
-  nonlinearity:                     sigmoid
-  initialisation_std:               1
-  batch_size:                       32
+  learning_rate:                    0.0001                    # Learning rate for gradient descent.
+  optimiser:                        adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
+  dataset:                          mnist                     # Dataset to use for training and testing (e.g., mnist, fashion_mnist, or cifar).
+  input_dimension:                  784                       # Number of input (and output) dimensions.
+  latent_dimension:                 50                        # Number of latent dimensions.
+  nonlinearity:                     elu                       # Activation function (e.g., sigmoid, elu, ReLU, etc.).
+  initialisation_std:               0.1                       # Standard deviation of the weight and bias initialization.
+  batch_size:                       100                       # Size of the training batches.
   loss_function:
-  num_epochs:                       10
+  num_epochs:                       100                       # Number of training epochs.
 
 testing:
-  test_frequency:                   1000
-  visualise:                        True
+  test_frequency:                   100                       # Number of training steps between tests.
+  visualise:                        True                      # Capture the output image of the test.
