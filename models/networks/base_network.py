@@ -43,13 +43,13 @@ class baseNetwork(nn.Module, ABC):
 
     def forward(self, x):   
         """
-        Forward pass
+        Feeds the given input tensor through this network.  Note that the
+        activation function is not applied to the output of the final layer.
 
         :param x: input tensor to network
-        :return x: output of network
+        :return: output of network
         """
-        for layer in self.layers:
+        for layer in self.layers[:-1]:
             x = self.nonlinear_function(layer(x))
-
-        return x
+        return self.layers[-1](x)
     
