@@ -66,7 +66,7 @@ class NormFlowPosterior(approximatePosterior):
 
 
 #from author
-from utils.math_ops import log_bernoulli, log_normal, log_mean_exp
+# from utils.math_ops import log_bernoulli, log_normal, log_mean_exp
 
 
 class Flow(nn.Module):

@@ -11,7 +11,7 @@ class RNVP(BaseFlow):
         self.softplus = nn.Softplus()
 
     def _construct_layers(self):
-        
+        pass
 
     def activation_derivative(self, x):
         """ Derivative of tanh """
