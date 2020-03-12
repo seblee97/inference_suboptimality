@@ -6,7 +6,7 @@ from .networks import feedBackwardNetwork
 from .encoder import Encoder
 from .decoder import Decoder
 
-from .approximate_posteriors import gaussianPosterior
+from .approximate_posteriors import gaussianPosterior, NormFlowPosterior
 
 from .loss_modules import gaussianLoss
 
@@ -88,9 +88,13 @@ class VAERunner:
         
         # approximate posterior family
         if self.approximate_posterior_type == "gaussian":
-            approximate_posterior = gaussianPosterior()
+            approximate_posterior = gaussianPosterior(config=config)
+        elif self.approximate_posterior_type == "norm_flow":
+            approximate_posterior = NormFlowPosterior(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised".format(self.approximate_posterior_type))
+
+        # XXX: maybe return flow/approx parameters here and if not None they can be added to optimiser (rather than explicity have flow object be part of vae graph construction)  
         
         return Encoder(network=network, approximate_posterior=approximate_posterior)
 
