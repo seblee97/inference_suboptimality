@@ -150,6 +150,8 @@ class VAERunner():
 
                 self.writer.add_scalar("training_loss", float(loss) / self.batch_size, step_count)
 
+            print("Training loss after {} epochs: {}".format(e + 1, float(loss)))
+
     def _perform_test_loop(self, step:int):
 
         # explicitly set model to evaluation mode
