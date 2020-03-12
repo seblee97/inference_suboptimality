@@ -23,7 +23,7 @@ import torch
 
 from tensorboardX import SummaryWriter
 
-class VAERunner:
+class VAERunner():
 
     def __init__(self, config: Dict) -> None:
         """
@@ -39,11 +39,12 @@ class VAERunner:
         self.loss_function = torch.nn.MSELoss()
 
         # initialise encoder, decoder
+        # This should also give activation functions !!
         encoder = self._setup_encoder(config)
         decoder = self._setup_decoder(config)
 
         # construct vae from encoder and decoder
-        self.vae = VAE(encoder=encoder, decoder=decoder)
+        self.vae = VAE(encoder=encoder, decoder=decoder) # param should contain more parameters
 
         # setup loss
         self._setup_loss_module()

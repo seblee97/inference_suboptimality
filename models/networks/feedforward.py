@@ -11,7 +11,7 @@ class feedForwardNetwork(baseNetwork):
         self.input_dimension = config.get(["training", "input_dimension"])
         self.latent_dimension = config.get(["training", "latent_dimension"])
         self.hidden_dimensions = config.get(["encoder", "hidden_dimensions"])
-
+        # The activation function is defined at mother class level as well as forward
         baseNetwork.__init__(self, config=config)
         
     def _construct_layers(self):

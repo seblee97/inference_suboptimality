@@ -20,7 +20,7 @@ class baseNetwork(nn.Module, ABC):
         elif self.nonlinearity_name == 'elu':
             self.nonlinear_function = F.elu 
         elif self.nonlinearity_name == 'sigmoid':
-            self.nonlinear_function = F.sigmoid
+            self.nonlinear_function = torch.sigmoid
         else:
             raise ValueError("Invalid nonlinearity name")
 
@@ -43,13 +43,13 @@ class baseNetwork(nn.Module, ABC):
 
     def forward(self, x):   
         """
-        Forward pass
+        Feeds the given input tensor through this network.  Note that the
+        activation function is not applied to the output of the final layer.
 
         :param x: input tensor to network
-        :return x: output of network
+        :return: output of network
         """
-        for layer in self.layers:
+        for layer in self.layers[:-1]:
             x = self.nonlinear_function(layer(x))
-
-        return x
+        return self.layers[-1](x)
     

@@ -15,15 +15,15 @@ class gaussianPosterior(approximatePosterior):
         pass
 
     def sample(self, parameters):
+        # There are two dimensions to |parameters|; the second one consists of two halves:
+        #   1. The first half represents the multidimensional mean of the Gaussian posterior.
+        #   2. The second half represents the multidimensional log variance of the Gaussian posterior.
+        dimensions = parameters.shape[1] // 2
+        mean = parameters[:, :dimensions]
+        log_var = parameters[:, dimensions:]
 
-        cutoff = int(0.5 * parameters.shape[1])
-
-        mu = parameters[:, :cutoff]
-        var = parameters[:, cutoff:]
-        
-        # sample noise (reparameterisation trick), unsqueeze to match dimensions
-        noise = self.noise_distribution.sample(var.shape).squeeze()
-        
-        latent_vector = mu + torch.sqrt(var) * noise
-        
-        return latent_vector, [mu, var]
+        # Sample the standard deviation along each dimension of the factorized Gaussian posterior.
+        noise = self.noise_distribution.sample(log_var.shape).squeeze()
+        # Apply the reparameterization trick.
+        latent_vector = mean + torch.sqrt(torch.exp(log_var)) * noise
+        return latent_vector, [mean, log_var]
