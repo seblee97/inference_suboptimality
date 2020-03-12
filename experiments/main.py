@@ -10,7 +10,8 @@ import os
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='config.yaml')
+parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml')
+parser.add_argument('-additional_configs', '--ac', type=str, help='path to folder containing additional configuration files (e.g. for flow)', default='additional_configs/')
 
 args = parser.parse_args()
 
@@ -25,6 +26,27 @@ if __name__ == "__main__":
 
     # create object in which to store experiment parameters
     inference_gap_parameters = utils.parameters.InferenceGapParameters(params)
+
+    supplementary_configs_path = args.ac
+    additional_configurations = []
+
+    approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
+    if approximate_posterior_configuration == 'gaussian':
+        pass 
+    elif approximate_posterior_configuration == 'norm_flow':
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
+    else:
+        raise ValueError("approximate_posterior_configuration {} not recognised. Please use 'gaussian', \
+                or 'flow'".format(approximate_posterior_configuration))
+
+    # specific parameters
+    for additional_configuration in additional_configurations:
+        additional_configuration_full_path = os.path.join(main_file_path, additional_configuration)
+        with open(additional_configuration_full_path, 'r') as yaml_file:
+            specific_params = yaml.load(yaml_file, yaml.SafeLoader)
+    
+        # update base-parameters with specific parameters
+        inference_gap_parameters.update(specific_params)
 
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
