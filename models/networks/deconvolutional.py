@@ -23,9 +23,9 @@ class deconvNetwork(baseNetwork):
         [64, 3, 4, 2]
         """
             
-        self.input_dimension = config.get(["training", "input_dimension"])
-        self.latent_dimension = config.get(["training", "latent_dimension"])
-        self.hidden_dimensions = config.get(["decoder", "hidden_dimensions"])
+        self.input_dimension = config.get(["model", "input_dimension"])
+        self.latent_dimension = config.get(["model", "latent_dimension"])
+        self.hidden_dimensions = config.get(["model", "decoder", "hidden_dimensions"])
         super(convNetwork, self).__init__()
         
     def _construct_layers(self):

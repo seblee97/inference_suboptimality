@@ -8,9 +8,9 @@ class feedBackwardNetwork(baseNetwork):
 
     def __init__(self, config: Dict):
 
-        self.input_dimension = config.get(["training", "input_dimension"])
-        self.latent_dimension = config.get(["training", "latent_dimension"])
-        self.hidden_dimensions = config.get(["decoder", "hidden_dimensions"])
+        self.input_dimension = config.get(["model", "input_dimension"])
+        self.latent_dimension = config.get(["model", "latent_dimension"])
+        self.hidden_dimensions = config.get(["model", "decoder", "hidden_dimensions"])
 
         baseNetwork.__init__(self, config=config)
 

@@ -13,7 +13,7 @@ class baseNetwork(nn.Module, ABC):
     def __init__(self, config: Dict):
         super(baseNetwork, self).__init__()
 
-        self.nonlinearity_name = config.get(["training", "nonlinearity"])
+        self.nonlinearity_name = config.get(["model", "nonlinearity"])
 
         if self.nonlinearity_name == 'relu':
             self.nonlinear_function = F.relu
@@ -25,7 +25,7 @@ class baseNetwork(nn.Module, ABC):
             raise ValueError("Invalid nonlinearity name")
 
         self.initialisation = config.get(["model", "initialisation"])
-        self.initialisation_std = config.get(["training", "initialisation_std"])
+        self.initialisation_std = config.get(["model", "initialisation_std"])
 
         self._construct_layers()
 

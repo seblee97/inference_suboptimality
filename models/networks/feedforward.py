@@ -8,9 +8,9 @@ class feedForwardNetwork(baseNetwork):
 
     def __init__(self, config: Dict):
 
-        self.input_dimension = config.get(["training", "input_dimension"])
-        self.latent_dimension = config.get(["training", "latent_dimension"])
-        self.hidden_dimensions = config.get(["encoder", "hidden_dimensions"])
+        self.input_dimension = config.get(["model", "input_dimension"])
+        self.latent_dimension = config.get(["model", "latent_dimension"])
+        self.hidden_dimensions = config.get(["model", "encoder", "hidden_dimensions"])
         # The activation function is defined at mother class level as well as forward
         baseNetwork.__init__(self, config=config)
         

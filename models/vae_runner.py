@@ -64,14 +64,14 @@ class VAERunner():
 
         self.checkpoint_path = config.get("checkpoint_path")
 
-        self.encoder_type = config.get(["encoder", "network_type"])
-        self.decoder_type = config.get(["decoder", "network_type"])
+        self.encoder_type = config.get(["model", "encoder", "network_type"])
+        self.decoder_type = config.get(["model", "decoder", "network_type"])
         self.approximate_posterior_type = config.get(["model", "approximate_posterior"])
+        self.latent_dimension = config.get(["model", "latent_dimension"])
 
         self.relative_data_path = config.get(["relative_data_path"])
         self.dataset = config.get(["training", "dataset"])
         self.batch_size = config.get(["training", "batch_size"])
-        self.latent_dimension = config.get(["training", "latent_dimension"])
 
         self.num_epochs = config.get(["training", "num_epochs"])
         self.loss_type = config.get(["training", "loss_function"])
