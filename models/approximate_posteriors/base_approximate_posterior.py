@@ -1,5 +1,7 @@
 from abc import ABC
 
+from typing import Dict
+
 class approximatePosterior(ABC):
 
     def __init__(self, config: Dict):
