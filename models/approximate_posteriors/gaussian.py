@@ -5,10 +5,12 @@ import torch.distributions as tdist
 
 from utils import log_normal
 
+from typing import Dict
+
 class gaussianPosterior(approximatePosterior):
 
-    def __init__(self):
-        super(gaussianPosterior, self).__init__()
+    def __init__(self, config: Dict):
+        approximatePosterior.__init__(self, config)
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
 
     def construct_posterior(self):
