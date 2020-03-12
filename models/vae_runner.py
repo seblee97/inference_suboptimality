@@ -51,7 +51,8 @@ class VAERunner():
 
         self.dataloader, self.test_data = self._setup_dataset(config)
 
-        self.optimiser = torch.optim.Adam(self.vae.parameters(), lr=self.learning_rate)
+        # setup optimiser with parameters from config
+        self.optimiser = self._setup_optimiser(config)
 
         # initialise general tensorboard writer
         self.writer = SummaryWriter(self.checkpoint_path)
@@ -78,6 +79,9 @@ class VAERunner():
 
         self.test_frequency = config.get(["testing", "test_frequency"])
         self.visualise_test = config.get(["testing", "visualise"])
+
+        self.optimiser_type = config.get(["training", "optimiser", "type"])
+        self.optimiser_params = config.get(["training", "optimiser", "params"])
 
     def _setup_encoder(self, config: Dict):
         
@@ -121,6 +125,17 @@ class VAERunner():
         else:
             raise ValueError("Dataset {} not recognised".format(self.dataset))
         return dataloader, test_data
+
+    def _setup_optimiser(self, config: Dict):
+        if self.optimiser_type == "adam":
+            beta_1 = self.optimiser_params[0]
+            beta_2 = self.optimiser_params[1]
+            epsilon = self.optimiser_params[2]
+            return torch.optim.Adam(
+                self.vae.parameters(), lr=self.learning_rate, betas=(beta_1, beta_2), eps=epsilon 
+                )
+        else:
+            raise ValueError("Optimiser {} not recognised". format(self.optimiser_type))
 
     def train(self):
 
