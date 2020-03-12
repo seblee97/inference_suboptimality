@@ -16,6 +16,9 @@ class Encoder(nn.Module, ABC):
         approximate_posterior_parameters = self.network(x)
         latent_vector, params = self.approximate_posterior.sample(approximate_posterior_parameters)
 
+        # XXX: should we also return a field akin to 'loss_metrics' in the dictionary
+        # for downstream use in calculating the losses e.g. logdetj for the flow modules
+
         return {'z': latent_vector, 'params': params}
 
 # # compute probability of sample under q
