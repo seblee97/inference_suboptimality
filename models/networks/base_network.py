@@ -24,6 +24,7 @@ class baseNetwork(nn.Module, ABC):
         else:
             raise ValueError("Invalid nonlinearity name")
 
+        self.initialisation = config.get(["model", "initialisation"])
         self.initialisation_std = config.get(["training", "initialisation_std"])
 
         self._construct_layers()
@@ -36,9 +37,15 @@ class baseNetwork(nn.Module, ABC):
         """
         Weight initialisation method for given layer
         """
-        # TODO: make initialisation part of config to allow for other methods
-        torch.nn.init.normal_(layer.weight, std=self.initialisation_std)    
-        torch.nn.init.normal_(layer.bias, std=self.initialisation_std)
+        if self.initialisation == "xavier_uniform":
+            nn.init.xavier_uniform_(layer.weight)
+            nn.init.constant_(layer.bias, 0)
+        elif self.initialisation == "xavier_normal":
+            nn.init.xavier_normal_(layer.weight)
+            nn.init.constant_(layer.bias, 0)
+        else:
+            raise ValueError("Initialisation {} not recognised".format(self.initialisation))
+
         return layer
 
     def forward(self, x):   
