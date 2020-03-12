@@ -1,2 +1,2 @@
-from .gaussian_posterior import gaussianPosterior
+from .gaussian import gaussianPosterior
 from .norm_flow import NormFlowPosterior
