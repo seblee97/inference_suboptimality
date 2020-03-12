@@ -2,7 +2,7 @@ from abc import ABC
 
 class approximatePosterior(ABC):
 
-    def __init__(self):
+    def __init__(self, config: Dict):
         pass
 
     def construct_posterior(self):
