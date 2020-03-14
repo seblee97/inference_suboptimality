@@ -10,7 +10,7 @@ from .approximate_posteriors import gaussianPosterior, NormFlowPosterior
 
 from .loss_modules import gaussianLoss
 
-from utils import mnist_dataloader
+from utils import mnist_dataloader, binarised_mnist_dataloader
 
 from typing import Dict
 import os
@@ -122,6 +122,10 @@ class VAERunner():
         if self.dataset == "mnist":
             dataloader = mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
             test_data = iter(mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
+                
+        if self.dataset == "binarised_mnist":
+            dataloader = binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
+            test_data = iter(binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         else:
             raise ValueError("Dataset {} not recognised".format(self.dataset))
         return dataloader, test_data
@@ -145,9 +149,8 @@ class VAERunner():
         step_count = 0
 
         for e in range(self.num_epochs):
-
-            for batch_input, batch_labels in self.dataloader:
-
+            for batch_input in self.dataloader:
+                batch_input = batch_input[0] #discard labels
                 if step_count % self.test_frequency == 0:
                     self._perform_test_loop(step=step_count)
                 
@@ -173,7 +176,6 @@ class VAERunner():
         self.vae.eval()
 
         with torch.no_grad():
-
             vae_output = self.vae(self.test_data)
 
             overall_test_loss = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
@@ -186,10 +188,17 @@ class VAERunner():
                 z = torch.randn(1, int(0.5 * self.latent_dimension))
 
                 # pass sample through decoder
-                reconstructed_image = self.vae.decoder(z)
+                reconstructed_image = torch.sigmoid(self.vae.decoder(z)) # sigmoid for plotting image
 
                 numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
-
+                
+                """
+                # To binarised output
+                numpy_image_ls = numpy_image > 0.5
+                numpy_image[numpy_image_ls] = 1
+                numpy_image_ls[~numpy_image_ls] = 0
+                """
+                
                 fig = plt.figure()
                 plt.imshow(numpy_image, cmap='gray')
 
