@@ -24,11 +24,7 @@ training:
   optimiser:                        
     type:                           adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
     params:                         [0.9, 0.999, 0.0001]
-<<<<<<< HEAD
-  dataset:                          binarised_mnist           # Dataset to use for training and testing (e.g., mnist, binarised_mnist, fashion_mnist, or cifar).
-=======
   dataset:                          binarised_mnist                     # Dataset to use for training and testing (e.g., mnist, fashion_mnist, or cifar).
->>>>>>> 931c77ad3ae73194bc3efe8a61c8106115b7bb1d
   batch_size:                       100                       # Size of the training batches.
   loss_function:
   num_epochs:                       100                       # Number of training epochs.
