@@ -15,6 +15,7 @@ from utils import mnist_dataloader, binarised_mnist_dataloader
 from typing import Dict
 import os
 import copy
+import random
 import pandas as pd
 
 import matplotlib.pyplot as plt
@@ -184,9 +185,10 @@ class VAERunner():
 
             if self.visualise_test:
                 #Test 1: closeness output-input
-                reconstructed_image = vae_output['x_hat'][0]    # Should we add a sigmoid ? 
+                index = random.randint(0, vae_output['x_hat'].size()[0]-1)
+                reconstructed_image = vae_output['x_hat'][index]    # Should we add a sigmoid ?
                 numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
-                numpy_input = self.test_data[0].detach().numpy().reshape((28, 28))
+                numpy_input = self.test_data[index].detach().numpy().reshape((28, 28))
                 
                 fig, (ax0, ax1) = plt.subplots(ncols=2)
                 ax0.imshow(numpy_image, cmap='gray')
