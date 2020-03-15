@@ -12,12 +12,12 @@ model:
   latent_dimension:                 50                        # Number of latent dimensions.
 
   encoder:
-    network_type:                     feedforward               # Type of encoder network (i.e., feedforward or convolutional).
-    hidden_dimensions:                [200, 200]                # Layer dimensions in the encoder network (excluding the input dimensions and final latent dimensions).
+    network_type:                     feedforward             # Type of encoder network (i.e., feedforward or convolutional).
+    hidden_dimensions:                [200, 200]              # Layer dimensions in the encoder network (excluding the input dimensions and final latent dimensions).
 
   decoder:
-    network_type:                     feedbackward              # Type of decoder network (i.e. feedforward or (de)convolutional)
-    hidden_dimensions:                [200, 200]                # Layer dimensions in the decoder network (excluding output dimensions).
+    network_type:                     feedbackward            # Type of decoder network (i.e. feedforward or (de)convolutional)
+    hidden_dimensions:                [200, 200]              # Layer dimensions in the decoder network (excluding output dimensions).
 
 training:
   learning_rate:                    0.0001                    # Learning rate for gradient descent.
