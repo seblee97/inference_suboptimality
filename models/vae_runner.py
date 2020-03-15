@@ -166,8 +166,8 @@ class VAERunner():
 
                 self.optimiser.step()
 
-                self.writer.add_scalar("training_loss", float(loss) / self.batch_size, step_count)
-
+                self.writer.add_scalar("training_loss", float(loss), step_count)
+                self.writer.add_scalar("ELBO", float(-loss), step_count)
             print("Training loss after {} epochs: {}".format(e + 1, float(loss)))
 
     def _perform_test_loop(self, step:int):
@@ -180,7 +180,7 @@ class VAERunner():
 
             overall_test_loss = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
     
-            self.writer.add_scalar("test_loss", float(overall_test_loss) / 10000, step)
+            self.writer.add_scalar("test_loss", float(overall_test_loss), step)
 
             if self.visualise_test:
                 #Test 1: closeness output-input
