@@ -21,6 +21,8 @@ class baseNetwork(nn.Module, ABC):
             self.nonlinear_function = F.elu 
         elif self.nonlinearity_name == 'sigmoid':
             self.nonlinear_function = torch.sigmoid
+        elif self.nonlinearity_name == 'tanh':
+            self.nonlinear_function = torch.tanh
         else:
             raise ValueError("Invalid nonlinearity name")
 
