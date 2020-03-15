@@ -15,6 +15,7 @@ from utils import mnist_dataloader, binarised_mnist_dataloader
 from typing import Dict
 import os
 import copy
+import random
 import pandas as pd
 
 import matplotlib.pyplot as plt
@@ -166,8 +167,8 @@ class VAERunner():
 
                 self.optimiser.step()
 
-                self.writer.add_scalar("training_loss", float(loss) / self.batch_size, step_count)
-
+                self.writer.add_scalar("training_loss", float(loss), step_count)
+                self.writer.add_scalar("ELBO", float(-loss), step_count)
             print("Training loss after {} epochs: {}".format(e + 1, float(loss)))
 
     def _perform_test_loop(self, step:int):
@@ -180,13 +181,14 @@ class VAERunner():
 
             overall_test_loss = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
     
-            self.writer.add_scalar("test_loss", float(overall_test_loss) / 10000, step)
+            self.writer.add_scalar("test_loss", float(overall_test_loss), step)
 
             if self.visualise_test:
                 #Test 1: closeness output-input
-                reconstructed_image = vae_output['x_hat'][0]    # Should we add a sigmoid ? 
+                index = random.randint(0, vae_output['x_hat'].size()[0]-1)
+                reconstructed_image = vae_output['x_hat'][index]    # Should we add a sigmoid ?
                 numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
-                numpy_input = self.test_data[0].detach().numpy().reshape((28, 28))
+                numpy_input = self.test_data[index].detach().numpy().reshape((28, 28))
                 
                 fig, (ax0, ax1) = plt.subplots(ncols=2)
                 ax0.imshow(numpy_image, cmap='gray')
