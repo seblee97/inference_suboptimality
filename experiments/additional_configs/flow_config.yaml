@@ -1,6 +1,6 @@
 flow:
 
-  flow_type:                          real_nvp
+  flow_type:                          rnvp_flow #rnvp_flow, rnvp_aux_flow, base_flow
   num_flows:                          2
   flow_layers:                        [50, 50]
-  nonlinearity:                       elu    
+  nonlinearity:                       elu

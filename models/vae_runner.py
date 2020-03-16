@@ -84,13 +84,13 @@ class VAERunner():
         self.optimiser_params = config.get(["training", "optimiser", "params"])
 
     def _setup_encoder(self, config: Dict):
-        
+
         # network
         if self.encoder_type == "feedforward":
             network = feedForwardNetwork(config=config)
         else:
             raise ValueError("Encoder type {} not recognised".format(self.encoder_type))
-        
+
         # approximate posterior family
         if self.approximate_posterior_type == "gaussian":
             approximate_posterior = gaussianPosterior(config=config)
@@ -99,8 +99,8 @@ class VAERunner():
         else:
             raise ValueError("Approximate posterior family {} not recognised".format(self.approximate_posterior_type))
 
-        # XXX: maybe return flow/approx parameters here and if not None they can be added to optimiser (rather than explicity have flow object be part of vae graph construction)  
-        
+        # XXX: maybe return flow/approx parameters here and if not None they can be added to optimiser (rather than explicity have flow object be part of vae graph construction)
+
         return Encoder(network=network, approximate_posterior=approximate_posterior)
 
     def _setup_decoder(self, config: Dict):
@@ -114,6 +114,8 @@ class VAERunner():
     def _setup_loss_module(self):
         if self.approximate_posterior_type == "gaussian":
             self.loss_module = gaussianLoss()
+        if self.approximate_posterior_type == "norm_flow":
+            self.loss_module = gaussianLoss()
         else:
             raise ValueError("Loss module not correctly specified")
 
@@ -122,7 +124,7 @@ class VAERunner():
         if self.dataset == "mnist":
             dataloader = mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
             test_data = iter(mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
-                
+
         elif self.dataset == "binarised_mnist":
             dataloader = binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
             test_data = iter(binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
@@ -136,7 +138,7 @@ class VAERunner():
             beta_2 = self.optimiser_params[1]
             epsilon = self.optimiser_params[2]
             return torch.optim.Adam(
-                self.vae.parameters(), lr=self.learning_rate, betas=(beta_1, beta_2), eps=epsilon 
+                self.vae.parameters(), lr=self.learning_rate, betas=(beta_1, beta_2), eps=epsilon
                 )
         else:
             raise ValueError("Optimiser {} not recognised". format(self.optimiser_type))
@@ -153,7 +155,7 @@ class VAERunner():
                 batch_input = batch_input[0] #discard labels
                 if step_count % self.test_frequency == 0:
                     self._perform_test_loop(step=step_count)
-                
+
                 step_count += 1
 
                 vae_output = self.vae(batch_input)
@@ -179,7 +181,7 @@ class VAERunner():
             vae_output = self.vae(self.test_data)
 
             overall_test_loss = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
-    
+
             self.writer.add_scalar("test_loss", float(overall_test_loss) / 10000, step)
 
             if self.visualise_test:
@@ -191,14 +193,14 @@ class VAERunner():
                 reconstructed_image = torch.sigmoid(self.vae.decoder(z)) # sigmoid for plotting image
 
                 numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
-                
+
                 """
                 # To binarised output
                 numpy_image_ls = numpy_image > 0.5
                 numpy_image[numpy_image_ls] = 1
                 numpy_image_ls[~numpy_image_ls] = 0
                 """
-                
+
                 fig = plt.figure()
                 plt.imshow(numpy_image, cmap='gray')
 

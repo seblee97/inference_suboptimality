@@ -19,10 +19,10 @@ class NormFlowPosterior(approximatePosterior):
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
 
         # ammortisation networks for flow parameters
-        if self.flow_type == 'rnvp':
+        if self.flow_type == 'rnvp_flow':
             self.flow_module = RNVP(config=config)
-        elif self.flow_type == 'rnvp_aux':
-            self.flow_module = RNVPAux(config=config)        
+        elif self.flow_type == 'rnvp_aux_flow':
+            self.flow_module = RNVPAux(config=config)
         else:
             raise ValueError("flow_type {} not recognised".format(self.flow_type))
 
@@ -31,7 +31,7 @@ class NormFlowPosterior(approximatePosterior):
 
     def sample(self, parameters):
 
-        # cutoff = int(0.5 * parameters.shape[1])
+        #cutoff = int(parameters.shape[1] / 2)
 
         # z1 = parameters[:, :cutoff]
         # z2 = parameters[:, cutoff:]
@@ -41,7 +41,7 @@ class NormFlowPosterior(approximatePosterior):
 
         # sample noise (reparameterisation trick), unsqueeze to match dimensions
         # noise = self.noise_distribution.sample(z2.shape).squeeze()
-        
+
         # z0 = z1 + torch.sqrt(z2) * noise
 
         # z_through_flow = []
@@ -49,15 +49,15 @@ class NormFlowPosterior(approximatePosterior):
         # log_det_jacobian_sum = 0
 
         # apply flow transformations
-        self.flow_module(parameters)
-        
+        self.flow_module.forward(parameters)
+
         for k in range(self.num_flows):
             z_k, log_det_jacobian = flow_k(z[k], u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
             z_through_flow.append(z_k)
             log_det_jacobian_sum += log_det_jacobian
 
         latent_vector = z_through_flow[-1]
-        
+
         return {'z': latent_vector, 'params': [z1, z2, z0, log_det_jacobian_sum]}
 
 
