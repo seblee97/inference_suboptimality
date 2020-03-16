@@ -7,7 +7,7 @@ model:
   approximate_posterior:            gaussian                  # Family of functions to use for approximate posterior (q_\phi(z | x)).
   initialisation:                   xavier_uniform
   initialisation_std:               0.1                       # Standard deviation of the weight and bias initialization.
-  nonlinearity:                     tanh                      # Activation function (e.g., sigmoid, elu, ReLU, etc.).
+  nonlinearity:                     elu                       # Activation function (e.g., sigmoid, elu, ReLU, tanh, etc.).
   input_dimension:                  784                       # Number of input (and output) dimensions.
   latent_dimension:                 50                        # Number of latent dimensions.
 
@@ -24,10 +24,10 @@ training:
   optimiser:                        
     type:                           adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
     params:                         [0.9, 0.999, 0.0001]
-  dataset:                          binarised_mnist                     # Dataset to use for training and testing (e.g., mnist, fashion_mnist, or cifar).
+  dataset:                          binarised_mnist           # Dataset to use for training and testing (e.g., mnist, binarised_mnist, fashion_mnist, or cifar).
   batch_size:                       100                       # Size of the training batches.
   loss_function:
-  num_epochs:                       100                       # Number of training epochs.
+  num_epochs:                       300                       # Number of training epochs.
 
 testing:
   test_frequency:                   100                       # Number of training steps between tests.
