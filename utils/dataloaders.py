@@ -60,7 +60,7 @@ def binarised_mnist_dataloader(data_path: str, batch_size: int, train:bool=True)
 
 def fashion_mnist_dataloader(data_path: str, batch_size: int, train:bool=True):
     """
-        Load cifar image data from specified, convert to grayscaled tensors, flatten, return dataloader
+        Load cifar image data from specified location, convert to grayscaled tensors, binarise, flatten, and return dataloader
         
         :param data_path: full path to data directory
         :param batch_size: batch size for dataloader
@@ -83,7 +83,8 @@ def fashion_mnist_dataloader(data_path: str, batch_size: int, train:bool=True):
 
 def cifar_dataloader(data_path: str, batch_size: int, train:bool=True):
     """
-        Load cifar image data from specified, convert to grayscaled tensors, flatten, return dataloader
+        Load cifar image data from specified location, convert to  tensors, binarise, and return dataloader
+        Note: Cifar already grayscaled in each channel.
         
         :param data_path: full path to data directory
         :param batch_size: batch size for dataloader
@@ -92,14 +93,12 @@ def cifar_dataloader(data_path: str, batch_size: int, train:bool=True):
         """
     # transforms to add to data
     transform = torchvision.transforms.Compose([
-                                                torchvision.transforms.Grayscale(),
                                                 torchvision.transforms.ToTensor(),
                                                 lambda x: x>=0.5,
                                                 lambda x: x.float(),
-                                                TensorFlatten()
                                                 ])
         
-    mnist_data = torchvision.datasets.MNIST(data_path, transform=transform, train=train)
-    dataloader = torch.utils.data.DataLoader(mnist_data, batch_size=batch_size, shuffle=True)
+    CIFAR10_data = torchvision.datasets.CIFAR10(data_path, transform=transform, train=train)
+    dataloader = torch.utils.data.DataLoader(CIFAR10_data, batch_size=batch_size, shuffle=True)
                                                 
     return dataloader
