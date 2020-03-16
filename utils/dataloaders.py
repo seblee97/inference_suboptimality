@@ -60,8 +60,8 @@ def binarised_mnist_dataloader(data_path: str, batch_size: int, train:bool=True)
 
 def fashion_mnist_dataloader(data_path: str, batch_size: int, train:bool=True):
     """
-        Load cifar image data from specified location, convert to grayscaled tensors, binarise, flatten, and return dataloader
-        
+        Load fashion_mnist image data from specified location, convert to tensors, binarise, flatten, and return dataloader
+        Note: fashion_mnist already grayscaled in each channel.
         :param data_path: full path to data directory
         :param batch_size: batch size for dataloader
         :param train: whether to load train or test data
@@ -69,7 +69,6 @@ def fashion_mnist_dataloader(data_path: str, batch_size: int, train:bool=True):
         """
     # transforms to add to data
     transform = torchvision.transforms.Compose([
-                                                torchvision.transforms.Grayscale(),
                                                 torchvision.transforms.ToTensor(),
                                                 lambda x: x>=0.5,
                                                 lambda x: x.float(),
