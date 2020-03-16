@@ -158,16 +158,16 @@ class VAERunner():
 
                 vae_output = self.vae(batch_input)
 
-                loss = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output)
+                loss, loss_metrics = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output)
 
                 self.optimiser.zero_grad()
-
                 loss.backward()
-
                 self.optimiser.step()
 
                 self.writer.add_scalar("training_loss", float(loss), step_count)
-                self.writer.add_scalar("ELBO", float(-loss), step_count)
+
+                for metric in loss_metrics: # should include e.g. elbo
+                    self.writer.add_scalar(metric, loss_metrics[metric], step_count)
             print("Training loss after {} epochs: {}".format(e + 1, float(loss)))
 
     def _perform_test_loop(self, step:int):
@@ -178,7 +178,7 @@ class VAERunner():
         with torch.no_grad():
             vae_output = self.vae(self.test_data)
 
-            overall_test_loss = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
+            overall_test_loss, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
     
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
 
