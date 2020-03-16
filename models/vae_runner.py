@@ -122,8 +122,7 @@ class VAERunner():
         file_path = os.path.dirname(__file__)
         if self.dataset == "mnist":
             dataloader = mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
-            test_data = iter(mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
-                
+            test_data = iter(mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]          
         elif self.dataset == "binarised_mnist":
             dataloader = binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
             test_data = iter(binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
@@ -150,8 +149,8 @@ class VAERunner():
         step_count = 0
 
         for e in range(self.num_epochs):
-            for batch_input in self.dataloader:
-                batch_input = batch_input[0] #discard labels
+            for batch_input, _ in self.dataloader: # target discarded
+                
                 if step_count % self.test_frequency == 0:
                     self._perform_test_loop(step=step_count)
                 
@@ -195,7 +194,7 @@ class VAERunner():
                 ax1.imshow(numpy_input, cmap='gray')
                 self.writer.add_figure("test_autoencoding", fig, step)
     
-                #Test 2: random latent variable sample
+                #Test 2: random latent variable sample (i.e. from prior)
                 z = torch.randn(1, int(0.5 * self.latent_dimension))
                 reconstructed_image = torch.sigmoid(self.vae.decoder(z))
                 numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
