@@ -6,3 +6,4 @@ flow:
   latent_dim:                         25
   input_dim:                          392
   nonlinearity:                       elu
+  weight_initialisation:              default
