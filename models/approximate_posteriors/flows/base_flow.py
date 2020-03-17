@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+import torch
 import torch.nn as nn 
 
 class BaseFlow(nn.Module, ABC):
@@ -31,3 +32,7 @@ class BaseFlow(nn.Module, ABC):
             raise ValueError("Initialisation {} not recognised".format(self.initialisation))
 
         return layer
+
+    @abstractmethod
+    def forward(self, x: torch.Tensor):
+        raise NotImplementedError("Base class method")
