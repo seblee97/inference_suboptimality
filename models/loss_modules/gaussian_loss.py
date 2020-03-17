@@ -20,18 +20,14 @@ class gaussianLoss(baseLoss):
     #     kl_loss = torch.sum(torch.exp(log_var) + mean**2 - 1 - log_var) / 2
     #     return reconstruction_loss + kl_loss
 
-    def compute_loss(self, x, vae_output) -> (torch.Tensor, Dict):
+    def compute_loss(self, x, vae_output) -> (torch.Tensor, Dict, torch.Tensor):
         """
         Computes the loss between the network input and output assuming the
         approximate posterior is a fully-factorized Gaussian.
         
         :param x: input to the VAE
         :param vae_output: output of the VAE
-        :return (loss, loss_metrics): information about the loss.
-        """
-        
-        """
-        This one mimicks what the paper does.
+        :return (loss, loss_metrics, log_p_x): information about the loss
         """
         vae_reconstruction = vae_output['x_hat']
         vae_latent = vae_output['z']
@@ -59,4 +55,4 @@ class gaussianLoss(baseLoss):
         loss_metrics["log p(z)"] = float(torch.mean(log_p_z))
         loss_metrics["log q(z|x)"] = float(torch.mean(log_q_zx))
 
-        return loss, loss_metrics
+        return loss, loss_metrics, log_p_x

@@ -32,3 +32,8 @@ training:
 testing:
   test_frequency:                   100                       # Number of training steps between tests.
   visualise:                        True                      # Capture the output image of the test.
+
+estimator:
+  type: "none"                                                # Type of log-likelihood estimator (e.g., None, IWAE)
+  iwae:
+    samples: 20                                               # Number of samples to use in the IWAE estimate.

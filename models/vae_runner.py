@@ -8,6 +8,8 @@ from .decoder import Decoder
 
 from .approximate_posteriors import gaussianPosterior, NormFlowPosterior
 
+from .likelihood_estimators import BaseEstimator, IWAEEstimator
+
 from .loss_modules import gaussianLoss
 
 from utils import mnist_dataloader, binarised_mnist_dataloader
@@ -55,6 +57,9 @@ class VAERunner():
         # setup optimiser with parameters from config
         self.optimiser = self._setup_optimiser(config)
 
+        # setup likelihood estimator with parameters from config
+        self.estimator = self._setup_estimator(config)
+
         # initialise general tensorboard writer
         self.writer = SummaryWriter(self.checkpoint_path)
 
@@ -83,6 +88,8 @@ class VAERunner():
 
         self.optimiser_type = config.get(["training", "optimiser", "type"])
         self.optimiser_params = config.get(["training", "optimiser", "params"])
+
+        self.estimator_type = config.get(["estimator", "type"])
 
     def _setup_encoder(self, config: Dict):
         
@@ -141,6 +148,20 @@ class VAERunner():
         else:
             raise ValueError("Optimiser {} not recognised". format(self.optimiser_type))
 
+    def _setup_estimator(self, config: Dict) -> BaseEstimator:
+        """
+        Sets up the likelihood estimator for this VAERunner.
+
+        :param config: parsed configuration file.
+        """
+        if self.estimator_type.upper() == "NONE":
+            return None
+        elif self.estimator_type.upper() == "IWAE":
+            samples = config.get(['estimator', 'iwae', 'samples'])
+            return IWAEEstimator(samples)
+        else:
+            raise ValueError("Estimator {} not recognised". format(self.estimator_type))
+
     def train(self):
 
         # explicitly set model to train mode
@@ -158,7 +179,7 @@ class VAERunner():
 
                 vae_output = self.vae(batch_input)
 
-                loss, loss_metrics = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output)
+                loss, loss_metrics, _ = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output)
 
                 self.optimiser.zero_grad()
                 loss.backward()
@@ -178,9 +199,13 @@ class VAERunner():
         with torch.no_grad():
             vae_output = self.vae(self.test_data)
 
-            overall_test_loss, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
-    
+            overall_test_loss, _, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
+
+            if self.estimator:
+                estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
+                self.writer.add_scalar("estimated_loss", float(estimated_loss), step)
+                print("Estimated Loss =", estimated_loss)
 
             if self.visualise_test:
                 #Test 1: closeness output-input
