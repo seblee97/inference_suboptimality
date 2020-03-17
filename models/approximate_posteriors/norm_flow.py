@@ -49,7 +49,7 @@ class NormFlowPosterior(approximatePosterior):
         # log_det_jacobian_sum = 0
 
         # apply flow transformations
-        self.flow_module.forward(parameters)
+        self.flow_module(parameters)
 
         for k in range(self.num_flows):
             z_k, log_det_jacobian = flow_k(z[k], u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
