@@ -31,13 +31,13 @@ class IWAEEstimator(BaseEstimator):
 
         # Global warming is no joke, and neither are gradient calculations.
         with torch.no_grad():
-            # Duplicate the input batch once for each sample in |self._samples|.
-            inputs = batch_input.repeat(self._samples, 1)
+            # Duplicate the input batch once for each sample in |self._num_samples|.
+            inputs = batch_input.repeat(self._num_samples, 1)
             # Compute the log-likelihood of each input.
             outputs = vae(inputs)
             _, _, log_p_x = loss_module.compute_loss(x=inputs, vae_output=outputs)
             # Align the rows of the log-likelihoods with the inputs in the batch.
-            log_p_x = log_p_x.view(-1, self._samples)
+            log_p_x = log_p_x.view(-1, self._num_samples)
             # Find the maximum log-likelihood to avoid numeric overflow with the
             # LogSumExp trick.  For more details, see https://www.xarg.org/2016/06/the-log-sum-exp-trick-in-machine-learning/.
             max_log_p_x, _ = torch.max(log_p_x, 1, keepdim=True)
