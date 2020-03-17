@@ -1,10 +1,9 @@
 from .base_flow import BaseFlow
-sys.path.append('../../networks')
 from .nflow_feedforward import NFlowfeedForwardNetwork
 
 
 import torch.nn as nn
-import torch.nn.Functional as F
+import torch.nn.functional as F
 
 
 class RNVP(BaseFlow):
@@ -17,7 +16,6 @@ class RNVP(BaseFlow):
         self.activation = nn.ELU()
         self.softplus = nn.Softplus()
         self.flow_network = NFlowfeedForwardNetwork
-        self.sigmap = F.sigmoid()
 
     def _construct_layers(self):
         pass
@@ -32,9 +30,12 @@ class RNVP(BaseFlow):
 
         z1 = parameters[:, :cutoff]
         z2 = parameters[:, cutoff:]
+        print(z2)
+        z2.squeeze()
+        print(z2)
 
         u1_in = self.flow_network(z2)
-        u1 = self.sigmap(u1_in)
+        u1 = self.F.sigmoid(u1_in)
 
         w1_in = self.flow_network(z2)
         w1 = self.activation(w1_in)
