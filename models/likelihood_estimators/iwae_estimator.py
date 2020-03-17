@@ -2,19 +2,20 @@ from .base_estimator import BaseEstimator
 from models.loss_modules import baseLoss
 
 import torch
+import torch.nn as nn
 
 class IWAEEstimator(BaseEstimator):
 
-    def __init__(self, samples: float):
+    def __init__(self, num_samples: float):
         """
         Constructs an IWAEEstimator with the given number of samples.
 
-        :param samples: number of samples
+        :param num_samples: number of samples
         """
         BaseEstimator.__init__(self)
-        self._samples = samples
+        self._num_samples = num_samples
 
-    def estimate_log_likelihood_loss(self, batch_input: torch.Tensor, vae, loss_module: baseLoss) -> torch.Tensor:
+    def estimate_log_likelihood_loss(self, batch_input: torch.Tensor, vae: nn.Module, loss_module: baseLoss) -> torch.Tensor:
         """
         Estimates the log-likelihood loss of the given input batch using the
         provided VAE and loss module.
