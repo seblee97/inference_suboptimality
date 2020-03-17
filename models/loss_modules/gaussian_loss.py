@@ -20,32 +20,43 @@ class gaussianLoss(baseLoss):
     #     kl_loss = torch.sum(torch.exp(log_var) + mean**2 - 1 - log_var) / 2
     #     return reconstruction_loss + kl_loss
 
-        # loss, rec, kl, bpd = calculate_loss(x_mean, data, z_mu, z_var, z0, zk, ldj, args, beta=beta)
-
-        # loss, rec, kl = binary_loss_function(x_mean, x, z_mu, z_var, z_0, z_k, ldj, beta=beta)
-
     def compute_loss(self, x, vae_output) -> (torch.Tensor, Dict):
+        """
+        Computes the loss between the network input and output assuming the
+        approximate posterior is a fully-factorized Gaussian.
+        
+        :param x: input to the VAE
+        :param vae_output: output of the VAE
+        :return (loss, loss_metrics): information about the loss.
+        """
+        
         """
         This one mimicks what the paper does.
         """
-        loss_metrics = {}
-
         vae_reconstruction = vae_output['x_hat']
         vae_latent = vae_output['z']
         mean, log_var = vae_output['params']
 
-        logpz = -0.5 * (((vae_latent).pow(2)).sum(1))
-        logqz = -0.5 * (log_var.sum(1) + ((vae_latent - mean).pow(2) / torch.exp(log_var)).sum(1))
+        # Calculate the logs in the ELBO with ONE sample from the expectation.
+        #   ELBO = E[log(p(x,z) / q(z|x))]
+        #        = E[log(p(x|z) * p(z) / q(z|x))]
+        #        = E[log p(x|z) + log p(z) - log q(z|x)]
+        log_p_xz = -F.binary_cross_entropy(vae_reconstruction, x, reduction='none').sum(-1)
+        log_p_z = -0.5 * vae_latent.pow(2).sum(1)
+        log_q_zx = -0.5 * (log_var.sum(1) + ((vae_latent - mean).pow(2) / torch.exp(log_var)).sum(1))
+        # TODO: Add a warm-up constant to the last two terms.
+        log_p_x = log_p_xz + log_p_z - log_q_zx
 
-        reconstruction_loss = F.binary_cross_entropy(vae_reconstruction, x, reduction='none').sum(-1) #this is the equivalent of log_bernouilli which is summed, not meaned.
+        # The ELBO is defined to be the mean of the logs in the batch.
+        elbo = torch.mean(log_p_x)
 
-        ELBO = torch.mean(-reconstruction_loss + logpz - logqz)  # the last term should have a warmup constant
-        loss = -ELBO    
+        # Maximizing the ELBO is equivalent to minimizing the negative ELBO.
+        loss = -elbo
 
-        loss_metrics["reconstruction_loss"] = float(torch.mean(reconstruction_loss))
-        loss_metrics["elbo"] = float(ELBO)
-        loss_metrics["log(p|z)"] = float(torch.mean(logpz))
-        loss_metrics["log(q|z)"] = float(torch.mean(logqz))
+        loss_metrics = {}
+        loss_metrics["elbo"] = float(elbo)
+        loss_metrics["log p(x|z)"] = float(torch.mean(log_p_xz))
+        loss_metrics["log p(z)"] = float(torch.mean(log_p_z))
+        loss_metrics["log q(z|x)"] = float(torch.mean(log_q_zx))
 
         return loss, loss_metrics
-
