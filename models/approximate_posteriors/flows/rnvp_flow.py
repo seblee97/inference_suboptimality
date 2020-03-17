@@ -15,7 +15,7 @@ class RNVP(BaseFlow):
 
         self.activation = nn.ELU()
         self.softplus = nn.Softplus()
-        self.flow_network = NFlowfeedForwardNetwork
+        self.flow_network = NFlowfeedForwardNetwork(config=config)
 
     def _construct_layers(self):
         pass
