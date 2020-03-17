@@ -26,9 +26,6 @@ class NormFlowPosterior(approximatePosterior):
         else:
             raise ValueError("flow_type {} not recognised".format(self.flow_type))
 
-    def construct_posterior(self):
-        pass
-
     def sample(self, parameters):
 
         # cutoff = int(0.5 * parameters.shape[1])
