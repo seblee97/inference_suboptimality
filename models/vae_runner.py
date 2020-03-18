@@ -205,7 +205,6 @@ class VAERunner():
             if self.estimator:
                 estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
                 self.writer.add_scalar("estimated_loss", float(estimated_loss), step)
-                print("Estimated Loss =", estimated_loss)
 
             if self.visualise_test:
                 #Test 1: closeness output-input
