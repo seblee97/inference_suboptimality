@@ -38,3 +38,5 @@ class RNVPLoss(baseLoss):
 
         # Maximizing the ELBO is equivalent to minimizing the negative ELBO.
         loss = -elbo
+
+        return loss
