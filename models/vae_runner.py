@@ -57,7 +57,8 @@ class VAERunner():
         self.optimiser = self._setup_optimiser(config)
 
         # setup likelihood estimator with parameters from config
-        self.estimator = self._setup_estimator(config)
+        if self.is_estimator:
+            self.estimator = self._setup_estimator(config)
 
         # initialise general tensorboard writer
         self.writer = SummaryWriter(self.checkpoint_path)
@@ -88,7 +89,7 @@ class VAERunner():
         self.optimiser_type = config.get(["training", "optimiser", "type"])
         self.optimiser_params = config.get(["training", "optimiser", "params"])
 
-        self.estimator_type = config.get(["estimator", "type"])
+        self.is_estimator = config.get(["model", "is_estimator"])
 
     def _setup_encoder(self, config: Dict):
 
@@ -155,9 +156,7 @@ class VAERunner():
 
         :param config: parsed configuration file.
         """
-        if self.estimator_type.upper() == "NONE":
-            return None
-        elif self.estimator_type.upper() == "IWAE":
+        if self.estimator_type.upper() == "IWAE":
             samples = config.get(['estimator', 'iwae', 'samples'])
             return IWAEEstimator(samples)
         else:
@@ -184,12 +183,6 @@ class VAERunner():
 
                 self.optimiser.zero_grad()
                 loss.backward()
-<<<<<<< HEAD
-
-                print(float(loss))
-
-=======
->>>>>>> master
                 self.optimiser.step()
 
                 self.writer.add_scalar("training_loss", float(loss), step_count)
@@ -206,55 +199,27 @@ class VAERunner():
         with torch.no_grad():
             vae_output = self.vae(self.test_data)
 
-<<<<<<< HEAD
-            overall_test_loss = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
-
-            self.writer.add_scalar("test_loss", float(overall_test_loss) / 10000, step)
-
-            if self.visualise_test:
-
-                # sample latent variable
-                z = torch.randn(1, int(self.latent_dimension))
-
-                # pass sample through decoder
-                reconstructed_image = torch.sigmoid(self.vae.decoder(z)) # sigmoid for plotting image
-=======
             overall_test_loss, _, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
 
-            if self.estimator:
+            if self.is_estimator:
                 estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
                 self.writer.add_scalar("estimated_loss", float(estimated_loss), step)
->>>>>>> master
 
             if self.visualise_test:
                 #Test 1: closeness output-input
                 index = random.randint(0, vae_output['x_hat'].size()[0]-1)
                 reconstructed_image = vae_output['x_hat'][index]    # Should we add a sigmoid ?
                 numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
-<<<<<<< HEAD
-
-                """
-                # To binarised output
-                numpy_image_ls = numpy_image > 0.5
-                numpy_image[numpy_image_ls] = 1
-                numpy_image_ls[~numpy_image_ls] = 0
-                """
-
-                fig = plt.figure()
-                plt.imshow(numpy_image, cmap='gray')
-
-=======
                 numpy_input = self.test_data[index].detach().numpy().reshape((28, 28))
                 
                 fig, (ax0, ax1) = plt.subplots(ncols=2)
                 ax0.imshow(numpy_image, cmap='gray')
                 ax1.imshow(numpy_input, cmap='gray')
->>>>>>> master
                 self.writer.add_figure("test_autoencoding", fig, step)
     
                 #Test 2: random latent variable sample (i.e. from prior)
-                z = torch.randn(1, int(0.5 * self.latent_dimension))
+                z = torch.randn(1, int(self.latent_dimension))
                 reconstructed_image = torch.sigmoid(self.vae.decoder(z))
                 numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
                 fig2 = plt.figure()
