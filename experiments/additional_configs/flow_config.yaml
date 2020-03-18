@@ -2,8 +2,6 @@ flow:
 
   flow_type:                          rnvp_flow #rnvp_flow, rnvp_aux_flow, base_flow
   num_flows:                          2
-  flow_layers:                        [50, 50]
-  latent_dim:                         25
-  input_dim:                          392
+  flow_layers:                        [25, 25]
   nonlinearity:                       elu
   weight_initialisation:              default
