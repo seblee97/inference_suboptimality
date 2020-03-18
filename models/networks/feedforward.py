@@ -26,5 +26,5 @@ class feedForwardNetwork(baseNetwork):
             self.layers.append(hidden_layer)
 
         # final layer to latent dim
-        hidden_to_latent_layer = self._initialise_weights(nn.Linear(self.hidden_dimensions[-1], self.latent_dimension))
+        hidden_to_latent_layer = self._initialise_weights(nn.Linear(self.hidden_dimensions[-1], 2 * self.latent_dimension))
         self.layers.append(hidden_to_latent_layer)
