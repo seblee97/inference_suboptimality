@@ -114,7 +114,7 @@ class VAERunner():
     def _setup_loss_module(self):
         if self.approximate_posterior_type == "gaussian":
             self.loss_module = gaussianLoss()
-        if self.approximate_posterior_type == "rnvp_norm_flow":
+        elif self.approximate_posterior_type == "rnvp_norm_flow":
             self.loss_module = RNVPLoss()
         else:
             raise ValueError("Loss module not correctly specified")
