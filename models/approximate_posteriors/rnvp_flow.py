@@ -81,7 +81,7 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
         # in each flow transformation jacobian remains triangular because half is unchanged.
         apply_flow_to_top_partition = True
 
-        log_det_jacobian = 0
+        log_det_jacobian = torch.zeros(z0.shape[0])
 
         # this implements 9, 10 from https://arxiv.org/pdf/1801.03558.pdf
         for f in range(self.num_flows):
@@ -94,7 +94,7 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
             
             # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
             log_det_transformation = torch.sum(torch.log(sigma_map), axis=1)
-            log_det_jacobian += torch.sum(log_det_transformation)
+            log_det_jacobian += log_det_transformation
 
             apply_flow_to_top_partition = not apply_flow_to_top_partition
 
