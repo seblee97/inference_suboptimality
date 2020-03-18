@@ -34,19 +34,42 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
 
     def _construct_layers(self):
 
-        self.sigma_maps = nn.ModuleList([])
-        self.mu_maps = nn.ModuleList([])
+        self.flow_modules = []
 
-        # initiate mapping functions according to config spec
-        self.sigma_maps.append(self._initialise_weights(nn.Linear(self.input_dimension, self.sigma_flow_layers[0])))
-        self.mu_maps.append(self._initialise_weights(nn.Linear(self.input_dimension, self.mu_flow_layers[0])))
+        for f in range(self.num_flows):
 
-        for f in range(len(self.sigma_flow_layers[:-1])):
-            self.sigma_maps.append(self._initialise_weights(nn.Linear(self.sigma_flow_layers[f], self.sigma_flow_layers[f + 1])))
-            self.mu_maps.append(self._initialise_weights(nn.Linear(self.mu_flow_layers[f], self.mu_flow_layers[f + 1])))
-        
-        self.sigma_maps.append(self._initialise_weights(nn.Linear(self.sigma_flow_layers[-1], self.input_dimension)))
-        self.mu_maps.append(self._initialise_weights(nn.Linear(self.mu_flow_layers[-1], self.input_dimension)))
+            sigma_map = nn.ModuleList([])
+            mu_map = nn.ModuleList([])
+
+            # initiate mapping functions according to config spec
+            sigma_map.append(self._initialise_weights(nn.Linear(self.input_dimension, self.sigma_flow_layers[0])))
+            mu_map.append(self._initialise_weights(nn.Linear(self.input_dimension, self.mu_flow_layers[0])))
+
+            for f in range(len(self.sigma_flow_layers[:-1])):
+                sigma_map.append(self._initialise_weights(nn.Linear(self.sigma_flow_layers[f], self.sigma_flow_layers[f + 1])))
+                mu_map.append(self._initialise_weights(nn.Linear(self.mu_flow_layers[f], self.mu_flow_layers[f + 1])))
+            
+            sigma_map.append(self._initialise_weights(nn.Linear(self.sigma_flow_layers[-1], self.input_dimension)))
+            mu_map.append(self._initialise_weights(nn.Linear(self.mu_flow_layers[-1], self.input_dimension)))
+
+            self.flow_modules.append((sigma_map, mu_map))
+
+        #     # initiate mapping functions according to config spec
+        #     self.add_module("flow_{}_sigma_layer_0".format(f), self._initialise_weights(nn.Linear(self.input_dimension, self.sigma_flow_layers[0])))
+        #     self.add_module("flow_{}_mu_layer_0".format(f), self._initialise_weights(nn.Linear(self.input_dimension, self.mu_flow_layers[0])))
+
+        #     for l in range(len(self.sigma_flow_layers[:-1])):
+        #         self.add_module("flow_{}_sigma_layer_{}".format(f, l + 1), self._initialise_weights(nn.Linear(self.sigma_flow_layers[l], self.sigma_flow_layers[l + 1])))
+        #         self.add_module("flow_{}_mu_layer_{}".format(f, l + 1), self._initialise_weights(nn.Linear(self.mu_flow_layers[l], self.mu_flow_layers[l + 1])))
+            
+        #     self.add_module("flow_{}_sigma_output_layer".format(f), self._initialise_weights(nn.Linear(self.sigma_flow_layers[-1], self.input_dimension)))
+        #     self.add_module("flow_{}_mu_output_layer".format(f), self._initialise_weights(nn.Linear(self.mu_flow_layers[-1], self.input_dimension)))
+
+    def _mapping_forward(self, mapping_network: nn.ModuleList, z_partition: torch.Tensor) -> torch.Tensor:
+        for layer in mapping_network:
+            z_partition = self.activation(layer(z_partition))
+        return z_partition
+
 
     def forward(self, z0: torch.Tensor):
 
@@ -57,26 +80,24 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
         # in each flow transformation jacobian remains triangular because half is unchanged.
         apply_flow_to_top_partition = True
 
-        det_jacobian = 0
+        log_det_jacobian = 0
 
         # this implements 9, 10 from https://arxiv.org/pdf/1801.03558.pdf
         for f in range(self.num_flows):
             if apply_flow_to_top_partition:
-                sigma_map = self.sigma_maps[f](z2)
-                z1 = z1 * (sigma_map + self.mu_maps[f](z2))
+                sigma_map = torch.exp(self._mapping_forward(self.flow_modules[f][0], z2))
+                z1 = z1 * sigma_map + self._mapping_forward(self.flow_modules[f][1], z2)
             else:
-                sigma_map = self.sigma_maps[f](z1)
-                z2 = z2 * (sigma_map + self.mu_maps[f](z1))
+                sigma_map = torch.exp(self._mapping_forward(self.flow_modules[f][0], z1))
+                z2 = z2 * sigma_map + self._mapping_forward(self.flow_modules[f][1], z1)
             
             # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
-            det_transformation = torch.prod(sigma_map)
-            det_jacobian += det_transformation
+            log_det_transformation = torch.log(torch.prod(sigma_map, axis=1))
+            log_det_jacobian += torch.sum(log_det_transformation)
 
             apply_flow_to_top_partition = not apply_flow_to_top_partition
 
         z = torch.cat([z1, z2], dim=1)
-
-        log_det_jacobian = torch.log(det_jacobian)
 
         return z, log_det_jacobian
 
@@ -100,7 +121,6 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
         z0 = mean + torch.sqrt(torch.exp(log_var)) * noise
 
         # The above is identical to gaussian case, now apply flow transformations
-        import pdb; pdb.set_trace()
         z, log_det_jacobian = self.forward(z0)
 
         return z, [mean, log_var, z0, log_det_jacobian]
