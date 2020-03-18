@@ -13,9 +13,6 @@ class gaussianPosterior(approximatePosterior):
         approximatePosterior.__init__(self, config)
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
 
-    def construct_posterior(self):
-        pass
-
     def sample(self, parameters):
         # There are two dimensions to |parameters|; the second one consists of two halves:
         #   1. The first half represents the multidimensional mean of the Gaussian posterior.

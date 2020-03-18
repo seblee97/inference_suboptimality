@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 from typing import Dict
 
@@ -7,9 +7,7 @@ class approximatePosterior(ABC):
     def __init__(self, config: Dict):
         pass
 
-    def construct_posterior(self):
-        raise NotImplementedError("Base class method")
-
+    @abstractmethod
     def sample(self):
         #approximate_posterior.sample should return the latent and a log-probability
 
