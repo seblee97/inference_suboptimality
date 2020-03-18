@@ -187,7 +187,7 @@ class VAERunner():
             if self.visualise_test:
 
                 # sample latent variable
-                z = torch.randn(1, int(0.5 * self.latent_dimension))
+                z = torch.randn(1, int(self.latent_dimension))
 
                 # pass sample through decoder
                 reconstructed_image = torch.sigmoid(self.vae.decoder(z)) # sigmoid for plotting image
