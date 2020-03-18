@@ -11,8 +11,8 @@ class Decoder(nn.Module, ABC):
 
         self.network = network 
 
-    def forward(self, x):
+    def forward(self, z: torch.Tensor):
         """Latent forward computation on the lattent z"""
-        decoding = self.network.forward(x)
+        decoding = self.network(z)
 
         return decoding
