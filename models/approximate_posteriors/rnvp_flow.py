@@ -34,7 +34,8 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
 
     def _construct_layers(self):
 
-        self.flow_modules = []
+        self.flow_sigma_modules = nn.ModuleList([])
+        self.flow_mu_modules = nn.ModuleList([])
 
         for f in range(self.num_flows):
 
@@ -52,7 +53,8 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
             sigma_map.append(self._initialise_weights(nn.Linear(self.sigma_flow_layers[-1], self.input_dimension)))
             mu_map.append(self._initialise_weights(nn.Linear(self.mu_flow_layers[-1], self.input_dimension)))
 
-            self.flow_modules.append((sigma_map, mu_map))
+            self.flow_sigma_modules.append(sigma_map)
+            self.flow_mu_modules.append(mu_map)
 
         #     # initiate mapping functions according to config spec
         #     self.add_module("flow_{}_sigma_layer_0".format(f), self._initialise_weights(nn.Linear(self.input_dimension, self.sigma_flow_layers[0])))
@@ -70,7 +72,6 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
             z_partition = self.activation(layer(z_partition))
         return z_partition
 
-
     def forward(self, z0: torch.Tensor):
 
         z1 = z0[:, :self.input_dimension]
@@ -85,11 +86,11 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
         # this implements 9, 10 from https://arxiv.org/pdf/1801.03558.pdf
         for f in range(self.num_flows):
             if apply_flow_to_top_partition:
-                sigma_map = torch.exp(self._mapping_forward(self.flow_modules[f][0], z2))
-                z1 = z1 * sigma_map + self._mapping_forward(self.flow_modules[f][1], z2)
+                sigma_map = torch.exp(self._mapping_forward(self.flow_sigma_modules[f], z2))
+                z1 = z1 * sigma_map + self._mapping_forward(self.flow_mu_modules[f], z2)
             else:
-                sigma_map = torch.exp(self._mapping_forward(self.flow_modules[f][0], z1))
-                z2 = z2 * sigma_map + self._mapping_forward(self.flow_modules[f][1], z1)
+                sigma_map = torch.exp(self._mapping_forward(self.flow_sigma_modules[f], z1))
+                z2 = z2 * sigma_map + self._mapping_forward(self.flow_mu_modules[f], z1)
             
             # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
             log_det_transformation = torch.sum(torch.log(sigma_map), axis=1)
