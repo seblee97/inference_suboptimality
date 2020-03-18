@@ -166,6 +166,8 @@ class VAERunner():
 
                 loss.backward()
 
+                print(float(loss))
+
                 self.optimiser.step()
 
                 self.writer.add_scalar("training_loss", float(loss) / self.batch_size, step_count)
