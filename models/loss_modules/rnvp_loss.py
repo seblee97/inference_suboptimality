@@ -9,11 +9,9 @@ from typing import Dict
 
 class RNVPLoss(baseLoss):
 
-    def __init__(self, input_dim):
+    def __init__(self):
 
         baseLoss.__init__(self)
-
-        self.input_dim = input_dim
 
     """
     loss module :https://github.com/chrischute/real-nvp/blob/df51ad570baf681e77df4d2265c0f1eb1b5b646c/models/real_nvp/real_nvp_loss.py
