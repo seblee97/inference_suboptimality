@@ -40,6 +40,6 @@ class BaseFlow(nn.Module, ABC):
         return layer
 
     @abstractmethod
-    def forward(self, x: torch.Tensor):
+    def forward(self, z0: torch.Tensor):
         raise NotImplementedError("Base class method")
 
