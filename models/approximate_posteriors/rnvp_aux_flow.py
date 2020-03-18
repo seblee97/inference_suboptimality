@@ -1,4 +1,4 @@
-from .base_flow import BaseFlow
+from .base_norm_flow import BaseFlow
 
 import torch
 import torch.nn as nn
