@@ -4,7 +4,7 @@ seed:                               1                         # Random seed to e
 relative_data_path:                 ../data/                  # Path to the dataset directory.
 
 model:
-  approximate_posterior:            norm_flow                  # Family of functions to use for approximate posterior (q_\phi(z | x)).
+  approximate_posterior:            rnvp_norm_flow                  # Family of functions to use for approximate posterior (q_\phi(z | x)).
   initialisation:                   xavier_uniform
   initialisation_std:               0.1                       # Standard deviation of the weight and bias initialization.
   nonlinearity:                     elu                       # Activation function (e.g., sigmoid, elu, ReLU, etc.).
