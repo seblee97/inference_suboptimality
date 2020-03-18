@@ -18,22 +18,23 @@ class RNVPLoss(baseLoss):
     """
 
     def compute_loss(self, x, vae_output):
+
         vae_reconstruction = vae_output['x_hat']
-        z1, z2, z0, log_det_jacobian = vae_output['params']
+        vae_latent = vae_output['z']
+        mean, log_var, z0, log_det_jacobian = vae_output['params']
 
-        prior = -0.5 * (vae_reconstruction ** 2 + np.log(2 * np.pi))
-        prior_l = prior.view(vae_reconstruction.size(0), -1).sum(-1) / - np.log(self.input_dim) * np.prod(z.size()[1:])
-        ll = prior_l + log_det_jacobian
-        nll = -ll.mean()
+        # Calculate the logs in the ELBO with ONE sample from the expectation.
+        #   ELBO = E[log(p(x,z) / q(z|x))]
+        #        = E[log(p(x|z) * p(z) / q(z|x))]
+        #        = E[log p(x|z) + log p(z) - log q(z|x)]
+        log_p_xz = -F.binary_cross_entropy(vae_reconstruction, x, reduction='none').sum(-1)
+        log_p_z = -0.5 * vae_latent.pow(2).sum(1)
+        log_q_zx = -0.5 * (log_var.sum(1) + ((vae_latent - mean).pow(2) / torch.exp(log_var)).sum(1)) - log_det_jacobian
+        # TODO: Add a warm-up constant to the last two terms.
+        log_p_x = log_p_xz + log_p_z - log_q_zx
 
+        # The ELBO is defined to be the mean of the logs in the batch.
+        elbo = torch.mean(log_p_x)
 
-        # Assuming a normal Gaussian prior and a fully-factorized Gaussian approximation,
-        # the loss function is detailed in https://arxiv.org/pdf/1907.08956.pdf.
-        #reconstruction_loss = F.binary_cross_entropy(vae_reconstruction, x, reduction='mean')
-        #kl_loss = torch.sum(torch.exp(log_var) + mean**2 - 1 - log_var) / 2
-
-        return nll
-
-        # loss, rec, kl, bpd = calculate_loss(x_mean, data, z_mu, z_var, z0, zk, ldj, args, beta=beta)
-
-        # loss, rec, kl = binary_loss_function(x_mean, x, z_mu, z_var, z_0, z_k, ldj, beta=beta)
+        # Maximizing the ELBO is equivalent to minimizing the negative ELBO.
+        loss = -elbo
