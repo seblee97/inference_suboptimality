@@ -117,7 +117,7 @@ class VAERunner():
         else:
             raise ValueError("Decoder type {} not recognised".format(self.decoder_type))
 
-        return network
+        return Decoder(network=network)
 
     def _setup_loss_module(self):
         if self.approximate_posterior_type == "gaussian":
@@ -219,7 +219,7 @@ class VAERunner():
                 self.writer.add_figure("test_autoencoding", fig, step)
     
                 #Test 2: random latent variable sample (i.e. from prior)
-                z = torch.randn(1, int(self.latent_dimension))
+                z = torch.randn(1, self.latent_dimension)
                 reconstructed_image = torch.sigmoid(self.vae.decoder(z))
                 numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
                 fig2 = plt.figure()
