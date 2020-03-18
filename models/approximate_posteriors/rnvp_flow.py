@@ -4,6 +4,7 @@ from .base_approximate_posterior import approximatePosterior
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.distributions as tdist
 
 from typing import Dict
 
@@ -26,6 +27,8 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
         assert (self.num_flows == len(self.sigma_flow_layers)) and (self.num_flows == len(self.mu_flow_layers)), \
             "Number of flows (num_flows) does not match flow layers specified"
 
+        self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
+
         approximatePosterior.__init__(self, config)
         BaseFlow.__init__(self, config)
 
@@ -45,32 +48,37 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
         self.sigma_maps.append(self._initialise_weights(nn.Linear(self.sigma_flow_layers[-1], self.input_dimension)))
         self.mu_maps.append(self._initialise_weights(nn.Linear(self.mu_flow_layers[-1], self.input_dimension)))
 
-    def forward(self, parameters):
+    def forward(self, z0: torch.Tensor):
 
-        z = parameters
-
-        z1 = z[:, :self.input_dimension]
-        z2 = z[:, self.input_dimension:]
-
-        def apply_flow(partitioned_parameter: torch.Tensor, map_index: int) -> torch.Tensor:
-            return self.sigma_maps[map_index](partitioned_parameter) + self.mu_maps[map_index](partitioned_parameter)
+        z1 = z0[:, :self.input_dimension]
+        z2 = z0[:, self.input_dimension:]
 
         # ensure flow is applied to whole part of latent by alternating half to which flow is applied.
         # in each flow transformation jacobian remains triangular because half is unchanged.
         apply_flow_to_top_partition = True
 
+        det_jacobian = 0
+
         # this implements 9, 10 from https://arxiv.org/pdf/1801.03558.pdf
         for f in range(self.num_flows):
             if apply_flow_to_top_partition:
-                z1 = z1 * (self.sigma_maps[f](z2) + self.mu_maps[f](z2))
+                sigma_map = self.sigma_maps[f](z2)
+                z1 = z1 * (sigma_map + self.mu_maps[f](z2))
             else:
-                z2 = z2 * (self.sigma_maps[f](z1) + self.mu_maps[f](z1))
+                sigma_map = self.sigma_maps[f](z1)
+                z2 = z2 * (sigma_map + self.mu_maps[f](z1))
+            
+            # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
+            det_transformation = torch.prod(sigma_map)
+            det_jacobian += det_transformation
 
             apply_flow_to_top_partition = not apply_flow_to_top_partition
 
         z = torch.cat([z1, z2], dim=1)
 
-        return z, None
+        log_det_jacobian = torch.log(det_jacobian)
+
+        return z, log_det_jacobian
 
         # # det(J) = exp(sigma) ** input dimension.det(AB) = det(A)det(B)
         # det_jacobian = (torch.exp(sigma_z2) ** cutoff) * (torch.exp(sigma_zp) ** cutoff)
@@ -79,14 +87,20 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
         # return z, log_det_jacobian
 
     def sample(self, parameters):
-        # apply flow transformations
-        z, log_det_jacobian = self.forward(parameters)
+        # There are two dimensions to |parameters|; the second one consists of two halves:
+        #   1. The first half represents the multidimensional mean of the Gaussian posterior.
+        #   2. The second half represents the multidimensional log variance of the Gaussian posterior.
+        dimensions = parameters.shape[1] // 2
+        mean = parameters[:, :dimensions]
+        log_var = parameters[:, dimensions:]
 
-        #for k in range(self.num_flows):
-        #    z_k, log_det_jacobian = flow_k(z[k], u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
-        #    z_through_flow.append(z_k)
-        #    log_det_jacobian_sum += log_det_jacobian
+        # Sample the standard deviation along each dimension of the factorized Gaussian posterior.
+        noise = self.noise_distribution.sample(log_var.shape).squeeze()
+        # Apply the reparameterization trick.
+        z0 = mean + torch.sqrt(torch.exp(log_var)) * noise
 
-        #latent_vector = z_through_flow[-1]
+        # The above is identical to gaussian case, now apply flow transformations
+        import pdb; pdb.set_trace()
+        z, log_det_jacobian = self.forward(z0)
 
-        return z, [log_det_jacobian]
+        return z, [mean, log_var, z0, log_det_jacobian]
