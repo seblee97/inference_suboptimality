@@ -6,10 +6,9 @@ from .networks import feedBackwardNetwork
 from .encoder import Encoder
 from .decoder import Decoder
 
-from .approximate_posteriors import gaussianPosterior, NormFlowPosterior
+from .approximate_posteriors import gaussianPosterior, RNVPPosterior
 
-from .loss_modules import gaussianLoss
-from .loss_modules import RNVPLoss
+from .loss_modules import gaussianLoss, RNVPLoss
 
 from utils import mnist_dataloader, binarised_mnist_dataloader
 
@@ -84,8 +83,6 @@ class VAERunner():
         self.optimiser_type = config.get(["training", "optimiser", "type"])
         self.optimiser_params = config.get(["training", "optimiser", "params"])
 
-        self.input_dim = config.get(["flow", "input_dim"])
-
     def _setup_encoder(self, config: Dict):
 
         # network
@@ -97,8 +94,8 @@ class VAERunner():
         # approximate posterior family
         if self.approximate_posterior_type == "gaussian":
             approximate_posterior = gaussianPosterior(config=config)
-        elif self.approximate_posterior_type == "norm_flow":
-            approximate_posterior = NormFlowPosterior(config=config)
+        elif self.approximate_posterior_type == "rnvp_norm_flow":
+            approximate_posterior = RNVPPosterior(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised".format(self.approximate_posterior_type))
 
@@ -117,8 +114,8 @@ class VAERunner():
     def _setup_loss_module(self):
         if self.approximate_posterior_type == "gaussian":
             self.loss_module = gaussianLoss()
-        if self.approximate_posterior_type == "norm_flow":
-            self.loss_module = RNVPLoss(self.input_dim)
+        if self.approximate_posterior_type == "rnvp_norm_flow":
+            self.loss_module = RNVPLoss()
         else:
             raise ValueError("Loss module not correctly specified")
 
