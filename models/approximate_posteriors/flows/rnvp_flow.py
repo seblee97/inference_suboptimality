@@ -1,10 +1,12 @@
 from .base_flow import BaseFlow
+from .scale_map import ScaleMap
+from .translate_map import TranslateMap
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from typing import Dict
-
 
 class RNVP(BaseFlow):
     # TODO: doc
@@ -16,9 +18,17 @@ class RNVP(BaseFlow):
         self.latent_dimension = config.get(["flow", "latent_dim"])
         self.hidden_dimensions = config.get(["flow", "flow_layers"])
         self.activation_function = config.get(["flow", "nonlinearity"])
+
         # The activation function is defined at mother class level as well as forward
 
         BaseFlow.__init__(self, config)
+
+        # 4 mapping functions
+        self.sigma1 = ScaleMap(config=config)
+        self.mu1 = TranslateMap(config=config)
+        self.sigma2 = ScaleMap(config=config)
+        self.mu2 = TranslateMap(config=config)
+
 
     def _construct_layers(self):
 
@@ -43,38 +53,39 @@ class RNVP(BaseFlow):
 
         cutoff = int(parameters.shape[1] / 2)
 
+        # separate latent vector into two variables
         z1 = parameters[:, :cutoff]
         z2 = parameters[:, cutoff:]
-        print(z2)
-        z2.squeeze()
-        print(z2)
+        #print(z2)
 
-        u1_in = self.flow_network(z2)
-        u1 = self.F.sigmoid(u1_in)
+        # flow: za' = za * exp(sigma(zb)) + mu(zb)
 
-        w1_in = self.flow_network(z2)
-        w1 = self.activation(w1_in)
+        sigma_z2 = self.sigma1(self.activation(z2))
+        mu_z2 = self.mu1(self.activation(z2))
+        z_prime = z1 * torch.exp(sigma_z2) + mu_z2 # does not match comment below, no b
 
-        z_prime = z1 * u1 + w1 #does not match comment below, no b
+        sigma_zp = self.sigma2(self.activation(z_prime))
+        mu_zp = self.mu2(self.activation(z_prime))
+        z2_prime = z2 * torch.exp(sigma_zp) + mu_zp
 
-        u2_in = self.flow_network(z_prime)
-        u2 = self.sigmap(u2_in)
+        #now calculate Jacobian log det
 
-        w2_in = self.flow_network(z_prime)
-        w2 = self.activation(w2_in)
+        z = torch.cat([z_prime, z2_prime], dim=0)
 
-        z2_prime = z2 * u2 + w2
+        # det(J) = exp(sigma) ** input dimension.det(AB) = det(A)det(B)
+        det_jacobian = (torch.exp(sigma_z2) ** cutoff) * (torch.exp(sigma_zp) ** cutoff)
+        log_det_jacobian = cutoff * (sigma_z2 + sigma_zp)
 
-        #now calculate Jacobian
-
+        '''
+        # BELOW HERE IS STUFF I HAVENT TOUCHED, just commented out
 
         # sample noise (reparameterisation trick), unsqueeze to match dimensions
         #noise = self.noise_distribution.sample(z2.shape).squeeze()
         #z0 = z1 + torch.sqrt(z2) * noise
 
-        z_through_flow = []
+        #z_through_flow = []
 
-        log_det_jacobian_sum = 0
+        #log_det_jacobian_sum = 0
 
 
         """
@@ -109,5 +120,6 @@ class RNVP(BaseFlow):
         psi = w * self.der_h(wzb)
         log_det_jacobian = torch.log(torch.abs(1 + torch.bmm(psi, u_hat)))
         log_det_jacobian = log_det_jacobian.squeeze(2).squeeze(1)
+        '''
 
         return z, log_det_jacobian

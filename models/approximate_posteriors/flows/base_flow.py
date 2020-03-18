@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 
 import torch
-import torch.nn as nn 
+import torch.nn as nn
+import torch.nn.functional as F
 
 class BaseFlow(nn.Module, ABC):
 
@@ -11,6 +12,11 @@ class BaseFlow(nn.Module, ABC):
 
         self.initialisation = config.get(["flow", "weight_initialisation"])
         self._construct_layers()
+
+        self.activation_function = config.get(["flow", "nonlinearity"])
+        if self.activation_function == 'elu':
+            self.activation = F.elu
+
 
     @abstractmethod
     def _construct_layers(self):
@@ -36,3 +42,4 @@ class BaseFlow(nn.Module, ABC):
     @abstractmethod
     def forward(self, x: torch.Tensor):
         raise NotImplementedError("Base class method")
+

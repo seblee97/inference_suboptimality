@@ -31,40 +31,41 @@ class NormFlowPosterior(approximatePosterior):
 
     def sample(self, parameters):
 
-        #cutoff = int(parameters.shape[1] / 2)
+        cutoff = int(parameters.shape[1] / 2)
 
-        # z1 = parameters[:, :cutoff]
-        # z2 = parameters[:, cutoff:]
+        z1 = parameters[:, :cutoff]
+        z2 = parameters[:, cutoff:]
 
         # u = self.sigma_mapping(parameters)
         # w = self.mu_mapping(parameters)
 
         # sample noise (reparameterisation trick), unsqueeze to match dimensions
-        # noise = self.noise_distribution.sample(z2.shape).squeeze()
+        noise = self.noise_distribution.sample(z2.shape).squeeze()
 
-        # z0 = z1 + torch.sqrt(z2) * noise
+        z0 = z1 + torch.sqrt(z2) * noise
 
-        # z_through_flow = []
+        #z_through_flow = []
 
-        # log_det_jacobian_sum = 0
+        #log_det_jacobian_sum = 0
 
         # apply flow transformations
-        self.flow_module(parameters)
+        z, log_det_jacobian = self.flow_module.forward(parameters)
 
-        for k in range(self.num_flows):
-            z_k, log_det_jacobian = flow_k(z[k], u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
-            z_through_flow.append(z_k)
-            log_det_jacobian_sum += log_det_jacobian
+        #for k in range(self.num_flows):
+        #    z_k, log_det_jacobian = flow_k(z[k], u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
+        #    z_through_flow.append(z_k)
+        #    log_det_jacobian_sum += log_det_jacobian
 
-        latent_vector = z_through_flow[-1]
+        #latent_vector = z_through_flow[-1]
+        latent_vector = z
 
-        return {'z': latent_vector, 'params': [z1, z2, z0, log_det_jacobian_sum]}
-
-
-
+        return {'z': latent_vector, 'params': [z1, z2, z0, log_det_jacobian]}
 
 
 
+
+
+'''
 #from author
 # from utils.math_ops import log_bernoulli, log_normal, log_mean_exp
 
@@ -192,3 +193,4 @@ class Flow(nn.Module):
         self.params = params
 
         self.sanity_check_param = self.params[0][0][0]._parameters['weight']
+        '''

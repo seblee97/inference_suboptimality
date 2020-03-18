@@ -9,6 +9,7 @@ from .decoder import Decoder
 from .approximate_posteriors import gaussianPosterior, NormFlowPosterior
 
 from .loss_modules import gaussianLoss
+from .loss_modules import RNVPLoss
 
 from utils import mnist_dataloader, binarised_mnist_dataloader
 
@@ -83,6 +84,8 @@ class VAERunner():
         self.optimiser_type = config.get(["training", "optimiser", "type"])
         self.optimiser_params = config.get(["training", "optimiser", "params"])
 
+        self.input_dim = config.get(["flow", "input_dim"])
+
     def _setup_encoder(self, config: Dict):
 
         # network
@@ -115,7 +118,7 @@ class VAERunner():
         if self.approximate_posterior_type == "gaussian":
             self.loss_module = gaussianLoss()
         if self.approximate_posterior_type == "norm_flow":
-            self.loss_module = gaussianLoss()
+            self.loss_module = RNVPLoss(self.input_dim)
         else:
             raise ValueError("Loss module not correctly specified")
 
