@@ -86,14 +86,14 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
         # this implements 9, 10 from https://arxiv.org/pdf/1801.03558.pdf
         for f in range(self.num_flows):
             if apply_flow_to_top_partition:
-                sigma_map = torch.exp(self._mapping_forward(self.flow_sigma_modules[f], z2))
-                z1 = z1 * sigma_map + self._mapping_forward(self.flow_mu_modules[f], z2)
+                sigma_map = self._mapping_forward(self.flow_sigma_modules[f], z2)
+                z1 = z1 * torch.exp(sigma_map) + self._mapping_forward(self.flow_mu_modules[f], z2)
             else:
-                sigma_map = torch.exp(self._mapping_forward(self.flow_sigma_modules[f], z1))
-                z2 = z2 * sigma_map + self._mapping_forward(self.flow_mu_modules[f], z1)
+                sigma_map = self._mapping_forward(self.flow_sigma_modules[f], z1)
+                z2 = z2 * torch.exp(sigma_map) + self._mapping_forward(self.flow_mu_modules[f], z1)
             
             # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
-            log_det_transformation = torch.sum(torch.log(sigma_map), axis=1)
+            log_det_transformation = torch.sum(sigma_map, axis=1)
             log_det_jacobian += log_det_transformation
 
             apply_flow_to_top_partition = not apply_flow_to_top_partition
