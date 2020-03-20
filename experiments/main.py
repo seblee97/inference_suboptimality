@@ -74,11 +74,10 @@ if __name__ == "__main__":
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
         inference_gap_parameters.set_property("device", "cuda")
-        experiment_device = torch.device("cuda:{}".format(args.gpu_id))
+        torch.set_default_tensor_type(torch.cuda.FloatTensor)
     else:
         print("Using the CPU")
         inference_gap_parameters.set_property("device", "cpu")
-        experiment_device = torch.device("cpu")
 
     # write copy of config_yaml in model_checkpoint_folder
     inference_gap_parameters.save_configuration(checkpoint_path)

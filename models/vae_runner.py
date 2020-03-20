@@ -171,7 +171,8 @@ class VAERunner():
             return None
         elif self.estimator_type.upper() == "IWAE":
             samples = config.get(['estimator', 'iwae', 'samples'])
-            return IWAEEstimator(samples)
+            batch_size = config.get(['estimator', 'iwae', 'batch_size'])
+            return IWAEEstimator(samples, batch_size)
         else:
             raise ValueError("Estimator {} not recognised". format(self.estimator_type))
 
@@ -204,7 +205,6 @@ class VAERunner():
             print("Training loss after {} epochs: {}".format(e + 1, float(loss)))
 
     def _perform_test_loop(self, step:int):
-        print("Start Test")
         # explicitly set model to evaluation mode
         self.vae.eval()
 
@@ -222,8 +222,8 @@ class VAERunner():
                 if self.dataset == "cifar":
                     #Test 1: closeness output-input
                     reconstructed_image = vae_output['x_hat'][index]
-                    numpy_image = np.transpose(reconstructed_image.detach().numpy(), (1, 2, 0))
-                    numpy_input = np.transpose(self.test_data[index].detach().numpy(), (1, 2, 0))
+                    numpy_image = np.transpose(reconstructed_image.detach().cpu().numpy(), (1, 2, 0))
+                    numpy_input = np.transpose(self.test_data[index].detach().cpu().numpy(), (1, 2, 0))
                     
                     fig, (ax0, ax1) = plt.subplots(ncols=2)
                     ax0.imshow(numpy_image)
@@ -233,7 +233,7 @@ class VAERunner():
                     #Test 2: random latent variable sample (i.e. from prior)
                     z = torch.randn(1, self.latent_dimension)
                     reconstructed_image = torch.sigmoid(self.vae.decoder(z))[0]
-                    numpy_image = np.transpose(reconstructed_image.detach().numpy(), (1, 2, 0))
+                    numpy_image = np.transpose(reconstructed_image.detach().cpu().numpy(), (1, 2, 0))
                     
                     fig2 = plt.figure()
                     plt.imshow(numpy_image)
@@ -242,8 +242,8 @@ class VAERunner():
                 else:
                     #Test 1: closeness output-input
                     reconstructed_image = vae_output['x_hat'][index]
-                    numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
-                    numpy_input = self.test_data[index].detach().numpy().reshape((28, 28))
+                    numpy_image = reconstructed_image.detach().cpu().numpy().reshape((28, 28))
+                    numpy_input = self.test_data[index].detach().cpu().numpy().reshape((28, 28))
                     
                     fig, (ax0, ax1) = plt.subplots(ncols=2)
                     ax0.imshow(numpy_image, cmap='gray')
@@ -253,10 +253,9 @@ class VAERunner():
                     #Test 2: random latent variable sample (i.e. from prior)
                     z = torch.randn(1, self.latent_dimension)
                     reconstructed_image = torch.sigmoid(self.vae.decoder(z))
-                    numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
+                    numpy_image = reconstructed_image.detach().cpu().numpy().reshape((28, 28))
                     fig2 = plt.figure()
                     plt.imshow(numpy_image, cmap='gray')
                     self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
         # set model back to train mode
         self.vae.train()
-        print("End Test")
