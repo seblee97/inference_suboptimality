@@ -1,0 +1,48 @@
+experiment_name:                    test                      # Name of the experiment.
+use_gpu:                            True                      # Use a gpu if one is available.
+seed:                               1                         # Random seed to ensure reproducibility.
+relative_data_path:                 ../data/                  # Path to the dataset directory.
+
+model:
+  approximate_posterior:            gaussian                  # Family of functions to use for approximate posterior (q_\phi(z | x)).
+  initialisation:                   xavier_uniform
+  initialisation_std:               0.1                       # Standard deviation of the weight and bias initialization.
+  nonlinearity:                     elu                       # Activation function (e.g., sigmoid, elu, ReLU, tanh, etc.).
+  input_dimension:                  784                       # Number of input (and output) dimensions.
+  latent_dimension:                 50                        # Number of latent dimensions.
+
+  encoder:
+    network_type:                     convolutional             # Type of encoder network (i.e., feedforward or convolutional).
+    hidden_dimensions:                [[3, 64, 4, 2, 0],
+                                      [64, 128, 4, 2, 0],
+                                      [128, 256, 4, 2, 0],
+                                      [1024, 100]]
+                                                              # Layer dimensions in the encoder network (including the input dimensions and final latent dimensions).
+                                                              # First entry should be the init_channel and is 64 or 128 depending on encoder size. More info in Networks/CNN
+
+  decoder:
+    network_type:                     deconvolutional         # Type of decoder network (i.e. feedforward or deconvolutional)
+    hidden_dimensions:                [[50, 1024],
+                                      [256, 128, 4, 2, 0],
+                                      [128, 64, 4, 2, 1],
+                                      [64, 3, 4, 2, 0]]
+                                                              # Layer dimensions in the decoder network (including output dimensions). The first entry should be the latent dimension.
+                                                              # More info in Networks/deCNN
+training:
+  learning_rate:                    0.001                    # Learning rate for gradient descent.
+  optimiser:                        
+    type:                           adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
+    params:                         [0.9, 0.999, 0.0001]
+  dataset:                          cifar                     # Dataset to use for training and testing (e.g., mnist, binarised_mnist, fashion_mnist, or cifar).
+  batch_size:                       100                       # Size of the training batches.
+  loss_function:
+  num_epochs:                       300                       # Number of training epochs.
+
+testing:
+  test_frequency:                   100                       # Number of training steps between tests.
+  visualise:                        True                      # Capture the output image of the test.
+
+estimator:
+  type: "none"                                                # Type of log-likelihood estimator (e.g., None, IWAE)
+  iwae:
+    samples: 20                                               # Number of samples to use in the IWAE estimate.

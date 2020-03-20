@@ -10,7 +10,7 @@ import os
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml')
+parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml') # base_config.yaml or base_config_CIFAR.yaml
 parser.add_argument('-additional_configs', '--ac', type=str, help='path to folder containing additional configuration files (e.g. for flow)', default='additional_configs/')
 
 args = parser.parse_args()
