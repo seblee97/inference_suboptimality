@@ -2,6 +2,8 @@ from .vae import VAE
 
 from .networks import feedForwardNetwork
 from .networks import feedBackwardNetwork
+from .networks import convNetwork
+from .networks import deconvNetwork
 
 from .encoder import Encoder
 from .decoder import Decoder
@@ -12,7 +14,7 @@ from .likelihood_estimators import BaseEstimator, IWAEEstimator
 
 from .loss_modules import gaussianLoss
 
-from utils import mnist_dataloader, binarised_mnist_dataloader
+from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader
 
 from typing import Dict
 import os
@@ -96,6 +98,8 @@ class VAERunner():
         # network
         if self.encoder_type == "feedforward":
             network = feedForwardNetwork(config=config)
+        elif self.encoder_type == "convolutional":
+            network = convNetwork(config=config)
         else:
             raise ValueError("Encoder type {} not recognised".format(self.encoder_type))
         
@@ -114,6 +118,8 @@ class VAERunner():
     def _setup_decoder(self, config: Dict):
         if self.decoder_type == "feedbackward":
             network = feedBackwardNetwork(config=config)
+        elif self.decoder_type == "deconvolutional":
+            network = deconvNetwork(config=config)
         else:
             raise ValueError("Decoder type {} not recognised".format(self.decoder_type))
 
@@ -133,6 +139,12 @@ class VAERunner():
         elif self.dataset == "binarised_mnist":
             dataloader = binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
             test_data = iter(binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
+        elif self.dataset == "fashion_mnist":
+            dataloader = fashion_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
+            test_data = iter(fashion_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
+        elif self.dataset == "cifar":
+            dataloader = cifar_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
+            test_data = iter(cifar_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         else:
             raise ValueError("Dataset {} not recognised".format(self.dataset))
         return dataloader, test_data
@@ -171,7 +183,6 @@ class VAERunner():
 
         for e in range(self.num_epochs):
             for batch_input, _ in self.dataloader: # target discarded
-                
                 if step_count % self.test_frequency == 0:
                     self._perform_test_loop(step=step_count)
                 

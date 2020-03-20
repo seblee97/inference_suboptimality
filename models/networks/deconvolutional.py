@@ -1,4 +1,7 @@
 from .base_network import baseNetwork
+from typing import List, Dict
+
+import torch.nn as nn
 
 class deconvNetwork(baseNetwork):
 
@@ -26,8 +29,9 @@ class deconvNetwork(baseNetwork):
         self.input_dimension = config.get(["model", "input_dimension"])
         self.latent_dimension = config.get(["model", "latent_dimension"])
         self.hidden_dimensions = config.get(["model", "decoder", "hidden_dimensions"])
-        super(convNetwork, self).__init__()
-        
+        #super(convNetwork, self).__init__()
+        baseNetwork.__init__(self, config=config)
+    
     def _construct_layers(self):
         self.layers = nn.ModuleList([])
         self.bn_layers = nn.ModuleList([])
@@ -52,13 +56,13 @@ class deconvNetwork(baseNetwork):
         self.layers.append(hidden_to_latent_layer)
 
     def forward(self, x):
-    """
+        """
         Forward pass
         
         :param x: input tensor to network
         :return x: output of network
         """
-        x = self.nonlinear_function(layer(x))
+        x = self.nonlinear_function(self.layers[0](x))
         x = x.view(x.size(0), -1, 2, 2)
         for level, layer in enumerate(self.layers[1:-1]):
             x = self.nonlinear_function(self.bn_layers[level](layer(x)))
