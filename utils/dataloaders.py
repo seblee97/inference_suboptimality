@@ -23,7 +23,7 @@ def mnist_dataloader(data_path: str, batch_size: int, train:bool=True):
                                                 ])
 
     mnist_data = torchvision.datasets.MNIST(data_path, transform=transform, train=train)
-    dataloader = torch.utils.data.DataLoader(mnist_data, batch_size=batch_size, shuffle=True, pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(mnist_data, batch_size=batch_size, shuffle=True)
 
     return dataloader
 
@@ -56,7 +56,7 @@ def binarised_mnist_dataloader(data_path: str, batch_size: int, train:bool=True)
     targets = torch.Tensor([-1 for _ in range(len(tensorData))]).view(len(tensorData), -1) # these are dummy targets to match API
 
     tensorDataset = torch.utils.data.TensorDataset(tensorData, targets)
-    dataloader = torch.utils.data.DataLoader(tensorDataset, batch_size=batch_size, shuffle=True, pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(tensorDataset, batch_size=batch_size, shuffle=True)
 
     return dataloader
 
@@ -78,7 +78,7 @@ def fashion_mnist_dataloader(data_path: str, batch_size: int, train:bool=True):
                                                 ])
         
     fashion_mnist_data = torchvision.datasets.FashionMNIST(data_path, transform=transform, train=train)
-    dataloader = torch.utils.data.DataLoader(fashion_mnist_data, batch_size=batch_size, shuffle=True, pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(fashion_mnist_data, batch_size=batch_size, shuffle=True)
                                                 
     return dataloader
 
@@ -100,6 +100,6 @@ def cifar_dataloader(data_path: str, batch_size: int, train:bool=True):
                                                 ])
         
     CIFAR10_data = torchvision.datasets.CIFAR10(data_path, transform=transform, train=train)
-    dataloader = torch.utils.data.DataLoader(CIFAR10_data, batch_size=batch_size, shuffle=True, pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(CIFAR10_data, batch_size=batch_size, shuffle=True)
                                                 
     return dataloader
