@@ -39,9 +39,7 @@ class deconvNetwork(baseNetwork):
         # Initial layer is fully connected
         param = self.hidden_dimensions[0]
         input_layer = self._initialise_weights(nn.Linear(param[0], param[1]))
-        bn_init = nn.BatchNorm2d(param[1])
         self.layers.append(input_layer)
-        self.bn_layers.append(bn_init)
         
         for h in range(1, len(self.hidden_dimensions[:-1])):
             param = self.hidden_dimensions[h]
@@ -65,6 +63,7 @@ class deconvNetwork(baseNetwork):
         x = self.nonlinear_function(self.layers[0](x))
         x = x.view(x.size(0), -1, 2, 2)
         for level, layer in enumerate(self.layers[1:-1]):
+            print(level)
             x = self.nonlinear_function(self.bn_layers[level](layer(x)))
         x = self.layers[-1](x)  # the last fully connected layer has no activation function
         return x
