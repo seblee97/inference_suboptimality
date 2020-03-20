@@ -18,7 +18,7 @@ model:
                                       [128, 256, 4, 2, 0],
                                       [1024, 100]]
                                                               # Layer dimensions in the encoder network (including the input dimensions and final latent dimensions).
-                                                              # First entry should be the init_channel and is 64 or 128 depending on encoder size. More info in Networks/CNN
+                                                              # Second entry should be the init_channel and is 64 or 128 depending on encoder size. More info in Networks/CNN
 
   decoder:
     network_type:                     deconvolutional         # Type of decoder network (i.e. feedforward or deconvolutional)
