@@ -158,7 +158,8 @@ class VAERunner():
             return None
         elif self.estimator_type.upper() == "IWAE":
             samples = config.get(['estimator', 'iwae', 'samples'])
-            return IWAEEstimator(samples)
+            batch_size = config.get(['estimator', 'iwae', 'batch_size'])
+            return IWAEEstimator(samples, batch_size)
         else:
             raise ValueError("Estimator {} not recognised". format(self.estimator_type))
 
@@ -209,9 +210,9 @@ class VAERunner():
             if self.visualise_test:
                 #Test 1: closeness output-input
                 index = random.randint(0, vae_output['x_hat'].size()[0]-1)
-                reconstructed_image = vae_output['x_hat'][index]    # Should we add a sigmoid ?
-                numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
-                numpy_input = self.test_data[index].detach().numpy().reshape((28, 28))
+                reconstructed_image = vae_output['x_hat'][index]
+                numpy_image = reconstructed_image.detach().cpu().numpy().reshape((28, 28))
+                numpy_input = self.test_data[index].detach().cpu().numpy().reshape((28, 28))
                 
                 fig, (ax0, ax1) = plt.subplots(ncols=2)
                 ax0.imshow(numpy_image, cmap='gray')
@@ -221,7 +222,7 @@ class VAERunner():
                 #Test 2: random latent variable sample (i.e. from prior)
                 z = torch.randn(1, self.latent_dimension)
                 reconstructed_image = torch.sigmoid(self.vae.decoder(z))
-                numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
+                numpy_image = reconstructed_image.detach().cpu().numpy().reshape((28, 28))
                 fig2 = plt.figure()
                 plt.imshow(numpy_image, cmap='gray')
                 self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
