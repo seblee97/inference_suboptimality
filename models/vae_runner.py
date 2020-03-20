@@ -70,6 +70,7 @@ class VAERunner():
         """
         Method to extract relevant parameters from config and make them attributes of this class
         """
+        self.device = config.get("device")
 
         self.checkpoint_path = config.get("checkpoint_path")
 
@@ -148,7 +149,7 @@ class VAERunner():
             test_data = iter(cifar_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         else:
             raise ValueError("Dataset {} not recognised".format(self.dataset))
-        return dataloader, test_data
+        return dataloader, test_data.to(self.device)
 
     def _setup_optimiser(self, config: Dict):
         if self.optimiser_type == "adam":
@@ -185,6 +186,9 @@ class VAERunner():
 
         for e in range(self.num_epochs):
             for batch_input, _ in self.dataloader: # target discarded
+                # Move the batch input onto the GPU if necessary.
+                batch_input = batch_input.to(self.device)
+
                 if step_count % self.test_frequency == 0:
                     self._perform_test_loop(step=step_count)
                 
