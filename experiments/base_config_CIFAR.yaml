@@ -29,7 +29,7 @@ model:
                                                               # Layer dimensions in the decoder network (including output dimensions). The first entry should be the latent dimension.
                                                               # More info in Networks/deCNN
 training:
-  learning_rate:                    0.0001                    # Learning rate for gradient descent.
+  learning_rate:                    0.001                    # Learning rate for gradient descent.
   optimiser:                        
     type:                           adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
     params:                         [0.9, 0.999, 0.0001]

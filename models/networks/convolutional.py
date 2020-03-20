@@ -38,14 +38,14 @@ class convNetwork(baseNetwork):
         
         # Initial layer
         param = self.hidden_dimensions[0]
-        input_layer = self._initialise_weights(nn.Conv2d(param[0], param[1], param[2], param[3], param[4]))
+        input_layer = self._initialise_weights(nn.Conv2d(param[0], param[1], param[2], param[3], padding=param[4]))
         bn_init = nn.BatchNorm2d(param[1])
         self.layers.append(input_layer)
         self.bn_layers.append(bn_init)
         
         for h in range(1, len(self.hidden_dimensions[:-1])):
             param = self.hidden_dimensions[h]
-            hidden_layer = self._initialise_weights(nn.Conv2d(param[0], param[1], param[2], param[3], param[4]))
+            hidden_layer = self._initialise_weights(nn.Conv2d(param[0], param[1], param[2], param[3], padding=param[4]))
             bn_layer = nn.BatchNorm2d(param[1])
             self.layers.append(hidden_layer)
             self.bn_layers.append(bn_layer)

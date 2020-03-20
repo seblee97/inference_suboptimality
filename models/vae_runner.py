@@ -20,6 +20,7 @@ from typing import Dict
 import os
 import copy
 import random
+import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
@@ -203,13 +204,12 @@ class VAERunner():
             print("Training loss after {} epochs: {}".format(e + 1, float(loss)))
 
     def _perform_test_loop(self, step:int):
-
+        print("Start Test")
         # explicitly set model to evaluation mode
         self.vae.eval()
 
         with torch.no_grad():
             vae_output = self.vae(self.test_data)
-
             overall_test_loss, _, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
 
@@ -218,24 +218,45 @@ class VAERunner():
                 self.writer.add_scalar("estimated_loss", float(estimated_loss), step)
 
             if self.visualise_test:
-                #Test 1: closeness output-input
                 index = random.randint(0, vae_output['x_hat'].size()[0]-1)
-                reconstructed_image = vae_output['x_hat'][index]    # Should we add a sigmoid ?
-                numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
-                numpy_input = self.test_data[index].detach().numpy().reshape((28, 28))
+                if self.dataset == "cifar":
+                    #Test 1: closeness output-input
+                    reconstructed_image = vae_output['x_hat'][index]
+                    numpy_image = np.transpose(reconstructed_image.detach().numpy(), (1, 2, 0))
+                    numpy_input = np.transpose(self.test_data[index].detach().numpy(), (1, 2, 0))
+                    
+                    fig, (ax0, ax1) = plt.subplots(ncols=2)
+                    ax0.imshow(numpy_image)
+                    ax1.imshow(numpy_input)
+                    self.writer.add_figure("test_autoencoding", fig, step)
                 
-                fig, (ax0, ax1) = plt.subplots(ncols=2)
-                ax0.imshow(numpy_image, cmap='gray')
-                ax1.imshow(numpy_input, cmap='gray')
-                self.writer.add_figure("test_autoencoding", fig, step)
-    
-                #Test 2: random latent variable sample (i.e. from prior)
-                z = torch.randn(1, self.latent_dimension)
-                reconstructed_image = torch.sigmoid(self.vae.decoder(z))
-                numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
-                fig2 = plt.figure()
-                plt.imshow(numpy_image, cmap='gray')
-                self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
-    
+                    #Test 2: random latent variable sample (i.e. from prior)
+                    z = torch.randn(1, self.latent_dimension)
+                    reconstructed_image = torch.sigmoid(self.vae.decoder(z))[0]
+                    numpy_image = np.transpose(reconstructed_image.detach().numpy(), (1, 2, 0))
+                    
+                    fig2 = plt.figure()
+                    plt.imshow(numpy_image)
+                    self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
+                
+                else:
+                    #Test 1: closeness output-input
+                    reconstructed_image = vae_output['x_hat'][index]
+                    numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
+                    numpy_input = self.test_data[index].detach().numpy().reshape((28, 28))
+                    
+                    fig, (ax0, ax1) = plt.subplots(ncols=2)
+                    ax0.imshow(numpy_image, cmap='gray')
+                    ax1.imshow(numpy_input, cmap='gray')
+                    self.writer.add_figure("test_autoencoding", fig, step)
+        
+                    #Test 2: random latent variable sample (i.e. from prior)
+                    z = torch.randn(1, self.latent_dimension)
+                    reconstructed_image = torch.sigmoid(self.vae.decoder(z))
+                    numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
+                    fig2 = plt.figure()
+                    plt.imshow(numpy_image, cmap='gray')
+                    self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
         # set model back to train mode
         self.vae.train()
+        print("End Test")

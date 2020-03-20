@@ -43,14 +43,14 @@ class deconvNetwork(baseNetwork):
         
         for h in range(1, len(self.hidden_dimensions[:-1])):
             param = self.hidden_dimensions[h]
-            hidden_layer = self._initialise_weights(nn.ConvTranspose2d(param[0], param[1], param[2], param[3], param[4]))
+            hidden_layer = self._initialise_weights(nn.ConvTranspose2d(param[0], param[1], param[2], param[3], output_padding=param[4]))
             bn_layer = nn.BatchNorm2d(param[1])
             self.layers.append(hidden_layer)
             self.bn_layers.append(bn_layer)
 
         # final layer to latent dim is a convolutional one with no batch normalisation.
         param = self.hidden_dimensions[-1]
-        hidden_to_latent_layer = self._initialise_weights(nn.ConvTranspose2d(param[0], param[1], param[2], param[3], param[4]))
+        hidden_to_latent_layer = self._initialise_weights(nn.ConvTranspose2d(param[0], param[1], param[2], param[3], output_padding=param[4]))
         self.layers.append(hidden_to_latent_layer)
 
     def forward(self, x):
@@ -63,7 +63,6 @@ class deconvNetwork(baseNetwork):
         x = self.nonlinear_function(self.layers[0](x))
         x = x.view(x.size(0), -1, 2, 2)
         for level, layer in enumerate(self.layers[1:-1]):
-            print(level)
             x = self.nonlinear_function(self.bn_layers[level](layer(x)))
         x = self.layers[-1](x)  # the last fully connected layer has no activation function
         return x
