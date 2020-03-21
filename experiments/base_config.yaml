@@ -37,4 +37,4 @@ estimator:
   type: "none"                                                # Type of log-likelihood estimator (e.g., None, IWAE)
   iwae:
     samples: 5000                                             # Number of samples to use in the IWAE estimate.
-    batch_size: 50                                            # Number of inputs to sample at once.
+    batch_size: 80                                            # Number of inputs to sample at once.

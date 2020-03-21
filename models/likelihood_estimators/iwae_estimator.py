@@ -32,6 +32,8 @@ class IWAEEstimator(BaseEstimator):
         # Remember the state of the VAE and restore it after the routine.
         training = vae.training
         vae.eval()
+        # Construct a tuple with a 1 for each dimension of the input.
+        input_repeat_shape = tuple(1 for _ in batch_input.shape[1:])
 
         # Global warming is no joke, and neither are gradient calculations.
         with torch.no_grad():
@@ -42,8 +44,8 @@ class IWAEEstimator(BaseEstimator):
             for beg in range(0, input_batch_size, self._batch_size):
                 # Truncate the end index if it exceeds the size of the input batch.
                 end = min(input_batch_size, beg + self._batch_size)
-                # Duplicate the input batch once for each sample in |self._num_samples|.
-                inputs = batch_input[beg:end].repeat(self._num_samples, 1)
+                # Duplicate the input subbatch once for each sample in |self._num_samples|.
+                inputs = batch_input[beg:end].repeat(self._num_samples, *input_repeat_shape)
                 # Compute the log-likelihood of each input.
                 outputs = vae(inputs)
                 _, _, log_p_x = loss_module.compute_loss(x=inputs, vae_output=outputs)
