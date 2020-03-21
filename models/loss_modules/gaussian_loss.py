@@ -37,11 +37,7 @@ class gaussianLoss(baseLoss):
         #   ELBO = E[log(p(x,z) / q(z|x))]
         #        = E[log(p(x|z) * p(z) / q(z|x))]
         #        = E[log p(x|z) + log p(z) - log q(z|x)]
-        log_p_xz = -F.binary_cross_entropy(vae_reconstruction, x, reduction='none').sum(-1)
-        
-        #Contract Tensor to batch vector (necessary for CIFAR)
-        while len(log_p_xz.size()) > 1:
-            log_p_xz = log_p_xz.sum(-1)
+        log_p_xz = -F.binary_cross_entropy(vae_reconstruction, x, reduction='none').view(x.shape[0], -1).sum(1)
         log_p_z = -0.5 * vae_latent.pow(2).sum(1)
         log_q_zx = -0.5 * (log_var.sum(1) + ((vae_latent - mean).pow(2) / torch.exp(log_var)).sum(1))
         # TODO: Add a warm-up constant to the last term (only that one).
