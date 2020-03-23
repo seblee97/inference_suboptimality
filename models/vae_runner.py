@@ -232,8 +232,8 @@ class VAERunner():
                 if self.dataset == "cifar":
                     #Test 1: closeness output-input
                     reconstructed_image = vae_output['x_hat'][index]
-                    numpy_image = np.transpose(reconstructed_image.detach().cpu().numpy(), (1, 2, 0))
-                    numpy_input = np.transpose(self.test_data[index].detach().cpu().numpy(), (1, 2, 0))
+                    numpy_image = np.transpose(((reconstructed_image.detach().cpu()>= 0.5).float()).numpy(), (1, 2, 0))
+                    numpy_input = np.transpose(self.test_data[index].detach().cpu().float().numpy(), (1, 2, 0))
                     
                     fig, (ax0, ax1) = plt.subplots(ncols=2)
                     ax0.imshow(numpy_image)
@@ -243,7 +243,7 @@ class VAERunner():
                     #Test 2: random latent variable sample (i.e. from prior)
                     z = torch.randn(1, self.latent_dimension)
                     reconstructed_image = torch.sigmoid(self.vae.decoder(z))[0]
-                    numpy_image = np.transpose(reconstructed_image.detach().cpu().numpy(), (1, 2, 0))
+                    numpy_image = np.transpose(((reconstructed_image.detach().cpu()>= 0.5).float()).numpy(), (1, 2, 0))
                     
                     fig2 = plt.figure()
                     plt.imshow(numpy_image)
