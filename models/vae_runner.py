@@ -43,7 +43,7 @@ class VAERunner():
 
         # initialise loss function and optimiser
         self.loss_function = torch.nn.MSELoss()
-
+        
         # initialise encoder, decoder
         # This should also give activation functions !!
         encoder = self._setup_encoder(config)
@@ -82,7 +82,8 @@ class VAERunner():
         self.relative_data_path = config.get(["relative_data_path"])
         self.dataset = config.get(["training", "dataset"])
         self.batch_size = config.get(["training", "batch_size"])
-
+        
+        self.warm_up_program =config.get(["training", "warm_up_program"])
         self.num_epochs = config.get(["training", "num_epochs"])
         self.loss_type = config.get(["training", "loss_function"])
         self.learning_rate = config.get(["training", "learning_rate"])
@@ -195,8 +196,13 @@ class VAERunner():
                 step_count += 1
 
                 vae_output = self.vae(batch_input)
-
-                loss, loss_metrics, _ = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output)
+                
+                # Get entropy-annealing factor for linear program
+                warm_up_factor = 1.0
+                if self.warm_up_program != 0:
+                    warm_up_factor= min(1.0, e/self.warm_up_program)
+                
+                loss, loss_metrics, _ = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output, warm_up = warm_up_factor)
 
                 self.optimiser.zero_grad()
                 loss.backward()
@@ -214,7 +220,7 @@ class VAERunner():
 
         with torch.no_grad():
             vae_output = self.vae(self.test_data)
-            overall_test_loss, _, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
+            overall_test_loss, _, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output, warm_up = 1.) # no warm-up for test right ?
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
 
             if self.estimator:
