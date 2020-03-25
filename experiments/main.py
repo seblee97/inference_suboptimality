@@ -13,6 +13,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml') # base_config.yaml or base_config_CIFAR.yaml
 parser.add_argument('-additional_configs', '--ac', type=str, help='path to folder containing additional configuration files (e.g. for flow)', default='additional_configs/')
 
+parser.add_argument('-learning_rate', '--lr', type=float, default=None)
+parser.add_argument('-dataset', type=str, default=None)
+
 args = parser.parse_args()
 
 if __name__ == "__main__":
@@ -51,6 +54,12 @@ if __name__ == "__main__":
     
         # update base-parameters with specific parameters
         inference_gap_parameters.update(specific_params)
+
+    # update parameters with (optional) args given in command line
+    if args.lr:
+        inference_gap_parameters._config["training"]["learning_rate"] = args.lr
+    if args.dataset:
+        inference_gap_parameters._config["training"]["dataset"] = args.dataset
 
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
