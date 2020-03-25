@@ -9,5 +9,5 @@ class baseLoss(ABC):
         pass
 
     @abstractmethod
-    def compute_loss(self, x: torch.Tensor, vae_output: Dict):
+    def compute_loss(self, x: torch.Tensor, vae_output: Dict, warm_up: float):
         raise NotImplementedError("Base class method")
