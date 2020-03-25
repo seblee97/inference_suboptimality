@@ -83,7 +83,9 @@ class VAERunner():
         self.dataset = config.get(["training", "dataset"])
         self.batch_size = config.get(["training", "batch_size"])
         
-        self.warm_up_program =config.get(["training", "warm_up_program"])
+        self.warm_up_program = config.get(["training", "warm_up_program"])
+        self.decoder_unfreeze_ratio = config.get(["training", "decoder_unfreeze_ratio"])
+        self.encoder_unfreeze_ratio = config.get(["training", "encoder_unfreeze_ratio"])
         self.num_epochs = config.get(["training", "num_epochs"])
         self.loss_type = config.get(["training", "loss_function"])
         self.learning_rate = config.get(["training", "learning_rate"])
@@ -184,9 +186,22 @@ class VAERunner():
         self.vae.train()
 
         step_count = 0
+        decoder_freeze_count = 0
+        encoder_freeze_count = 0
 
         for e in range(self.num_epochs):
             for batch_input, _ in self.dataloader: # target discarded
+
+                # freeze decoder/encoder by default
+                self.vae.freeze_decoder()
+                self.vae.freeze_encoder()
+
+                # unfreeze decoder/encoder on appropriate steps
+                if decoder_freeze_count % self.decoder_unfreeze_ratio == 0:
+                    self.vae.unfreeze_decoder()
+                if encoder_freeze_count % self.encoder_unfreeze_ratio == 0:
+                    self.vae.unfreeze_encoder()
+
                 # Move the batch input onto the GPU if necessary.
                 batch_input = batch_input.to(self.device)
 
@@ -194,6 +209,8 @@ class VAERunner():
                     self._perform_test_loop(step=step_count)
 
                 step_count += 1
+                decoder_freeze_count += 1
+                encoder_freeze_count += 1
 
                 vae_output = self.vae(batch_input)
                 
