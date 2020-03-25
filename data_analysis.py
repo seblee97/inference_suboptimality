@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import matplotlib.scale as scale
+import sys
 #import pandas as pd
 
 
@@ -45,15 +46,16 @@ print("log_p_x: ", logpx)
 var_list = {}
 
 
+textfile = sys.argv[1]
 
-with open("parse4.txt", "r") as file:
+
+with open(textfile, "r") as file:
     lines = file.readlines()[2:-1]
     for line in lines:
         data = line.split(":")
         var = data[0].strip()
         if var not in var_list.keys():
             var_list[var] = []
-
         var_list[var].append(data[1].strip())
 
 #print(var_list)

@@ -1,4 +1,7 @@
 from .base_network import baseNetwork
+from typing import List, Dict
+
+import torch.nn as nn
 
 class convNetwork(baseNetwork):
 
@@ -26,22 +29,23 @@ class convNetwork(baseNetwork):
         self.input_dimension = config.get(["model", "input_dimension"])
         self.latent_dimension = config.get(["model", "latent_dimension"])
         self.hidden_dimensions = config.get(["model", "encoder", "hidden_dimensions"])
-        super(convNetwork, self).__init__()
-
+        #super(convNetwork, self).__init__()
+        baseNetwork.__init__(self, config=config)
+    
     def _construct_layers(self):
         self.layers = nn.ModuleList([])
         self.bn_layers = nn.ModuleList([])
         
         # Initial layer
         param = self.hidden_dimensions[0]
-        input_layer = self._initialise_weights(nn.Conv2d(param[0], param[1], param[2], param[3], param[4]))
+        input_layer = self._initialise_weights(nn.Conv2d(param[0], param[1], param[2], param[3], padding=param[4]))
         bn_init = nn.BatchNorm2d(param[1])
         self.layers.append(input_layer)
         self.bn_layers.append(bn_init)
         
         for h in range(1, len(self.hidden_dimensions[:-1])):
             param = self.hidden_dimensions[h]
-            hidden_layer = self._initialise_weights(nn.Conv2d(param[0], param[1], param[2], param[3], param[4]))
+            hidden_layer = self._initialise_weights(nn.Conv2d(param[0], param[1], param[2], param[3], padding=param[4]))
             bn_layer = nn.BatchNorm2d(param[1])
             self.layers.append(hidden_layer)
             self.bn_layers.append(bn_layer)

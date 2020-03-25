@@ -10,7 +10,7 @@ import os
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml')
+parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml') # base_config.yaml or base_config_CIFAR.yaml
 parser.add_argument('-additional_configs', '--ac', type=str, help='path to folder containing additional configuration files (e.g. for flow)', default='additional_configs/')
 
 args = parser.parse_args()
@@ -78,11 +78,10 @@ if __name__ == "__main__":
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
         inference_gap_parameters.set_property("device", "cuda")
-        experiment_device = torch.device("cuda:{}".format(args.gpu_id))
+        torch.set_default_tensor_type(torch.cuda.FloatTensor)
     else:
         print("Using the CPU")
         inference_gap_parameters.set_property("device", "cpu")
-        experiment_device = torch.device("cpu")
 
     # write copy of config_yaml in model_checkpoint_folder
     inference_gap_parameters.save_configuration(checkpoint_path)

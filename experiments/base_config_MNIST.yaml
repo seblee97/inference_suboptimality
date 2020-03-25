@@ -4,13 +4,12 @@ seed:                               1                         # Random seed to e
 relative_data_path:                 ../data/                  # Path to the dataset directory.
 
 model:
-  approximate_posterior:            rnvp_norm_flow                  # Family of functions to use for approximate posterior (q_\phi(z | x)).
+  approximate_posterior:            gaussian                  # Family of functions to use for approximate posterior (q_\phi(z | x)).
   initialisation:                   xavier_uniform
   initialisation_std:               0.1                       # Standard deviation of the weight and bias initialization.
   nonlinearity:                     elu                       # Activation function (e.g., sigmoid, elu, ReLU, tanh, etc.).
   input_dimension:                  784                       # Number of input (and output) dimensions.
   latent_dimension:                 50                        # Number of latent dimensions.
-  is_estimator:                     False
 
   encoder:
     network_type:                     feedforward             # Type of encoder network (i.e., feedforward or convolutional).
@@ -22,7 +21,7 @@ model:
 
 training:
   learning_rate:                    0.0001                    # Learning rate for gradient descent.
-  optimiser:
+  optimiser:                        
     type:                           adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
     params:                         [0.9, 0.999, 0.0001]
   dataset:                          binarised_mnist           # Dataset to use for training and testing (e.g., mnist, binarised_mnist, fashion_mnist, or cifar).
@@ -34,12 +33,8 @@ training:
 testing:
   test_frequency:                   100                       # Number of training steps between tests.
   visualise:                        True                      # Capture the output image of the test.
-<<<<<<< HEAD
-=======
 
 estimator:
   type: "none"                                                # Type of log-likelihood estimator (e.g., None, IWAE)
   iwae:
-    samples: 5000                                             # Number of samples to use in the IWAE estimate.
-    batch_size: 80                                            # Number of inputs to sample at once.
->>>>>>> master
+    samples: 20                                               # Number of samples to use in the IWAE estimate.

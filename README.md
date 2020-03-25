@@ -18,6 +18,8 @@ From then, all python prerequisites should be satisfied by running
 
 ```pip3 install -r requirements.txt```
 
+To run experiments with a GPU, it is essential to use Python **3.7.5** (on Windows).  Our code is compatible with CUDA 10.1.
+
 ## Datasets
 
 We do not provide the datasets directly in this repository. However we are using standard datasets (e.g. MNIST, CIFAR10) that can be loaded with the torchvision datasets module. To retrive the datasets, run:

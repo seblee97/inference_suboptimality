@@ -2,6 +2,8 @@ from .vae import VAE
 
 from .networks import feedForwardNetwork
 from .networks import feedBackwardNetwork
+from .networks import convNetwork
+from .networks import deconvNetwork
 
 from .encoder import Encoder
 from .decoder import Decoder
@@ -11,12 +13,13 @@ from .approximate_posteriors import gaussianPosterior, RNVPPosterior
 from .loss_modules import gaussianLoss, RNVPLoss
 from .likelihood_estimators import BaseEstimator, IWAEEstimator
 
-from utils import mnist_dataloader, binarised_mnist_dataloader
+from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader
 
 from typing import Dict
 import os
 import copy
 import random
+import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
@@ -39,7 +42,7 @@ class VAERunner():
 
         # initialise loss function and optimiser
         self.loss_function = torch.nn.MSELoss()
-
+        
         # initialise encoder, decoder
         # This should also give activation functions !!
         encoder = self._setup_encoder(config)
@@ -67,6 +70,7 @@ class VAERunner():
         """
         Method to extract relevant parameters from config and make them attributes of this class
         """
+        self.device = config.get("device")
 
         self.checkpoint_path = config.get("checkpoint_path")
 
@@ -78,7 +82,8 @@ class VAERunner():
         self.relative_data_path = config.get(["relative_data_path"])
         self.dataset = config.get(["training", "dataset"])
         self.batch_size = config.get(["training", "batch_size"])
-
+        
+        self.warm_up_program =config.get(["training", "warm_up_program"])
         self.num_epochs = config.get(["training", "num_epochs"])
         self.loss_type = config.get(["training", "loss_function"])
         self.learning_rate = config.get(["training", "learning_rate"])
@@ -96,6 +101,8 @@ class VAERunner():
         # network
         if self.encoder_type == "feedforward":
             network = feedForwardNetwork(config=config)
+        elif self.encoder_type == "convolutional":
+            network = convNetwork(config=config)
         else:
             raise ValueError("Encoder type {} not recognised".format(self.encoder_type))
 
@@ -114,6 +121,8 @@ class VAERunner():
     def _setup_decoder(self, config: Dict):
         if self.decoder_type == "feedbackward":
             network = feedBackwardNetwork(config=config)
+        elif self.decoder_type == "deconvolutional":
+            network = deconvNetwork(config=config)
         else:
             raise ValueError("Decoder type {} not recognised".format(self.decoder_type))
 
@@ -135,9 +144,15 @@ class VAERunner():
         elif self.dataset == "binarised_mnist":
             dataloader = binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
             test_data = iter(binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
+        elif self.dataset == "fashion_mnist":
+            dataloader = fashion_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
+            test_data = iter(fashion_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
+        elif self.dataset == "cifar":
+            dataloader = cifar_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
+            test_data = iter(cifar_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         else:
             raise ValueError("Dataset {} not recognised".format(self.dataset))
-        return dataloader, test_data
+        return dataloader, test_data.to(self.device)
 
     def _setup_optimiser(self, config: Dict):
         if self.optimiser_type == "adam":
@@ -158,7 +173,8 @@ class VAERunner():
         """
         if self.estimator_type.upper() == "IWAE":
             samples = config.get(['estimator', 'iwae', 'samples'])
-            return IWAEEstimator(samples)
+            batch_size = config.get(['estimator', 'iwae', 'batch_size'])
+            return IWAEEstimator(samples, batch_size)
         else:
             raise ValueError("Estimator {} not recognised". format(self.estimator_type))
 
@@ -171,15 +187,22 @@ class VAERunner():
 
         for e in range(self.num_epochs):
             for batch_input, _ in self.dataloader: # target discarded
-                
+                # Move the batch input onto the GPU if necessary.
+                batch_input = batch_input.to(self.device)
+
                 if step_count % self.test_frequency == 0:
                     self._perform_test_loop(step=step_count)
 
                 step_count += 1
 
                 vae_output = self.vae(batch_input)
-
-                loss, loss_metrics, _ = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output)
+                
+                # Get entropy-annealing factor for linear program
+                warm_up_factor = 1.0
+                if self.warm_up_program != 0:
+                    warm_up_factor= min(1.0, e/self.warm_up_program)
+                
+                loss, loss_metrics, _ = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output, warm_up = warm_up_factor)
 
                 self.optimiser.zero_grad()
                 loss.backward()
@@ -192,14 +215,12 @@ class VAERunner():
             print("Training loss after {} epochs: {}".format(e + 1, float(loss)))
 
     def _perform_test_loop(self, step:int):
-
         # explicitly set model to evaluation mode
         self.vae.eval()
 
         with torch.no_grad():
             vae_output = self.vae(self.test_data)
-
-            overall_test_loss, _, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output)
+            overall_test_loss, _, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output, warm_up = 1.) # no warm-up for test right ?
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
 
             if self.is_estimator:
@@ -207,24 +228,44 @@ class VAERunner():
                 self.writer.add_scalar("estimated_loss", float(estimated_loss), step)
 
             if self.visualise_test:
-                #Test 1: closeness output-input
                 index = random.randint(0, vae_output['x_hat'].size()[0]-1)
-                reconstructed_image = vae_output['x_hat'][index]    # Should we add a sigmoid ?
-                numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
-                numpy_input = self.test_data[index].detach().numpy().reshape((28, 28))
+                if self.dataset == "cifar":
+                    #Test 1: closeness output-input
+                    reconstructed_image = vae_output['x_hat'][index]
+                    numpy_image = np.transpose(((reconstructed_image.detach().cpu()>= 0.5).float()).numpy(), (1, 2, 0))
+                    numpy_input = np.transpose(self.test_data[index].detach().cpu().float().numpy(), (1, 2, 0))
+                    
+                    fig, (ax0, ax1) = plt.subplots(ncols=2)
+                    ax0.imshow(numpy_image)
+                    ax1.imshow(numpy_input)
+                    self.writer.add_figure("test_autoencoding", fig, step)
                 
-                fig, (ax0, ax1) = plt.subplots(ncols=2)
-                ax0.imshow(numpy_image, cmap='gray')
-                ax1.imshow(numpy_input, cmap='gray')
-                self.writer.add_figure("test_autoencoding", fig, step)
-    
-                #Test 2: random latent variable sample (i.e. from prior)
-                z = torch.randn(1, self.latent_dimension)
-                reconstructed_image = torch.sigmoid(self.vae.decoder(z))
-                numpy_image = reconstructed_image.detach().numpy().reshape((28, 28))
-                fig2 = plt.figure()
-                plt.imshow(numpy_image, cmap='gray')
-                self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
-    
+                    #Test 2: random latent variable sample (i.e. from prior)
+                    z = torch.randn(1, self.latent_dimension)
+                    reconstructed_image = torch.sigmoid(self.vae.decoder(z))[0]
+                    numpy_image = np.transpose(((reconstructed_image.detach().cpu()>= 0.5).float()).numpy(), (1, 2, 0))
+                    
+                    fig2 = plt.figure()
+                    plt.imshow(numpy_image)
+                    self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
+                
+                else:
+                    #Test 1: closeness output-input
+                    reconstructed_image = vae_output['x_hat'][index]
+                    numpy_image = reconstructed_image.detach().cpu().numpy().reshape((28, 28))
+                    numpy_input = self.test_data[index].detach().cpu().numpy().reshape((28, 28))
+                    
+                    fig, (ax0, ax1) = plt.subplots(ncols=2)
+                    ax0.imshow(numpy_image, cmap='gray')
+                    ax1.imshow(numpy_input, cmap='gray')
+                    self.writer.add_figure("test_autoencoding", fig, step)
+        
+                    #Test 2: random latent variable sample (i.e. from prior)
+                    z = torch.randn(1, self.latent_dimension)
+                    reconstructed_image = torch.sigmoid(self.vae.decoder(z))
+                    numpy_image = reconstructed_image.detach().cpu().numpy().reshape((28, 28))
+                    fig2 = plt.figure()
+                    plt.imshow(numpy_image, cmap='gray')
+                    self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
         # set model back to train mode
         self.vae.train()
