@@ -8,11 +8,10 @@ from .networks import deconvNetwork
 from .encoder import Encoder
 from .decoder import Decoder
 
-from .approximate_posteriors import gaussianPosterior, NormFlowPosterior
+from .approximate_posteriors import gaussianPosterior, RNVPPosterior
 
+from .loss_modules import gaussianLoss, RNVPLoss
 from .likelihood_estimators import BaseEstimator, IWAEEstimator
-
-from .loss_modules import gaussianLoss
 
 from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader
 
@@ -61,7 +60,8 @@ class VAERunner():
         self.optimiser = self._setup_optimiser(config)
 
         # setup likelihood estimator with parameters from config
-        self.estimator = self._setup_estimator(config)
+        if self.is_estimator:
+            self.estimator = self._setup_estimator(config)
 
         # initialise general tensorboard writer
         self.writer = SummaryWriter(self.checkpoint_path)
@@ -94,10 +94,10 @@ class VAERunner():
         self.optimiser_type = config.get(["training", "optimiser", "type"])
         self.optimiser_params = config.get(["training", "optimiser", "params"])
 
-        self.estimator_type = config.get(["estimator", "type"])
+        self.is_estimator = config.get(["model", "is_estimator"])
 
     def _setup_encoder(self, config: Dict):
-        
+
         # network
         if self.encoder_type == "feedforward":
             network = feedForwardNetwork(config=config)
@@ -105,17 +105,17 @@ class VAERunner():
             network = convNetwork(config=config)
         else:
             raise ValueError("Encoder type {} not recognised".format(self.encoder_type))
-        
+
         # approximate posterior family
         if self.approximate_posterior_type == "gaussian":
             approximate_posterior = gaussianPosterior(config=config)
-        elif self.approximate_posterior_type == "norm_flow":
-            approximate_posterior = NormFlowPosterior(config=config)
+        elif self.approximate_posterior_type == "rnvp_norm_flow":
+            approximate_posterior = RNVPPosterior(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised".format(self.approximate_posterior_type))
 
-        # XXX: maybe return flow/approx parameters here and if not None they can be added to optimiser (rather than explicity have flow object be part of vae graph construction)  
-        
+        # XXX: maybe return flow/approx parameters here and if not None they can be added to optimiser (rather than explicity have flow object be part of vae graph construction)
+
         return Encoder(network=network, approximate_posterior=approximate_posterior)
 
     def _setup_decoder(self, config: Dict):
@@ -131,6 +131,8 @@ class VAERunner():
     def _setup_loss_module(self):
         if self.approximate_posterior_type == "gaussian":
             self.loss_module = gaussianLoss()
+        elif self.approximate_posterior_type == "rnvp_norm_flow":
+            self.loss_module = RNVPLoss()
         else:
             raise ValueError("Loss module not correctly specified")
 
@@ -158,7 +160,7 @@ class VAERunner():
             beta_2 = self.optimiser_params[1]
             epsilon = self.optimiser_params[2]
             return torch.optim.Adam(
-                self.vae.parameters(), lr=self.learning_rate, betas=(beta_1, beta_2), eps=epsilon 
+                self.vae.parameters(), lr=self.learning_rate, betas=(beta_1, beta_2), eps=epsilon
                 )
         else:
             raise ValueError("Optimiser {} not recognised". format(self.optimiser_type))
@@ -169,9 +171,7 @@ class VAERunner():
 
         :param config: parsed configuration file.
         """
-        if self.estimator_type.upper() == "NONE":
-            return None
-        elif self.estimator_type.upper() == "IWAE":
+        if self.estimator_type.upper() == "IWAE":
             samples = config.get(['estimator', 'iwae', 'samples'])
             batch_size = config.get(['estimator', 'iwae', 'batch_size'])
             return IWAEEstimator(samples, batch_size)
@@ -192,7 +192,7 @@ class VAERunner():
 
                 if step_count % self.test_frequency == 0:
                     self._perform_test_loop(step=step_count)
-                
+
                 step_count += 1
 
                 vae_output = self.vae(batch_input)
@@ -223,7 +223,7 @@ class VAERunner():
             overall_test_loss, _, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output, warm_up = 1.) # no warm-up for test right ?
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
 
-            if self.estimator:
+            if self.is_estimator:
                 estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
                 self.writer.add_scalar("estimated_loss", float(estimated_loss), step)
 

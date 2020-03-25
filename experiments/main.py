@@ -33,11 +33,15 @@ if __name__ == "__main__":
     approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
     if approximate_posterior_configuration == 'gaussian':
         pass 
-    elif approximate_posterior_configuration == 'norm_flow':
+    elif approximate_posterior_configuration == 'rnvp_norm_flow':
         additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
     else:
         raise ValueError("approximate_posterior_configuration {} not recognised. Please use 'gaussian', \
-                or 'flow'".format(approximate_posterior_configuration))
+                or 'rnvp_norm_flow'".format(approximate_posterior_configuration))
+
+    is_estimator = inference_gap_parameters.get(["model", "is_estimator"])
+    if is_estimator:
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'estimator_config.yaml'))
 
     # specific parameters
     for additional_configuration in additional_configurations:
