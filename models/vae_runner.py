@@ -42,7 +42,7 @@ class VAERunner():
 
         # initialise loss function and optimiser
         self.loss_function = torch.nn.MSELoss()
-        
+
         # initialise encoder, decoder
         # This should also give activation functions !!
         encoder = self._setup_encoder(config)
@@ -82,7 +82,7 @@ class VAERunner():
         self.relative_data_path = config.get(["relative_data_path"])
         self.dataset = config.get(["training", "dataset"])
         self.batch_size = config.get(["training", "batch_size"])
-        
+
         self.warm_up_program =config.get(["training", "warm_up_program"])
         self.num_epochs = config.get(["training", "num_epochs"])
         self.loss_type = config.get(["training", "loss_function"])
@@ -111,6 +111,8 @@ class VAERunner():
             approximate_posterior = gaussianPosterior(config=config)
         elif self.approximate_posterior_type == "rnvp_norm_flow":
             approximate_posterior = RNVPPosterior(config=config)
+        elif self.approximate_posterior_type == "rnvp_aux_flow":
+            approximate_posterior = RNVPAux(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised".format(self.approximate_posterior_type))
 
@@ -133,6 +135,8 @@ class VAERunner():
             self.loss_module = gaussianLoss()
         elif self.approximate_posterior_type == "rnvp_norm_flow":
             self.loss_module = RNVPLoss()
+        elif self.approximate_posterior_type == "rnvp_aux_flow":
+            self.loss_module = RNVPAuxLoss()
         else:
             raise ValueError("Loss module not correctly specified")
 
@@ -140,7 +144,7 @@ class VAERunner():
         file_path = os.path.dirname(__file__)
         if self.dataset == "mnist":
             dataloader = mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
-            test_data = iter(mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]          
+            test_data = iter(mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         elif self.dataset == "binarised_mnist":
             dataloader = binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
             test_data = iter(binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
@@ -196,12 +200,12 @@ class VAERunner():
                 step_count += 1
 
                 vae_output = self.vae(batch_input)
-                
+
                 # Get entropy-annealing factor for linear program
                 warm_up_factor = 1.0
                 if self.warm_up_program != 0:
                     warm_up_factor= min(1.0, e/self.warm_up_program)
-                
+
                 loss, loss_metrics, _ = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output, warm_up = warm_up_factor)
 
                 self.optimiser.zero_grad()
@@ -234,32 +238,32 @@ class VAERunner():
                     reconstructed_image = vae_output['x_hat'][index]
                     numpy_image = np.transpose(((reconstructed_image.detach().cpu()>= 0.5).float()).numpy(), (1, 2, 0))
                     numpy_input = np.transpose(self.test_data[index].detach().cpu().float().numpy(), (1, 2, 0))
-                    
+
                     fig, (ax0, ax1) = plt.subplots(ncols=2)
                     ax0.imshow(numpy_image)
                     ax1.imshow(numpy_input)
                     self.writer.add_figure("test_autoencoding", fig, step)
-                
+
                     #Test 2: random latent variable sample (i.e. from prior)
                     z = torch.randn(1, self.latent_dimension)
                     reconstructed_image = torch.sigmoid(self.vae.decoder(z))[0]
                     numpy_image = np.transpose(((reconstructed_image.detach().cpu()>= 0.5).float()).numpy(), (1, 2, 0))
-                    
+
                     fig2 = plt.figure()
                     plt.imshow(numpy_image)
                     self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
-                
+
                 else:
                     #Test 1: closeness output-input
                     reconstructed_image = vae_output['x_hat'][index]
                     numpy_image = reconstructed_image.detach().cpu().numpy().reshape((28, 28))
                     numpy_input = self.test_data[index].detach().cpu().numpy().reshape((28, 28))
-                    
+
                     fig, (ax0, ax1) = plt.subplots(ncols=2)
                     ax0.imshow(numpy_image, cmap='gray')
                     ax1.imshow(numpy_input, cmap='gray')
                     self.writer.add_figure("test_autoencoding", fig, step)
-        
+
                     #Test 2: random latent variable sample (i.e. from prior)
                     z = torch.randn(1, self.latent_dimension)
                     reconstructed_image = torch.sigmoid(self.vae.decoder(z))

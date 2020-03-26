@@ -21,7 +21,7 @@ class RNVPAux(BaseFlow):
 
         # q(v|x,z)
         self.auxillary_forward_layers = nn.ModuleList([])
-        
+
         input_auxillary_forward_layer = self._initialise_weights(nn.Linear(self.input_dimension, self.auxillary_forward_dimensions[0]))
         self.auxillary_forward_layers.append(input_auxillary_forward_layer)
 
@@ -35,7 +35,7 @@ class RNVPAux(BaseFlow):
 
         # r(v|x,z)
         self.auxillary_reverse_layers = nn.ModuleList([])
-        
+
         input_auxillary_reverse_layer = self._initialise_weights(nn.Linear(self.input_dimension, self.auxillary_reverse_dimensions[0]))
         self.auxillary_reverse_layers.append(input_auxillary_reverse_layer)
 
@@ -71,12 +71,12 @@ class RNVPAux(BaseFlow):
 
         v0_mu = auxillary_variable_vector_params[:, :cutoff]
         v0_var = auxillary_variable_vector_params[:, cutoff:]
-        
+
         # sample noise (reparameterisation trick), unsqueeze to match dimensions
         noise = self.noise_distribution.sample(v0_var.shape).squeeze()
-        
+
         auxillary_variable_vector = v0_mu + torch.sqrt(v0_var) * noise
-        
+
 
 
 
