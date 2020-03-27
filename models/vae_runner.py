@@ -11,7 +11,7 @@ from .decoder import Decoder
 from .approximate_posteriors import gaussianPosterior, RNVPPosterior
 
 from .loss_modules import gaussianLoss, RNVPLoss
-from .likelihood_estimators import BaseEstimator, IWAEEstimator
+from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator
 
 from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader
 
@@ -175,12 +175,19 @@ class VAERunner():
 
         :param config: parsed configuration file.
         """
-        if self.estimator_type.upper() == "IWAE":
-            samples = config.get(['estimator', 'iwae', 'samples'])
+        estimator_type = config.get(["estimator", "type"]).upper()
+        if estimator_type == "IWAE":
+            num_samples = config.get(['estimator', 'iwae', 'num_samples'])
             batch_size = config.get(['estimator', 'iwae', 'batch_size'])
-            return IWAEEstimator(samples, batch_size)
+            return IWAEEstimator(num_samples, batch_size)
+        elif estimator_type == "AIS":
+            num_samples = config.get(['estimator', 'ais', 'num_samples'])
+            batch_size = config.get(['estimator', 'ais', 'batch_size'])
+            num_dists = config.get(['estimator', 'ais', 'num_dists'])
+            num_leapfrog_steps = config.get(['estimator', 'ais', 'num_leapfrog_steps'])
+            return AISEstimator(num_samples, batch_size, self.latent_dimension, num_dists, num_leapfrog_steps)
         else:
-            raise ValueError("Estimator {} not recognised". format(self.estimator_type))
+            raise ValueError("Estimator {} not recognised".format(estimator_type))
 
     def train(self):
 

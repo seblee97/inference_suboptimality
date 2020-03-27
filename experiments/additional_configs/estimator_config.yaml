@@ -1,4 +1,10 @@
 estimator:
-  type:                             IWAE                      # Type of log-likelihood estimator (e.g., None, IWAE)
+  type: "AIS"                                                 # Type of log-likelihood estimator (e.g., AIS, IWAE)
   iwae:
-    samples: 20                                               # Number of samples to use in the IWAE estimate.
+    num_samples: 5000                                         # Number of samples to use in the IWAE estimate.
+    batch_size: 80                                            # Number of inputs to sample at once.
+  ais:
+    num_samples: 5                                            # Number of samples to use in the AIS estimate.
+    batch_size: 10                                            # Number of inputs to sample at once.
+    num_dists: 10                                             # Number of intermediate distributions.
+    num_leapfrog_steps: 10                                    # Number of steps in the leapfrog algorithm.

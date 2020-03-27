@@ -185,7 +185,7 @@ class RNVPAux(approximatePosterior, BaseFlow):
 
         # log_prob = log_qv0 - log_det_jacobian - log_rvT
 
-    """
+        """
         zk = zk.unsqueeze(2)
 
         # reparameterize u such that the flow becomes invertible (see appendix paper)
@@ -203,7 +203,7 @@ class RNVPAux(approximatePosterior, BaseFlow):
         psi = w * self.der_h(wzb)
         log_det_jacobian = torch.log(torch.abs(1 + torch.bmm(psi, u_hat)))
         log_det_jacobian = log_det_jacobian.squeeze(2).squeeze(1)
-    """
+        """
 
         return zT, log_det_jacobian, log_qv0, log_rvT
 
