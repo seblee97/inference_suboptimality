@@ -21,7 +21,7 @@ class RNVPAuxLoss(baseLoss):
 
         vae_reconstruction = vae_output['x_hat']
         vae_latent = vae_output['z']
-        mean, log_var, z0, log_det_jacobian = vae_output['params']
+        mean, log_var, z0, log_qv0, log_rvT, log_det_jacobian = vae_output['params']
 
         # Calculate the logs in the ELBO with ONE sample from the expectation.
         # Flow adds extra term - the sum of the logs of the determinants of the transformation Jacobians.
