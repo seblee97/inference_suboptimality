@@ -37,6 +37,7 @@ training:
   batch_size:                       100                       # Size of the training batches.
   loss_function:
   num_epochs:                       300                       # Number of training epochs.
+  warm_up_program:                  50                        # Limit of linear entropy-annealing (= warm-up) program (set to 0 if no entropy annealing wanted). 50 is the default. 
 
 testing:
   test_frequency:                   100                       # Number of training steps between tests.

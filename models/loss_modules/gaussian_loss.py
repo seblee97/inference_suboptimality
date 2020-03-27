@@ -20,13 +20,14 @@ class gaussianLoss(baseLoss):
     #     kl_loss = torch.sum(torch.exp(log_var) + mean**2 - 1 - log_var) / 2
     #     return reconstruction_loss + kl_loss
 
-    def compute_loss(self, x, vae_output) -> (torch.Tensor, Dict, torch.Tensor):
+    def compute_loss(self, x, vae_output, warm_up) -> (torch.Tensor, Dict, torch.Tensor):
         """
         Computes the loss between the network input and output assuming the
         approximate posterior is a fully-factorized Gaussian.
         
         :param x: input to the VAE
         :param vae_output: output of the VAE
+        :param warm_up: the entropy annealing factor (warm-up).
         :return (loss, loss_metrics, log_p_x): information about the loss
         """
         vae_reconstruction = vae_output['x_hat']
@@ -41,7 +42,7 @@ class gaussianLoss(baseLoss):
         log_p_z = -0.5 * vae_latent.pow(2).sum(1)
         log_q_zx = -0.5 * (log_var.sum(1) + ((vae_latent - mean).pow(2) / torch.exp(log_var)).sum(1))
         # TODO: Add a warm-up constant to the last term (only that one).
-        log_p_x = log_p_xz + log_p_z - log_q_zx
+        log_p_x = log_p_xz + log_p_z - warm_up * log_q_zx
 
         # The ELBO is defined to be the mean of the logs in the batch.
         elbo = torch.mean(log_p_x)

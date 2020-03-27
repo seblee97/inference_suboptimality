@@ -1,2 +1,3 @@
 from .gaussian import gaussianPosterior
-from .norm_flow import NormFlowPosterior
+from .rnvp_flow import RNVPPosterior
+from .rnvp_aux_flow import RNVPAux

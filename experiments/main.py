@@ -13,6 +13,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml') # base_config.yaml or base_config_CIFAR.yaml
 parser.add_argument('-additional_configs', '--ac', type=str, help='path to folder containing additional configuration files (e.g. for flow)', default='additional_configs/')
 
+parser.add_argument('-learning_rate', '--lr', type=float, default=None)
+parser.add_argument('-dataset', type=str, default=None)
+
 args = parser.parse_args()
 
 if __name__ == "__main__":
@@ -32,21 +35,33 @@ if __name__ == "__main__":
 
     approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
     if approximate_posterior_configuration == 'gaussian':
-        pass 
-    elif approximate_posterior_configuration == 'norm_flow':
+        pass
+    elif approximate_posterior_configuration == 'rnvp_norm_flow':
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
+    elif approximate_posterior_configuration == 'rnvp_aux_flow':
         additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
     else:
         raise ValueError("approximate_posterior_configuration {} not recognised. Please use 'gaussian', \
-                or 'flow'".format(approximate_posterior_configuration))
+                'rnvp_norm_flow', or 'rnvp_aux_flow'".format(approximate_posterior_configuration))
+
+    is_estimator = inference_gap_parameters.get(["model", "is_estimator"])
+    if is_estimator:
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'estimator_config.yaml'))
 
     # specific parameters
     for additional_configuration in additional_configurations:
         additional_configuration_full_path = os.path.join(main_file_path, additional_configuration)
         with open(additional_configuration_full_path, 'r') as yaml_file:
             specific_params = yaml.load(yaml_file, yaml.SafeLoader)
-    
+
         # update base-parameters with specific parameters
         inference_gap_parameters.update(specific_params)
+
+    # update parameters with (optional) args given in command line
+    if args.lr:
+        inference_gap_parameters._config["training"]["learning_rate"] = args.lr
+    if args.dataset:
+        inference_gap_parameters._config["training"]["dataset"] = args.dataset
 
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
@@ -58,7 +73,7 @@ if __name__ == "__main__":
 
     # get specified random seed value from config
     seed_value = inference_gap_parameters.get("seed")
-    
+
     # import packages with non-deterministic behaviour
     import random
     import numpy as np
@@ -67,7 +82,7 @@ if __name__ == "__main__":
     random.seed(seed_value)
     np.random.seed(seed_value)
     torch.manual_seed(seed_value)
-    
+
     # establish whether gpu is available
     if torch.cuda.is_available() and inference_gap_parameters.get('use_gpu'):
         print("Using the GPU")
@@ -83,6 +98,6 @@ if __name__ == "__main__":
     inference_gap_parameters.save_configuration(checkpoint_path)
 
     runner = models.VAERunner(config=inference_gap_parameters)
-    
+
     runner.train()
-    
+

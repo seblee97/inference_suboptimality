@@ -1,0 +1,4 @@
+estimator:
+  type:                             IWAE                      # Type of log-likelihood estimator (e.g., None, IWAE)
+  iwae:
+    samples: 20                                               # Number of samples to use in the IWAE estimate.
