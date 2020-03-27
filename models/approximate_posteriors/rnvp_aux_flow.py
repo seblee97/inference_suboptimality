@@ -23,6 +23,7 @@ class RNVPAux(approximatePosterior, BaseFlow):
 
         # input to flow maps will be full latent dimension (for both latent and auxiliary)
         self.input_dimension = config.get(["model", "latent_dimension"])
+        self.auxillary_input = config.get(["training", "batch_size"])
 
         assert (self.num_flows == len(self.sigma_flow_layers)) and (self.num_flows == len(self.mu_flow_layers)), \
             "Number of flows (num_flows) does not match flow layers specified"
@@ -31,10 +32,10 @@ class RNVPAux(approximatePosterior, BaseFlow):
 
         # aux q(v|z) and r(v|z) have the same dimensions as the sigma/mu mappings 6.1.2
 
-        # self.auxillary_forward_dimensions = config.get(["flow", "auxillary_forward_dimensions"])
-        # self.auxillary_reverse_dimensions = config.get(["flow", "auxillary_reverse_dimensions"])
-        self.auxillary_forward_dimensions = config.get(["flow", "flow_layers"])
-        self.auxillary_reverse_dimensions = config.get(["flow", "flow_layers"])
+        self.auxillary_forward_dimensions = config.get(["flow", "auxillary_forward_dimensions"])
+        self.auxillary_reverse_dimensions = config.get(["flow", "auxillary_reverse_dimensions"])
+        #self.auxillary_forward_dimensions = config.get(["flow", "flow_layers"])
+        #self.auxillary_reverse_dimensions = config.get(["flow", "flow_layers"])
 
         approximatePosterior.__init__(self, config)
         BaseFlow.__init__(self, config)
@@ -70,7 +71,7 @@ class RNVPAux(approximatePosterior, BaseFlow):
 
         self.auxillary_forward_layers = nn.ModuleList([])
 
-        input_auxillary_forward_layer = self._initialise_weights(nn.Linear(self.input_dimension, self.auxillary_forward_dimensions[0]))
+        input_auxillary_forward_layer = self._initialise_weights(nn.Linear(self.auxillary_input, self.auxillary_forward_dimensions[0]))
         self.auxillary_forward_layers.append(input_auxillary_forward_layer)
 
         for h in range(len(self.auxillary_forward_dimensions[:-1])):
@@ -78,8 +79,9 @@ class RNVPAux(approximatePosterior, BaseFlow):
             self.auxillary_forward_layers.append(hidden_layer)
 
         # final layer back to latent dim
-        output_auxillary_forward_layer = self._initialise_weights(nn.Linear(self.auxillary_forward_dimensions[-1], self.latent_dimension))
+        output_auxillary_forward_layer = self._initialise_weights(nn.Linear(self.auxillary_forward_dimensions[-1], self.auxillary_input))
         self.auxillary_forward_layers.append(output_auxillary_forward_layer)
+
 
         # r(v|x,z) ###################################
 
@@ -88,12 +90,12 @@ class RNVPAux(approximatePosterior, BaseFlow):
         input_auxillary_reverse_layer = self._initialise_weights(nn.Linear(self.input_dimension, self.auxillary_reverse_dimensions[0]))
         self.auxillary_reverse_layers.append(input_auxillary_reverse_layer)
 
-        for h in range(len(self.reverse_auxillary_reverse_dimensions[:-1])):
+        for h in range(len(self.auxillary_reverse_dimensions[:-1])):
             hidden_layer = self._initialise_weights(nn.Linear(self.auxillary_reverse_dimensions[h], self.auxillary_reverse_dimensions[h + 1]))
             self.auxillary_reverse_layers.append(hidden_layer)
 
         # final layer back to latent dim
-        output_auxillary_reverse_layer = self._initialise_weights(nn.Linear(self.auxillary_reverse_dimensions[-1], self.latent_dimension))
+        output_auxillary_reverse_layer = self._initialise_weights(nn.Linear(self.auxillary_reverse_dimensions[-1], self.auxillary_input))
         self.auxillary_reverse_layers.append(output_auxillary_reverse_layer)
 
     def activation_derivative(self, x):
@@ -122,7 +124,34 @@ class RNVPAux(approximatePosterior, BaseFlow):
 
         return v
 
-    def forward(self, z: torch.Tensor):
+    def aux_forward(self, params: torch.Tensor):
+
+        dimensions = params.shape[1] // 2
+        mean = params[:, :dimensions]
+        log_var = params[:, dimensions:]
+
+        # Sample the standard deviation along each dimension of the factorized Gaussian posterior.
+        noise = self.noise_distribution.sample(log_var.shape).squeeze()
+        # Apply the reparameterization trick.
+        z0 = mean + torch.sqrt(torch.exp(log_var)) * noise
+        log_qz0 = -0.5 * (log_var.sum(1) + ((z0 - mean).pow(2) / torch.exp(log_var)).sum(1))
+
+        # auxiliary flow, forward psss ###################################
+
+        auxillary_variable_vector_params = self._auxillary_flow(params, "forward")
+
+        v0_mean = auxillary_variable_vector_params[:, :dimensions]
+        v0_var = auxillary_variable_vector_params[:, dimensions:]
+
+        # sample noise (reparameterisation trick), unsqueeze to match dimensions
+        noise = self.noise_distribution.sample(v0_var.shape).squeeze()
+        auxillary_variable_vector = v0_mean + torch.sqrt(v0_var) * noise
+
+        log_qv0 = -0.5 * (v0_var.sum(1) + ((auxillary_variable_vector - v0_mean).pow(2) / torch.exp(v0_var)).sum(1))
+
+        return z0, auxillary_variable_vector, log_qv0, log_qz0
+
+    def forward(self, z0: torch.Tensor, v0: torch.Tensor):
         """
         Forward pass. Assumes amortized u, w and b. Conditions on diagonals of u and w for invertibility
         will be be satisfied inside this function. Computes the following transformation:
@@ -136,28 +165,13 @@ class RNVPAux(approximatePosterior, BaseFlow):
         shape z = (batch_size, z_size).
         """
 
-        # auxiliary flow, forward psss ###################################
-
-        auxillary_variable_vector_params = self._auxillary_flow(z, forward)
-
-        cutoff = int(0.5 * auxillary_variable_vector_params.shape[1])
-
-        v0_mean = auxillary_variable_vector_params[:, :cutoff]
-        v0_var = auxillary_variable_vector_params[:, cutoff:]
-
-        # sample noise (reparameterisation trick), unsqueeze to match dimensions
-        noise = self.noise_distribution.sample(v0_var.shape).squeeze()
-        auxillary_variable_vector = v0_mean + torch.sqrt(v0_var) * noise
-
-        log_qv0 = -0.5 * (v0_var.sum(1) + ((auxillary_variable_vector - v0_mean).pow(2) / torch.exp(v0_var)).sum(1))
-
-        zT, vT = z, auxillary_variable_vector
+        zT, vT = z0, v0
 
         # apply norm flows to zT and vT ###################################
 
         apply_flow_to_top_partition = True
 
-        log_det_jacobian = torch.zeros(z0.shape[0])
+        log_det_jacobian = torch.zeros(zT.shape[0])
 
         # this implements 9, 10 from https://arxiv.org/pdf/1801.03558.pdf
         for f in range(self.num_flows):
@@ -174,44 +188,52 @@ class RNVPAux(approximatePosterior, BaseFlow):
 
             apply_flow_to_top_partition = not apply_flow_to_top_partition
 
+        return zT, vT, log_det_jacobian
+
+    def aux_reverse(self, zT: torch.Tensor, vT: torch.Tensor):
+
         # auxiliary flow, reverse pass #####################################
 
-        auxillary_variable_reverse = self._auxillary_flow(zT, reverse)
+        dimensions = self.auxillary_input // 2
+        auxillary_variable_reverse = self._auxillary_flow(zT, "reverse")
 
-        vT_mean = auxillary_variable_reverse[:, :cutoff]
-        vT_var = auxillary_variable_reverse[:, cutoff:]
+        vT_mean = auxillary_variable_reverse[:, :dimensions]
+        vT_var = auxillary_variable_reverse[:, dimensions:]
 
-        log_rvT = -0.5 * (vT_var.sum(1) + ((auxillary_variable_reverse - vT_mean).pow(2) / torch.exp(vT_var)).sum(1))
+        #auxillary_reversee_vector = v0_mean + torch.sqrt(v0_var)
+        log_rvT = -0.5 * (vT_var.sum(1) + ((vT - vT_mean).pow(2) / torch.exp(vT_var)).sum(1))
+
+        return auxillary_variable_reverse, vT_mean, vT_var, log_rvT
 
         # log_prob = log_qv0 - log_det_jacobian - log_rvT
 
-    """
-        zk = zk.unsqueeze(2)
+        """
+            zk = zk.unsqueeze(2)
 
-        # reparameterize u such that the flow becomes invertible (see appendix paper)
-        uw = torch.bmm(w, u)
-        m_uw = -1. + self.softplus(uw)
-        w_norm_sq = torch.sum(w ** 2, dim=2, keepdim=True)
-        u_hat = u + ((m_uw - uw) * w.transpose(2, 1) / w_norm_sq)
+            # reparameterize u such that the flow becomes invertible (see appendix paper)
+            uw = torch.bmm(w, u)
+            m_uw = -1. + self.softplus(uw)
+            w_norm_sq = torch.sum(w ** 2, dim=2, keepdim=True)
+            u_hat = u + ((m_uw - uw) * w.transpose(2, 1) / w_norm_sq)
 
-        # compute flow with u_hat
-        wzb = torch.bmm(w, zk) + b
-        z = zk + u_hat * self.h(wzb)
-        z = z.squeeze(2)
+            # compute flow with u_hat
+            wzb = torch.bmm(w, zk) + b
+            z = zk + u_hat * self.h(wzb)
+            z = z.squeeze(2)
 
-        # compute logdetJ
-        psi = w * self.der_h(wzb)
-        log_det_jacobian = torch.log(torch.abs(1 + torch.bmm(psi, u_hat)))
-        log_det_jacobian = log_det_jacobian.squeeze(2).squeeze(1)
-    """
+            # compute logdetJ
+            psi = w * self.der_h(wzb)
+            log_det_jacobian = torch.log(torch.abs(1 + torch.bmm(psi, u_hat)))
+            log_det_jacobian = log_det_jacobian.squeeze(2).squeeze(1)
+        """
 
-        return zT, log_det_jacobian, log_qv0, log_rvT
 
 
     def sample(self, parameters):
         # There are two dimensions to |parameters|; the second one consists of two halves:
         #   1. The first half represents the multidimensional mean of the Gaussian posterior.
         #   2. The second half represents the multidimensional log variance of the Gaussian posterior.
+        '''
         dimensions = parameters.shape[1] // 2
         mean = parameters[:, :dimensions]
         log_var = parameters[:, dimensions:]
@@ -220,8 +242,13 @@ class RNVPAux(approximatePosterior, BaseFlow):
         noise = self.noise_distribution.sample(log_var.shape).squeeze()
         # Apply the reparameterization trick.
         z0 = mean + torch.sqrt(torch.exp(log_var)) * noise
+        '''
+
+        z0, auxillary_variable_vector, log_qv0, log_qz0 = self.aux_forward(parameters)
 
         # The above is identical to gaussian case, now apply flow transformations
-        zT, log_det_jacobian, log_qv0, log_rvT = self.forward(z0)
+        zT, vT, log_det_jacobian = self.forward(z0, auxillary_variable_vector)
 
-        return zT, [mean, log_var, z0, log_qv0, log_rvT, log_det_jacobian]
+        auxillary_variable_reverse, vT_mean, vT_var, log_rvT = self.aux_reverse(zT, vT)
+
+        return zT, [z0, log_qv0, log_qz0, log_rvT, log_det_jacobian] # what to return?

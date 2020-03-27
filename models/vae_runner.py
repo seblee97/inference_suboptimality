@@ -8,9 +8,9 @@ from .networks import deconvNetwork
 from .encoder import Encoder
 from .decoder import Decoder
 
-from .approximate_posteriors import gaussianPosterior, RNVPPosterior
+from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux
 
-from .loss_modules import gaussianLoss, RNVPLoss
+from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss
 from .likelihood_estimators import BaseEstimator, IWAEEstimator
 
 from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader
