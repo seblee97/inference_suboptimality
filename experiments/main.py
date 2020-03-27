@@ -35,12 +35,14 @@ if __name__ == "__main__":
 
     approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
     if approximate_posterior_configuration == 'gaussian':
-        pass 
+        pass
     elif approximate_posterior_configuration == 'rnvp_norm_flow':
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
+    elif approximate_posterior_configuration == 'rnvp_aux_flow':
         additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
     else:
         raise ValueError("approximate_posterior_configuration {} not recognised. Please use 'gaussian', \
-                or 'rnvp_norm_flow'".format(approximate_posterior_configuration))
+                'rnvp_norm_flow', or 'rnvp_aux_flow'".format(approximate_posterior_configuration))
 
     is_estimator = inference_gap_parameters.get(["model", "is_estimator"])
     if is_estimator:
@@ -51,7 +53,7 @@ if __name__ == "__main__":
         additional_configuration_full_path = os.path.join(main_file_path, additional_configuration)
         with open(additional_configuration_full_path, 'r') as yaml_file:
             specific_params = yaml.load(yaml_file, yaml.SafeLoader)
-    
+
         # update base-parameters with specific parameters
         inference_gap_parameters.update(specific_params)
 
@@ -71,7 +73,7 @@ if __name__ == "__main__":
 
     # get specified random seed value from config
     seed_value = inference_gap_parameters.get("seed")
-    
+
     # import packages with non-deterministic behaviour
     import random
     import numpy as np
@@ -80,7 +82,7 @@ if __name__ == "__main__":
     random.seed(seed_value)
     np.random.seed(seed_value)
     torch.manual_seed(seed_value)
-    
+
     # establish whether gpu is available
     if torch.cuda.is_available() and inference_gap_parameters.get('use_gpu'):
         print("Using the GPU")
@@ -96,6 +98,6 @@ if __name__ == "__main__":
     inference_gap_parameters.save_configuration(checkpoint_path)
 
     runner = models.VAERunner(config=inference_gap_parameters)
-    
+
     runner.train()
-    
+
