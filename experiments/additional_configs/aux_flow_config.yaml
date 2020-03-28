@@ -1,0 +1,12 @@
+flow:
+
+  num_flows:                          2
+  flow_layers:                        [100, 100]
+  nonlinearity:                       elu
+  weight_initialisation:              default
+  auxillary_forward_dimensions:       [100, 100]
+  auxillary_reverse_dimensions:       [100, 100]
+
+model:
+  encoder:
+    output_dimension_factor:           1
