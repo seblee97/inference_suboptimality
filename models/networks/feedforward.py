@@ -11,6 +11,7 @@ class feedForwardNetwork(baseNetwork):
         self.input_dimension = config.get(["model", "input_dimension"])
         self.latent_dimension = config.get(["model", "latent_dimension"])
         self.hidden_dimensions = config.get(["model", "encoder", "hidden_dimensions"])
+        self.factor = config.get(["model", "encoder", "output_dimension_factor"])
         # The activation function is defined at mother class level as well as forward
         baseNetwork.__init__(self, config=config)
         
@@ -26,5 +27,5 @@ class feedForwardNetwork(baseNetwork):
             self.layers.append(hidden_layer)
 
         # final layer to latent dim
-        hidden_to_latent_layer = self._initialise_weights(nn.Linear(self.hidden_dimensions[-1], 2 * self.latent_dimension))
+        hidden_to_latent_layer = self._initialise_weights(nn.Linear(self.hidden_dimensions[-1], self.factor * self.latent_dimension))
         self.layers.append(hidden_to_latent_layer)
