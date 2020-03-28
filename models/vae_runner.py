@@ -95,7 +95,7 @@ class VAERunner():
         self.optimiser_params = config.get(["training", "optimiser", "params"])
 
         self.is_estimator = config.get(["model", "is_estimator"])
-
+    
     def _setup_encoder(self, config: Dict):
 
         # network
