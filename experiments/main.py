@@ -13,8 +13,30 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml') # base_config.yaml or base_config_CIFAR.yaml
 parser.add_argument('-additional_configs', '--ac', type=str, help='path to folder containing additional configuration files (e.g. for flow)', default='additional_configs/')
 
+parser.add_argument('--experiment_name', type=str, default=None)
+
 parser.add_argument('-learning_rate', '--lr', type=float, default=None)
-parser.add_argument('-dataset', type=str, default=None)
+parser.add_argument('--dataset', type=str, default=None)
+parser.add_argument('--params', nargs='+', type=float, default=None)
+parser.add_argument('-batchsize', '--bs', type=int, default=None)
+parser.add_argument('-number_epochs', '--ne', type=int, default=None)
+parser.add_argument('-warm_up','--wu', type=int, default=None)
+parser.add_argument('-loss_function', '--lf', type=str, default=None)
+
+parser.add_argument('-approximate_posterior', '--ap', type=str, default=None)
+parser.add_argument('-is_estimator', '--ie', action='store_true')
+parser.add_argument('-encoder_network_type', '--ent', type=str, default=None)
+parser.add_argument('-encoder_hidden_dimensions', '--ehd', type=str, default=None)
+parser.add_argument('-encoder_output_dimensions', '--eod', type=str, default=None)
+parser.add_argument('-decoder_network_type', '--dnt', type=str, default=None)
+parser.add_argument('-decoder_hidden_dimensions', '--dhd', type=str, default=None)
+
+parser.add_argument('-decoder_unfreeze_ratio', '--dur', type=float, default=None)
+parser.add_argument('-encoder_unfreeze_ratio', '--eur', type=float, default=None)
+
+parser.add_argument('-estimator_type', '--et', type=str, default=None)
+parser.add_argument('-IWAE_samples', '--IWAEs', type=float, default=None)
+parser.add_argument('-IWAE_batch_size', '--IWAEbs', type=float, default=None)
 
 args = parser.parse_args()
 
@@ -44,6 +66,77 @@ if __name__ == "__main__":
         raise ValueError("approximate_posterior_configuration {} not recognised. Please use 'gaussian', \
                 'rnvp_norm_flow', or 'rnvp_aux_flow'".format(approximate_posterior_configuration))
 
+    # update parameters with (optional) args given in command line
+    # Experiment level
+    if args.experiment_name:
+        inference_gap_parameters._config["experiment_name"] = args.experiment_name
+    
+    # Training level
+    if args.lr:
+        inference_gap_parameters._config["training"]["learning_rate"] = args.lr
+    if args.dataset:
+        inference_gap_parameters._config["training"]["dataset"] = args.dataset
+    if args.params:
+        inference_gap_parameters._config["training"]["optimiser"]["params"] = args.params
+    if args.bs:
+        inference_gap_parameters._config["training"]["batch_size"] = args.bs
+    if args.ne:
+        inference_gap_parameters._config["training"]["num_epochs"] = args.ne
+    if args.wu:
+        inference_gap_parameters._config["training"]["warm_up_program"] = args.wu
+    if args.lf:
+        inference_gap_parameters._config["training"]["loss_function"] = args.lf
+    if args.dur:
+        inference_gap_parameters._config["training"]["decoder_unfreeze_ratio"] = args.dur
+    if args.eur:
+        inference_gap_parameters._config["training"]["encoder_unfreeze_ratio"] = args.eur
+
+    # Model level
+    if args.ap:
+        inference_gap_parameters._config["model"]["approximate_posterior"] = args.ap
+    if args.ie:
+        inference_gap_parameters._config["model"]["is_estimator"] = args.ie
+    if args.ent:
+        inference_gap_parameters._config["model"]["encoder"]["network_type"] = args.ent
+    if args.ehd:
+        whole_structure = []
+        for item in args.ehd.split(','):
+            substructure = []
+            for sub_item in item.split(' '):
+                if(not(sub_item)):
+                    continue
+                substructure.append(int(sub_item))
+            whole_structure.append(substructure)
+        if (len(whole_structure) == 1):
+            whole_structure = whole_structure[0]
+        inference_gap_parameters._config["model"]["encoder"]["hidden_dimensions"] = whole_structure
+    if args.eod:
+        inference_gap_parameters._config["model"]["encoder"]["output_dimension_factor"] = args.eod
+    if args.dnt:
+        inference_gap_parameters._config["model"]["decoder"]["network_type"] = args.dnt
+    if args.dhd:
+        whole_structure = []
+        for item in args.dhd.split(','):
+            substructure = []
+            for sub_item in item.split(' '):
+                if(not(sub_item)):
+                    continue
+                substructure.append(int(sub_item))
+            whole_structure.append(substructure)
+        if (len(whole_structure) == 1):
+            whole_structure = whole_structure[0]
+        inference_gap_parameters._config["model"]["decoder"]["hidden_dimensions"] = whole_structure
+    if args.dur:
+        inference_gap_parameters._config["model"]["decoder"]["decoder_unfreeze_ratio"] = args.dur
+    
+    # Estimator level
+    if args.et:
+        inference_gap_parameters._config["estimator"]["type"] = args.et
+    if args.IWAEs:
+        inference_gap_parameters._config["estimator"]["iwae"]["samples"] = args.IWAEs
+    if args.IWAEbs:
+        inference_gap_parameters._config["estimator"]["iwae"]["batch_size"] = args.IWAEbs
+
     is_estimator = inference_gap_parameters.get(["model", "is_estimator"])
     if is_estimator:
         additional_configurations.append(os.path.join(supplementary_configs_path, 'estimator_config.yaml'))
@@ -56,13 +149,7 @@ if __name__ == "__main__":
 
         # update base-parameters with specific parameters
         inference_gap_parameters.update(specific_params)
-
-    # update parameters with (optional) args given in command line
-    if args.lr:
-        inference_gap_parameters._config["training"]["learning_rate"] = args.lr
-    if args.dataset:
-        inference_gap_parameters._config["training"]["dataset"] = args.dataset
-
+    
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
     experiment_name = inference_gap_parameters.get("experiment_name")
