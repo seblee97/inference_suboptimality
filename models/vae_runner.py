@@ -11,7 +11,7 @@ from .decoder import Decoder
 from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux
 
 from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss
-from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator
+from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
 
 from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader
 
@@ -175,19 +175,32 @@ class VAERunner():
 
         :param config: parsed configuration file.
         """
+        def construct_estimator(estimator_type: str) -> BaseEstimator:
+            """
+            Constructs a BaseEstimator of the given type.
+
+            :param estimator_type: Type of the estimator (capitalized)
+            :return: The BaseEstimator object.
+            """
+            if estimator_type == "IWAE":
+                num_samples = config.get(['estimator', 'iwae', 'num_samples'])
+                batch_size = config.get(['estimator', 'iwae', 'batch_size'])
+                return IWAEEstimator(num_samples, batch_size)
+            elif estimator_type == "AIS":
+                num_chains = config.get(['estimator', 'ais', 'num_chains'])
+                batch_size = config.get(['estimator', 'ais', 'batch_size'])
+                num_dists = config.get(['estimator', 'ais', 'num_dists'])
+                num_leapfrog_steps = config.get(['estimator', 'ais', 'num_leapfrog_steps'])
+                return AISEstimator(num_chains, batch_size, self.latent_dimension, num_dists, num_leapfrog_steps)
+            elif estimator_type == "MAX":
+                ais_estimator = construct_estimator("AIS")
+                iwae_estimator = construct_estimator("IWAE")
+                return MaxEstimator(ais_estimator, iwae_estimator)
+            else:
+                raise ValueError("Estimator {} not recognised".format(estimator_type))
+
         estimator_type = config.get(["estimator", "type"]).upper()
-        if estimator_type == "IWAE":
-            num_samples = config.get(['estimator', 'iwae', 'num_samples'])
-            batch_size = config.get(['estimator', 'iwae', 'batch_size'])
-            return IWAEEstimator(num_samples, batch_size)
-        elif estimator_type == "AIS":
-            num_chains = config.get(['estimator', 'ais', 'num_chains'])
-            batch_size = config.get(['estimator', 'ais', 'batch_size'])
-            num_dists = config.get(['estimator', 'ais', 'num_dists'])
-            num_leapfrog_steps = config.get(['estimator', 'ais', 'num_leapfrog_steps'])
-            return AISEstimator(num_chains, batch_size, self.latent_dimension, num_dists, num_leapfrog_steps)
-        else:
-            raise ValueError("Estimator {} not recognised".format(estimator_type))
+        return construct_estimator(estimator_type)
 
     def train(self):
 

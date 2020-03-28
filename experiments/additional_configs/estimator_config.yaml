@@ -1,5 +1,5 @@
 estimator:
-  type: "AIS"                                                 # Type of log-likelihood estimator (e.g., AIS, IWAE)
+  type: "MAX"                                                 # Type of log-likelihood estimator (e.g., AIS, IWAE, MAX)
   iwae:
     num_samples: 5000                                         # Number of samples.
     batch_size: 80                                            # Number of inputs to sample at once.
