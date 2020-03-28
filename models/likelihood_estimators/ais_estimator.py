@@ -3,30 +3,29 @@ from models.loss_modules import baseLoss
 
 import math
 import torch
-import torch.nn as nn
 
 
 class AISEstimator(BaseEstimator):
 
-    def __init__(self, num_samples: float, batch_size: int, latent_size: int, num_dists: int, num_leapfrog_steps: int):
+    def __init__(self, num_chains: float, batch_size: int, latent_size: int, num_dists: int, num_leapfrog_steps: int):
         """
         Constructs a new AISEstimator with the given number of samples, batch size,
         latent vector size, distribution count, and leapfrog steps.
 
-        :param num_samples: Number of samples
+        :param num_chains: Number of simulation chains per input
         :param batch_size: Size of the minibatches
         :param latent_size: Size of the latent vector in the VAE
         :param num_dists: Number of intermediate distributions
         :param num_leapfrog_steps: Number of leapfrog steps in the HMC simulation
         """
         BaseEstimator.__init__(self)
-        self._num_samples = num_samples
+        self._num_chains = num_chains
         self._batch_size = batch_size
         self._latent_size = latent_size
         self._num_dists = num_dists
         self._num_leapfrog_steps = num_leapfrog_steps
 
-    def estimate_log_likelihood_loss(self, batch_input: torch.Tensor, vae: nn.Module, _: baseLoss) -> torch.Tensor:
+    def estimate_log_likelihood_loss(self, batch_input: torch.Tensor, vae: torch.nn.Module, _: baseLoss) -> torch.Tensor:
         """
         Estimates the average log-likelihood loss of the given input batch using
         the provided VAE and loss module.
@@ -85,10 +84,6 @@ class AISEstimator(BaseEstimator):
             :param v: The velocity in HMC
             :return: The kinetic energy associated with the given velocity
             """
-            # Note: the Inference Suboptimality authors use a "normalized" version
-            #       which is the negative log-likelihood of the velocity.
-            # TODO: Determine if the "normalized" kinetic energy works better.
-            # return 0.5 * (v.pow(2).sum(1) + v.size(1) * torch.log(torch.Tensor([2 * math.pi])))
             return 0.5 * (v * v).sum(1)
 
         def update_velocity(x: torch.Tensor, z: torch.Tensor, beta: float, v: torch.Tensor, step_sizes: torch.Tensor) -> torch.Tensor:
@@ -130,8 +125,8 @@ class AISEstimator(BaseEstimator):
         for beg in range(0, input_batch_size, self._batch_size):
             # Truncate the end index if it exceeds the size of the input batch.
             end = min(input_batch_size, beg + self._batch_size)
-            # Duplicate the input subbatch once for each sample in |self._num_samples|.
-            minibatch = batch_input[beg:end].repeat(self._num_samples, *batch_repeat_shape)
+            # Duplicate the input subbatch once for each sample in |self._num_chains|.
+            minibatch = batch_input[beg:end].repeat(self._num_chains, *batch_repeat_shape)
             minibatch_size = minibatch.size(0)
             minibatch_size_broadcast = (minibatch.size(0), 1)
 
@@ -175,10 +170,10 @@ class AISEstimator(BaseEstimator):
                 # The probability of a latent vector is the inverse exponential of its energy.
                 prev_E = U(minibatch, prev_z, b1) + K(prev_v)
                 next_E = U(minibatch, next_z, b1) + K(next_v)
-                diff_E = (next_E - prev_E).reshape(minibatch_size_broadcast)
+                diff_E = (prev_E - next_E).reshape(minibatch_size_broadcast)
 
                 # Accept or reject the proposals using the Metropolis criterion.
-                accepted = torch.exp(diff_E) < torch.rand(diff_E.size())
+                accepted = torch.rand(diff_E.size()) < torch.exp(diff_E)
                 rejected = ~accepted
                 z = next_z * accepted + prev_z * rejected
 
@@ -192,7 +187,7 @@ class AISEstimator(BaseEstimator):
                 step_sizes = step_sizes.clamp(1E-4, 5E-1)
 
             # Align the rows of the weights with the inputs in the minibatch.
-            log_weights = log_weights.view(self._num_samples, -1).transpose(0, 1)
+            log_weights = log_weights.view(self._num_chains, -1).transpose(0, 1)
             # Perform the same aggregation as IWAE.
             max_log_weights, _ = torch.max(log_weights, 1, keepdim=True)
             elbo += torch.sum(torch.log(torch.mean(torch.exp(log_weights - max_log_weights), 1)) + torch.squeeze(max_log_weights))
