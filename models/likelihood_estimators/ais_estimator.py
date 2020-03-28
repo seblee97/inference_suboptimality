@@ -106,6 +106,8 @@ class AISEstimator(BaseEstimator):
             duu = torch.ones(u.size(0))
             # Automagically compute ∂U/∂z.
             duz = torch.autograd.grad(u, z, duu)[0]
+            # The clamping constants below were adopted from the authors' code.
+            duz = torch.clamp(duz, -1E4, 1E4)
             # Adjust the velocity by its scaled gradient.
             return v - duz * step_sizes
 
