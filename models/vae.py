@@ -14,7 +14,22 @@ class VAE(nn.Module):
         
         self.encoder = encoder
         self.decoder = decoder
-    
+
+    def freeze_decoder(self):
+        for param in self.decoder.parameters():
+            param.requires_grad = False
+
+    def freeze_encoder(self):
+        for param in self.encoder.parameters():
+            param.requires_grad = False
+
+    def unfreeze_decoder(self):
+        for param in self.decoder.parameters():
+            param.requires_grad = True
+
+    def unfreeze_encoder(self):
+        for param in self.encoder.parameters():
+            param.requires_grad = True
     
     def forward(self, x):
 

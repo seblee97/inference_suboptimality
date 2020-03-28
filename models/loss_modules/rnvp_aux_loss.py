@@ -21,7 +21,7 @@ class RNVPAuxLoss(baseLoss):
 
         vae_reconstruction = vae_output['x_hat']
         vae_latent = vae_output['z']
-        mean, log_var, z0, log_qv0, log_rvT, log_det_jacobian = vae_output['params']
+        mean, log_var, z0, log_det_jacobian, rv, rv_mean, rv_log_var = vae_output['params']
 
         # Calculate the logs in the ELBO with ONE sample from the expectation.
         # Flow adds extra term - the sum of the logs of the determinants of the transformation Jacobians.
@@ -33,8 +33,14 @@ class RNVPAuxLoss(baseLoss):
         log_p_xz = -F.binary_cross_entropy(vae_reconstruction, x, reduction='none').sum(-1)
         log_p_z = -0.5 * vae_latent.pow(2).sum(1)
         log_q_zx = -0.5 * (log_var.sum(1) + ((z0 - mean).pow(2) / torch.exp(log_var)).sum(1)) - log_det_jacobian
+
+        # import pdb; pdb.set_trace()
+
+        # reverse model log
+        log_r_vxz = -0.5 * (rv_log_var.sum(1) + ((rv - rv_mean).pow(2) / torch.exp(rv_log_var)).sum(1))
+
         # TODO: Add a warm-up constant to the last two terms.
-        log_p_x = log_p_xz + log_p_z - warm_up * log_q_zx
+        log_p_x = log_p_xz + log_p_z - warm_up * log_q_zx + log_r_vxz
 
         # The ELBO is defined to be the mean of the logs in the batch.
         elbo = torch.mean(log_p_x)
@@ -48,5 +54,6 @@ class RNVPAuxLoss(baseLoss):
         loss_metrics["log p(z)"] = float(torch.mean(log_p_z))
         loss_metrics["log q(z|x)"] = float(torch.mean(log_q_zx))
         loss_metrics["log_det_jacobian"] = float(torch.mean(log_det_jacobian))
+        loss_metrics["reverse: log r(v|x,z)"] = float(torch.mean(log_r_vxz))
 
         return loss, loss_metrics, log_p_x

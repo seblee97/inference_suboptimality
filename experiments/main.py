@@ -39,7 +39,7 @@ if __name__ == "__main__":
     elif approximate_posterior_configuration == 'rnvp_norm_flow':
         additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
     elif approximate_posterior_configuration == 'rnvp_aux_flow':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'aux_flow_config.yaml'))
     else:
         raise ValueError("approximate_posterior_configuration {} not recognised. Please use 'gaussian', \
                 'rnvp_norm_flow', or 'rnvp_aux_flow'".format(approximate_posterior_configuration))
