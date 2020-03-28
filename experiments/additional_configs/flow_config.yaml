@@ -1,9 +1,6 @@
 flow:
 
-  flow_type:                          rnvp_aux_flow #rnvp_flow, rnvp_aux_flow, base_flow
   num_flows:                          2
   flow_layers:                        [100, 100]
   nonlinearity:                       elu
   weight_initialisation:              default
-  auxillary_forward_dimensions:       [100, 100]
-  auxillary_reverse_dimensions:       [100, 100]
