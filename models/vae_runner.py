@@ -181,11 +181,11 @@ class VAERunner():
             batch_size = config.get(['estimator', 'iwae', 'batch_size'])
             return IWAEEstimator(num_samples, batch_size)
         elif estimator_type == "AIS":
-            num_samples = config.get(['estimator', 'ais', 'num_samples'])
+            num_chains = config.get(['estimator', 'ais', 'num_chains'])
             batch_size = config.get(['estimator', 'ais', 'batch_size'])
             num_dists = config.get(['estimator', 'ais', 'num_dists'])
             num_leapfrog_steps = config.get(['estimator', 'ais', 'num_leapfrog_steps'])
-            return AISEstimator(num_samples, batch_size, self.latent_dimension, num_dists, num_leapfrog_steps)
+            return AISEstimator(num_chains, batch_size, self.latent_dimension, num_dists, num_leapfrog_steps)
         else:
             raise ValueError("Estimator {} not recognised".format(estimator_type))
 
