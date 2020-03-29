@@ -23,6 +23,7 @@ parser.add_argument('-number_epochs', '--ne', type=int, default=None)
 parser.add_argument('-warm_up','--wu', type=int, default=None)
 parser.add_argument('-loss_function', '--lf', type=str, default=None)
 
+parser.add_argument('-latent_dimension', '--ld', type=float, default=None)
 parser.add_argument('-approximate_posterior', '--ap', type=str, default=None)
 parser.add_argument('-is_estimator', '--ie', action='store_true')
 parser.add_argument('-encoder_network_type', '--ent', type=str, default=None)
@@ -92,6 +93,8 @@ if __name__ == "__main__":
         inference_gap_parameters._config["training"]["encoder_unfreeze_ratio"] = args.eur
 
     # Model level
+    if args.ld:
+        inference_gap_parameters._config["model"]["latent_dimension"] = args.ld
     if args.ap:
         inference_gap_parameters._config["model"]["approximate_posterior"] = args.ap
     if args.ie:
