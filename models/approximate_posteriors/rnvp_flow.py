@@ -9,7 +9,7 @@ import torch.distributions as tdist
 from typing import Dict
 
 class RNVPPosterior(approximatePosterior, BaseFlow):
-    
+
     """Applied Real-NVP normalising flows (Dinh et al https://arxiv.org/abs/1605.08803)"""
 
     def __init__(self, config: Dict):
@@ -49,7 +49,7 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
             for f in range(len(self.sigma_flow_layers[:-1])):
                 sigma_map.append(self._initialise_weights(nn.Linear(self.sigma_flow_layers[f], self.sigma_flow_layers[f + 1])))
                 mu_map.append(self._initialise_weights(nn.Linear(self.mu_flow_layers[f], self.mu_flow_layers[f + 1])))
-            
+
             sigma_map.append(self._initialise_weights(nn.Linear(self.sigma_flow_layers[-1], self.input_dimension)))
             mu_map.append(self._initialise_weights(nn.Linear(self.mu_flow_layers[-1], self.input_dimension)))
 
@@ -80,7 +80,7 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
             else:
                 sigma_map = self._mapping_forward(self.flow_sigma_modules[f], z1)
                 z2 = z2 * torch.exp(sigma_map) + self._mapping_forward(self.flow_mu_modules[f], z1)
-            
+
             # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
             log_det_transformation = torch.sum(sigma_map, axis=1)
             log_det_jacobian += log_det_transformation
@@ -105,6 +105,10 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
         z0 = mean + torch.sqrt(torch.exp(log_var)) * noise
 
         # The above is identical to gaussian case, now apply flow transformations
-        z, log_det_jacobian = self.forward(z0)
+        log_det_jacobian = torch.zeros(z0.shape[0])
+        z = z0
+        for f in range(self.num_flows):
+            z, log_det_j = self.forward(z)
+            log_det_jacobian += log_det_j
 
         return z, [mean, log_var, z0, log_det_jacobian]
