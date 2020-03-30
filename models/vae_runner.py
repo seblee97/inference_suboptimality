@@ -43,6 +43,14 @@ class VAERunner():
         # extract relevant parameters from config
         self._extract_parameters(config)
 
+        # construct hash of current run 
+        self._construct_model_hash(config)
+
+        # set path to save model weights for this run (make config path if necessary)
+        config_save_path = os.path.join(self.saved_models_path, self.config_hash)
+        self.save_model_path = os.path.join(config_save_path, self.experiment_timestamp)
+        os.makedirs(config_save_path, exist_ok=True)
+
         # initialise loss function and optimiser
         self.loss_function = torch.nn.MSELoss()
 
