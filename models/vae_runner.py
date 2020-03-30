@@ -78,7 +78,7 @@ class VAERunner():
             self.localised_ammortisation_network = self._setup_local_ammortisation(config)
 
         # initialise general tensorboard writer
-        self.writer = SummaryWriter(self.checkpoint_path)
+        self.writer = SummaryWriter(self.log_path)
 
     def _extract_parameters(self, config: Dict) -> None:
         """
@@ -86,7 +86,10 @@ class VAERunner():
         """
         self.device = config.get("device")
 
-        self.checkpoint_path = config.get("checkpoint_path")
+        self.log_path = config.get("log_path")
+        self.checkpoint_frequency = config.get("checkpoint_frequency")
+        self.experiment_timestamp = config.get("experiment_timestamp")
+        self.saved_models_path = config.get("saved_models_path")
 
         self.encoder_type = config.get(["model", "encoder", "network_type"])
         self.decoder_type = config.get(["model", "decoder", "network_type"])
@@ -97,9 +100,8 @@ class VAERunner():
         self.dataset = config.get(["training", "dataset"])
         self.batch_size = config.get(["training", "batch_size"])
 
-        self.warm_up_program =config.get(["training", "warm_up_program"])
+        self.warm_up_program = config.get(["training", "warm_up_program"])
         self.num_epochs = config.get(["training", "num_epochs"])
-        self.loss_type = config.get(["training", "loss_function"])
         self.learning_rate = config.get(["training", "learning_rate"])
 
         self.test_frequency = config.get(["testing", "test_frequency"])
