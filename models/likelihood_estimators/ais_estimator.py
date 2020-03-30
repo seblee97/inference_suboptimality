@@ -1,7 +1,6 @@
 from .base_estimator import BaseEstimator
 from models.loss_modules import baseLoss
 
-import math
 import torch
 
 
@@ -55,10 +54,11 @@ class AISEstimator(BaseEstimator):
                      β with respect to the given input and latent vector.
             """
             # The probability density of p(x|z) is the joint Bernoulli distribution.
-            output = torch.sigmoid(vae.decoder(z))
-            log_p_xz = -torch.nn.functional.binary_cross_entropy(output, x, reduction='none').view(x.shape[0], -1).sum(1)
+            output = vae.decoder(z)
+            log_p_xz = -torch.nn.functional.binary_cross_entropy_with_logits(output, x, reduction='none').view(x.shape[0], -1).sum(1)
             # The probability density of p(z) is the standard Gaussian distribution.
-            log_p_z = -0.5 * (z.pow(2).sum(1) + z.size(1) * torch.log(torch.Tensor([2 * math.pi])))
+            # Note that the constant term is ignored since it will get cancelled anyway.
+            log_p_z = -0.5 * z.pow(2).sum(1)
             # Compute log p(x, z, β) as derived in the function description.
             return beta * log_p_xz + log_p_z
 
@@ -121,7 +121,9 @@ class AISEstimator(BaseEstimator):
         # Assume a linear AIS schedule for the values of β.
         schedule = torch.linspace(start=0.0, end=1.0, steps=self._num_dists)
 
+        # Accumulate the ELBOs of each minibatch.
         elbo = 0
+
         # Cache the input batch size; it is used several times below.
         input_batch_size = len(batch_input)
         for beg in range(0, input_batch_size, self._batch_size):
@@ -196,8 +198,6 @@ class AISEstimator(BaseEstimator):
 
         # By definition, the loss is the negative average ELBO.
         loss = -elbo / input_batch_size
-
-        # ----------------------------------------------------------------------
 
         if training:
             vae.train()
