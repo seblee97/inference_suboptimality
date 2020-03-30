@@ -144,6 +144,10 @@ if __name__ == "__main__":
     if is_estimator:
         additional_configurations.append(os.path.join(supplementary_configs_path, 'estimator_config.yaml'))
 
+    optimise_local = inference_gap_parameters.get(["model", "optimise_local"])
+    if optimise_local:
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'local_ammortisation_config.yaml'))
+
     # specific parameters
     for additional_configuration in additional_configurations:
         additional_configuration_full_path = os.path.join(main_file_path, additional_configuration)
