@@ -5,6 +5,7 @@ data/FashionMNIST/
 data/cifar-10-batches-py
 cifar-10-python.tar.gz
 experiments/results/
+experiments/saved_models/
 **__pycache__/
 **.pyc
 # IDE
