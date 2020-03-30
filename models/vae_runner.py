@@ -111,7 +111,48 @@ class VAERunner():
         self.optimiser_params = config.get(["training", "optimiser", "params"])
 
         self.is_estimator = config.get(["model", "is_estimator"])
-    
+        self.optimise_local = config.get(["model", "optimise_local"])
+
+        if self.optimise_local:
+            self.max_num_epochs = config.get(["local_ammortisation", "max_num_epochs"])
+            self.convergence_check_period = config.get(["local_ammortisation", "convergence_check_period"])
+            self.cycles_until_convergence = config.get(["local_ammortisation", "cycles_until_convergence"])
+            self.mc_samples = config.get(["local_ammortisation", "mc_samples"])
+
+    def _construct_model_hash(self, config: Dict):
+        """
+        Unique signature for current config architecture.
+        Note 1. Fields such as learning rate and even non-linearities are not included as they do not 
+        affect capacity/architecture of model and thus do not impact save/load compatibility of config.
+        Note 2. The field optimise_local is not included in the config, when it is set to true a new hash
+        is constructed for this run so that runs can be saved independently without conflict.
+        """
+        model_specification_components = [
+                config.get(["model", "approximate_posterior"]),
+                config.get(["model", "input_dimension"]),
+                config.get(["model", "latent_dimension"]),
+                config.get(["model", "encoder", "network_type"]),
+                config.get(["model", "encoder", "hidden_dimensions"]),
+                config.get(["model", "encoder", "output_dimension_factor"]),
+                config.get(["model", "decoder", "network_type"]),
+                config.get(["model", "decoder", "hidden_dimensions"]),
+            ]
+
+        if self.approximate_posterior_type == "rnvp_norm_flow":
+            self.model_specification_components.extend([
+                config.get(["flow", "flow_layers"])
+            ])
+
+        if self.approximate_posterior_type == "rnvp_aux_flow":
+            self.model_specification_components.extent([
+                config.get(["flow", "flow_layers"]),
+                config.get(["flow", "auxillary_forward_dimensions"]),
+                config.get(["flow", "auxillary_reverse_dimensions"])
+            ])
+
+        # hash relevant elements of current config to see if trained model exists
+        self.config_hash = hashlib.md5(str(model_specification_components).encode('utf-8')).hexdigest()
+
     def _setup_encoder(self, config: Dict):
 
         # network
