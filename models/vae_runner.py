@@ -216,6 +216,9 @@ class VAERunner():
         return dataloader, test_data.to(self.device)
 
     def _setup_optimiser(self, config: Dict):
+        if self.optimise_local:
+            # Setup new optimiser for each datapoint, no global optimiser
+            return None
         if self.optimiser_type == "adam":
             beta_1 = self.optimiser_params[0]
             beta_2 = self.optimiser_params[1]
