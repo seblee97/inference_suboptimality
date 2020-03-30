@@ -12,15 +12,18 @@ from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux
 
 from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss
 from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
+from .local_ammortisation_modules import GaussianLocalAmmortisation, RNVPAuxLocalAmmortisation, RNVPLocalAmmortisation
 
 from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader
 
 from typing import Dict
 import os
+from pathlib import Path
 import copy
 import random
 import numpy as np
 import pandas as pd
+import hashlib
 
 import matplotlib.pyplot as plt
 
