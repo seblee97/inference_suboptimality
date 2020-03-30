@@ -297,7 +297,8 @@ class VAERunner():
 
         # there may be multiple runs with consistent hash that are saved. Heuristic: choose most recent saved run
         consistent_saved_run_paths = sorted(Path(correct_hash_saved_weights_path).iterdir(), key=os.path.getmtime)
-        self._load_checkpointed_model(os.path.join(consistent_saved_run_paths[-1], "saved_vae_weights.pt"))
+        if consistent_saved_run_paths:
+            self._load_checkpointed_model(os.path.join(consistent_saved_run_paths[-1], "saved_vae_weights.pt"))
 
         # set model to evaluation mode i.e. freeze weights
         self.vae.eval()
@@ -412,7 +413,7 @@ class VAERunner():
 
         with torch.no_grad():
             vae_output = self.vae(self.test_data)
-            overall_test_loss, _, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output, warm_up = 1.) # no warm-up for test right ?
+            overall_test_loss, _, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output, warm_up=0)
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
 
             if self.is_estimator:
