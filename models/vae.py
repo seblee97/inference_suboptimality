@@ -3,6 +3,8 @@ import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 
+import os
+
 class VAE(nn.Module):
     
     def __init__(self, encoder, decoder):
@@ -14,6 +16,9 @@ class VAE(nn.Module):
         
         self.encoder = encoder
         self.decoder = decoder
+
+        self.encoder_frozen = False
+        self.decoder_frozen = False
 
     def freeze_decoder(self):
         for param in self.decoder.parameters():
