@@ -160,9 +160,9 @@ if __name__ == "__main__":
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
     experiment_name = inference_gap_parameters.get("experiment_name")
-    checkpoint_path = os.path.join(main_file_path, 'results', exp_timestamp, experiment_name)
+    log_path = os.path.join(main_file_path, 'results', exp_timestamp, experiment_name)
 
-    inference_gap_parameters.set_property("checkpoint_path", checkpoint_path)
+    inference_gap_parameters.set_property("log_path", log_path)
     inference_gap_parameters.set_property("experiment_timestamp", exp_timestamp)
 
     # get specified random seed value from config
