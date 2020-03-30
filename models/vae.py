@@ -35,6 +35,14 @@ class VAE(nn.Module):
     def unfreeze_encoder(self):
         for param in self.encoder.parameters():
             param.requires_grad = True
+
+    def load_weights(self, weights_path: str) -> None:
+        """Load saved weights into model"""
+        self.load_state_dict(torch.load(weights_path))
+
+    def checkpoint_model_weights(self, path: str) -> None:
+        os.makedirs(path, exist_ok=True)
+        torch.save(self.state_dict(), os.path.join(path, "saved_vae_weights.pt"))
     
     def forward(self, x):
 
