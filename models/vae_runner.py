@@ -73,6 +73,9 @@ class VAERunner():
         # setup likelihood estimator with parameters from config
         if self.is_estimator:
             self.estimator = self._setup_estimator(config)
+        
+        if self.optimise_local:
+            self.localised_ammortisation_network = self._setup_local_ammortisation(config)
 
         # initialise general tensorboard writer
         self.writer = SummaryWriter(self.checkpoint_path)
