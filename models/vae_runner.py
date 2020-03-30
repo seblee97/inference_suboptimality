@@ -262,6 +262,110 @@ class VAERunner():
         estimator_type = config.get(["estimator", "type"]).upper()
         return construct_estimator(estimator_type)
 
+    def _setup_local_ammortisation(self, config: Dict):
+
+        local_approximate_posterior = config.get(["local_ammortisation", "approximate_posterior"])
+        if local_approximate_posterior == "gaussian":
+            local_ammortisation_module = GaussianLocalAmmortisation(config=config)
+        elif local_approximate_posterior == "rnvp_norm_flow":
+            local_ammortisation_module = RNVPLocalAmmortisation(config=config)
+        elif local_approximate_posterior == "rnvp_aux_flow":
+            local_ammortisation_module = RNVPAuxLocalAmmortisation(config=config)
+        else:
+            raise ValueError("Approximate posterior family {} not recognised for local ammortisation".format(local_approximate_posterior))
+            
+        return local_ammortisation_module
+
+    def _load_checkpointed_model(self, model_path: str) -> None:
+        """
+        Load weights saved in specified path into vae model
+        """
+        if not os.path.exists(model_path):
+            raise FileNotFoundError("Saved weights for specified config could not be found in specified path. \
+                                    To train locally optimised ammortisation, pretrained model is required.")
+        else:
+           self.vae.load_weights(model_path)
+
+    def train_local_optimisation(self) -> None:
+        """
+        Local optimisation (per data batch) of ammortisation network. 
+
+        Loads pretrained model and freezes weights.
+        """
+        # check for existing model (with hash signature) and load
+        correct_hash_saved_weights_path = os.path.join(self.saved_models_path, self.config_hash)
+
+        # there may be multiple runs with consistent hash that are saved. Heuristic: choose most recent saved run
+        consistent_saved_run_paths = sorted(Path(correct_hash_saved_weights_path).iterdir(), key=os.path.getmtime)
+        self._load_checkpointed_model(os.path.join(consistent_saved_run_paths[-1], "saved_vae_weights.pt"))
+
+        # set model to evaluation mode i.e. freeze weights
+        self.vae.eval()
+
+        vae_elbos = []
+
+        # loop through every datapoint and optimise for each individually
+        for b, (batch_input, _) in enumerate(self.dataloader): # target discarded
+
+            print("Locally optimising ammortisation for data batch {}/{}".format(b, len(self.dataloader)))
+
+            # take multiple monte carlo samples to reduce variance
+            copied_batch = batch_input.repeat(self.mc_samples, 1)
+
+            losses = []
+            best_loss_average = np.inf
+            num_cycles_without_improvement = 0
+                
+            # start with unit normal prior
+            mean = torch.zeros((self.batch_size * self.mc_samples, self.latent_dimension), requires_grad=True)
+            logvar = torch.zeros((self.batch_size * self.mc_samples, self.latent_dimension), requires_grad=True)
+
+            # for gaussian case, mean and logvar are only encoder parameters. For flow etc. there are others
+            additional_optimisation_parameters = self.localised_ammortisation_network.get_additional_parameters()
+            parameters_to_optimise = [mean, logvar] + additional_optimisation_parameters
+            
+            local_optimiser = self.localised_ammortisation_network.get_local_optimiser(parameters=parameters_to_optimise)
+
+            for e in range(self.max_num_epochs):
+                
+                z, params = self.localised_ammortisation_network.sample_latent_vector([mean, logvar])
+
+                reconstruction = torch.sigmoid(self.vae.decoder(z))
+                vae_output = {'x_hat': reconstruction, 'z': z, 'params': params}
+
+                loss, loss_metrics, _ = self.loss_module.compute_loss(x=copied_batch, vae_output=vae_output, warm_up=1)
+
+                local_optimiser.zero_grad()
+                loss.backward()
+                local_optimiser.step()
+            
+                losses.append(float(loss))
+
+                # check for threshold
+                if e % self.convergence_check_period == 0:
+                    average_loss = np.mean(losses)
+
+                    if average_loss < best_loss_average:
+                        base_loss_average = average_loss
+                        num_cycles_without_improvement = 0
+                    else:
+                        num_cycles_without_improvement += 1
+                        if num_cycles_without_improvement == self.cycles_until_convergence:
+                            break
+
+                    # clear losses list
+                    print(np.mean(losses))
+                    losses = []
+
+            # evaluation
+            test_z, test_params = self.localised_ammortisation_network.sample_latent_vector([mean, logvar])
+            test_reconstruction = torch.sigmoid(self.vae.decoder(z))
+            vae_output = {'x_hat': test_reconstruction, 'z': test_z, 'params': test_params}
+            loss, _, _ = self.loss_module.compute_loss(x=test_reconstruction, vae_output=vae_output, warm_up=1)
+
+            test_elbo = -loss
+            vae_elbos.append(test_elbo)
+
     def train(self):
 
         # explicitly set model to train mode
