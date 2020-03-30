@@ -403,6 +403,9 @@ class VAERunner():
                     self.writer.add_scalar(metric, loss_metrics[metric], step_count)
             print("Training loss after {} epochs: {}".format(e + 1, float(loss)))
 
+            if e % self.checkpoint_frequency == 0:
+                self.vae.checkpoint_model_weights(path=self.save_model_path)
+
     def _perform_test_loop(self, step:int):
         # explicitly set model to evaluation mode
         self.vae.eval()
