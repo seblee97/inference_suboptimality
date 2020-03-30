@@ -391,7 +391,7 @@ class VAERunner():
                 if self.warm_up_program != 0:
                     warm_up_factor= min(1.0, e/self.warm_up_program)
 
-                loss, loss_metrics, _ = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output, warm_up = warm_up_factor)
+                loss, loss_metrics, _ = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output, warm_up=warm_up_factor)
 
                 self.optimiser.zero_grad()
                 loss.backward()
