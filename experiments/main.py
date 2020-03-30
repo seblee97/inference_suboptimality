@@ -188,8 +188,12 @@ if __name__ == "__main__":
         print("Using the CPU")
         inference_gap_parameters.set_property("device", "cpu")
 
-    # write copy of config_yaml in model_checkpoint_folder
-    inference_gap_parameters.save_configuration(checkpoint_path)
+    # write copy of config_yaml in model_checkpoint_folder (note this also creates results folder if necessary)
+    inference_gap_parameters.save_configuration(log_path)
+
+    # setup saved models path
+    saved_models_path = inference_gap_parameters.get("saved_models_path")
+    os.makedirs(saved_models_path, exist_ok=True)
 
     runner = models.VAERunner(config=inference_gap_parameters)
 
