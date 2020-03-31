@@ -8,7 +8,7 @@ import torch.distributions as tdist
 
 from typing import Dict
 
-class RNVPPosterior(approximatePosterior, BaseFlow):
+class PlanarPosterior(approximatePosterior, BaseFlow):
 
     """Applied Planar normalising flows (https://github.com/riannevdberg/sylvester-flows/blob/master/models/VAE.py)"""
 
@@ -113,5 +113,7 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
             z_k, pass_log_det_jacobian = forward(z[k], u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
             z.append(z_k)
             log_det_jacobian += pass_log_det_jacobian
+
+        print(z, [mean, log_var, z0, log_det_jacobian])
 
         return z, [mean, log_var, z0, log_det_jacobian]

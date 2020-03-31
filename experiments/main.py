@@ -59,6 +59,8 @@ if __name__ == "__main__":
     approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
     if approximate_posterior_configuration == 'gaussian':
         pass
+    elif approximate_posterior_configuration == 'planar_flow':
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
     elif approximate_posterior_configuration == 'rnvp_norm_flow':
         additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
     elif approximate_posterior_configuration == 'rnvp_aux_flow':
@@ -71,7 +73,7 @@ if __name__ == "__main__":
     # Experiment level
     if args.experiment_name:
         inference_gap_parameters._config["experiment_name"] = args.experiment_name
-    
+
     # Training level
     if args.lr:
         inference_gap_parameters._config["training"]["learning_rate"] = args.lr
@@ -131,7 +133,7 @@ if __name__ == "__main__":
         inference_gap_parameters._config["model"]["decoder"]["hidden_dimensions"] = whole_structure
     if args.dur:
         inference_gap_parameters._config["model"]["decoder"]["decoder_unfreeze_ratio"] = args.dur
-    
+
     # Estimator level
     if args.et:
         inference_gap_parameters._config["estimator"]["type"] = args.et
@@ -156,7 +158,7 @@ if __name__ == "__main__":
 
         # update base-parameters with specific parameters
         inference_gap_parameters.update(specific_params)
-    
+
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
     experiment_name = inference_gap_parameters.get("experiment_name")
