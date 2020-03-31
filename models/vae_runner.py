@@ -442,6 +442,7 @@ class VAERunner():
             vae_output = self.vae(self.test_data)
             overall_test_loss, _, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output, warm_up=0)
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
+            self.logger_df.at[step, "test_loss"] = float(overall_test_loss)
 
             if self.is_estimator:
                 estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
