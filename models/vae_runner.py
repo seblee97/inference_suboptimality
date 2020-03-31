@@ -397,13 +397,13 @@ class VAERunner():
         for e in range(self.num_epochs):
             for batch_input, _ in self.dataloader: # target discarded
 
+                step_count += 1
+
+                if self.log_to_df:
+                    self.logger_df.append(pd.Series(name=step_count))
+
                 # Move the batch input onto the GPU if necessary.
                 batch_input = batch_input.to(self.device)
-
-                if step_count % self.test_frequency == 0:
-                    self._perform_test_loop(step=step_count)
-
-                step_count += 1
 
                 vae_output = self.vae(batch_input)
 
@@ -419,13 +419,20 @@ class VAERunner():
                 self.optimiser.step()
 
                 self.writer.add_scalar("training_loss", float(loss), step_count)
+                self.logger_df.at[step_count, "training_loss"] = float(loss)
 
                 for metric in loss_metrics: # should include e.g. elbo
                     self.writer.add_scalar(metric, loss_metrics[metric], step_count)
-            print("Training loss after {} epochs: {}".format(e + 1, float(loss)))
+                    self.logger_df.at[step_count, metric] = loss_metrics[metric]
 
-            if e % self.checkpoint_frequency == 0:
-                self.vae.checkpoint_model_weights(path=self.save_model_path)
+                if step_count % self.checkpoint_frequency == 0:
+                    self.vae.checkpoint_model_weights(path=self.save_model_path)
+                    self.checkpoint_df(step_count)
+
+                if step_count % self.test_frequency == 0:
+                    self._perform_test_loop(step=step_count)
+
+            print("Training loss after {} epochs: {}".format(e + 1, float(loss)))
 
     def _perform_test_loop(self, step:int):
         # explicitly set model to evaluation mode
