@@ -15,7 +15,8 @@ class RNVPAux(approximatePosterior, BaseFlow):
     def __init__(self, config: Dict):
 
         # get architecture of flows from config
-        self.num_flows = config.get(["flow", "num_flows"])
+        self.num_flow_transformations = config.get(["flow", "num_flow_transformations"])
+        self.num_flow_passes = config.get(["flow", "num_flow_passes"])
         # sigma and mu from eq 9, 10 in paper https://arxiv.org/pdf/1801.03558.pdf
         # also equivalent to s, t in https://lilianweng.github.io/lil-log/2018/10/13/flow-based-deep-generative-models#realnvp
         self.sigma_flow_layers = config.get(["flow", "flow_layers"])
@@ -28,8 +29,8 @@ class RNVPAux(approximatePosterior, BaseFlow):
         # this is in contrast to the non-auxillary case where the latent is split in two.
         self.input_dimension = config.get(["model", "latent_dimension"]) // 2
 
-        assert (self.num_flows == len(self.sigma_flow_layers)) and (self.num_flows == len(self.mu_flow_layers)), \
-            "Number of flows (num_flows) does not match flow layers specified"
+        assert (self.num_flow_transformations == len(self.sigma_flow_layers)) and (self.num_flow_transformations == len(self.mu_flow_layers)), \
+            "Number of flows (num_flow_transformations) does not match flow layers specified"
 
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
 
@@ -41,7 +42,7 @@ class RNVPAux(approximatePosterior, BaseFlow):
         self.flow_sigma_modules = nn.ModuleList([])
         self.flow_mu_modules = nn.ModuleList([])
 
-        for f in range(self.num_flows):
+        for f in range(self.num_flow_transformations):
 
             sigma_map = nn.ModuleList([])
             mu_map = nn.ModuleList([])
@@ -114,7 +115,7 @@ class RNVPAux(approximatePosterior, BaseFlow):
         log_det_jacobian = torch.zeros(z1.shape[0])
 
         # this implements 9, 10 from https://arxiv.org/pdf/1801.03558.pdf
-        for f in range(self.num_flows):
+        for f in range(self.num_flow_transformations):
             if apply_flow_to_top_partition:
                 sigma_map = self._mapping_forward(self.flow_sigma_modules[f], z2)
                 z1 = z1 * torch.exp(sigma_map) + self._mapping_forward(self.flow_mu_modules[f], z2)
@@ -141,12 +142,13 @@ class RNVPAux(approximatePosterior, BaseFlow):
         z1 = z0
         z2 = v
 
-        # ensure flow is applied to whole part of latent by alternating half to which flow is applied.
-        # in each flow transformation jacobian remains triangular because half is unchanged.
         log_det_jacobian = torch.zeros(z0.shape[0])
-        for f in range(self.num_flows):
-            z1, z2, log_det_transformation = self.flow_forward(z1, z2)
-            log_det_jacobian += log_det_transformation
+        
+        # pass latent sample through same flow module multiple times 
+        # !note! distinction between num_flow_transformations and num_flow_passes
+        for f in range(self.num_flow_passes):
+            z1, z2, pass_log_det_jacobian = self.flow_forward(z1, z2)
+            log_det_jacobian += pass_log_det_jacobian
 
         z = torch.cat([z1, z2], dim=1)
 
