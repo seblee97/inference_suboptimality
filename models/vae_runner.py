@@ -94,6 +94,8 @@ class VAERunner():
         self.checkpoint_frequency = config.get("checkpoint_frequency")
         self.experiment_timestamp = config.get("experiment_timestamp")
         self.saved_models_path = config.get("saved_models_path")
+        self.log_to_df = config.get("log_to_df")
+        self.df_log_path = config.get("df_log_path")
 
         self.encoder_type = config.get(["model", "encoder", "network_type"])
         self.decoder_type = config.get(["model", "decoder", "network_type"])
