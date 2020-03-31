@@ -159,12 +159,12 @@ class VAERunner():
             ]
 
         if self.approximate_posterior_type == "rnvp_norm_flow":
-            self.model_specification_components.extend([
+            model_specification_components.extend([
                 config.get(["flow", "flow_layers"])
             ])
 
         if self.approximate_posterior_type == "rnvp_aux_flow":
-            self.model_specification_components.extent([
+            model_specification_components.extend([
                 config.get(["flow", "flow_layers"]),
                 config.get(["flow", "auxillary_forward_dimensions"]),
                 config.get(["flow", "auxillary_reverse_dimensions"])
