@@ -125,6 +125,20 @@ class VAERunner():
             self.cycles_until_convergence = config.get(["local_ammortisation", "cycles_until_convergence"])
             self.mc_samples = config.get(["local_ammortisation", "mc_samples"])
 
+    def checkpoint_df(self, step: int) -> None:
+        """save dataframe"""
+        print("Checkpointing Dataframe...")
+        # check for existing dataframe
+        if step > self.checkpoint_frequency:
+            previous_df = pd.read_csv(self.df_log_path, index_col=0)
+            merged_df = pd.concat([previous_df, self.logger_df])
+        else:
+            merged_df = self.logger_df
+
+        merged_df.to_csv(self.df_log_path)
+        if self.log_to_df:
+            self.logger_df = pd.DataFrame()
+
     def _construct_model_hash(self, config: Dict):
         """
         Unique signature for current config architecture.
