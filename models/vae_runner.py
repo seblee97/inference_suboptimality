@@ -80,6 +80,10 @@ class VAERunner():
         # initialise general tensorboard writer
         self.writer = SummaryWriter(self.log_path)
 
+        # initialise dataframe to log metrics
+        if self.log_to_df:
+            self.logger_df = pd.DataFrame()
+
     def _extract_parameters(self, config: Dict) -> None:
         """
         Method to extract relevant parameters from config and make them attributes of this class
