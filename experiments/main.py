@@ -164,6 +164,7 @@ if __name__ == "__main__":
 
     inference_gap_parameters.set_property("log_path", log_path)
     inference_gap_parameters.set_property("experiment_timestamp", exp_timestamp)
+    inference_gap_parameters.set_property("df_log_path", os.path.join(log_path, 'data_logger.csv'))
 
     # get specified random seed value from config
     seed_value = inference_gap_parameters.get("seed")
