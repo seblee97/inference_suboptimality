@@ -9,7 +9,7 @@ import torch.distributions as tdist
 from typing import Dict
 
 class RNVPAux(approximatePosterior, BaseFlow):
-    
+
     """Applied Real-NVP normalising flows (Dinh et al https://arxiv.org/abs/1605.08803)"""
 
     def __init__(self, config: Dict):
@@ -53,7 +53,7 @@ class RNVPAux(approximatePosterior, BaseFlow):
             for f in range(len(self.sigma_flow_layers[:-1])):
                 sigma_map.append(self._initialise_weights(nn.Linear(self.sigma_flow_layers[f], self.sigma_flow_layers[f + 1])))
                 mu_map.append(self._initialise_weights(nn.Linear(self.mu_flow_layers[f], self.mu_flow_layers[f + 1])))
-            
+
             sigma_map.append(self._initialise_weights(nn.Linear(self.sigma_flow_layers[-1], self.input_dimension)))
             mu_map.append(self._initialise_weights(nn.Linear(self.mu_flow_layers[-1], self.input_dimension)))
 
@@ -105,6 +105,31 @@ class RNVPAux(approximatePosterior, BaseFlow):
 
         return reparameterised_vector, mean, log_var
 
+    def flow_forward(self, z1, z2):
+
+        # ensure flow is applied to whole part of latent by alternating half to which flow is applied.
+        # in each flow transformation jacobian remains triangular because half is unchanged.
+        apply_flow_to_top_partition = True
+
+        log_det_jacobian = torch.zeros(z1.shape[0])
+
+        # this implements 9, 10 from https://arxiv.org/pdf/1801.03558.pdf
+        for f in range(self.num_flows):
+            if apply_flow_to_top_partition:
+                sigma_map = self._mapping_forward(self.flow_sigma_modules[f], z2)
+                z1 = z1 * torch.exp(sigma_map) + self._mapping_forward(self.flow_mu_modules[f], z2)
+            else:
+                sigma_map = self._mapping_forward(self.flow_sigma_modules[f], z1)
+                z2 = z2 * torch.exp(sigma_map) + self._mapping_forward(self.flow_mu_modules[f], z1)
+
+            # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
+            log_det_transformation = torch.sum(sigma_map, axis=1)
+            log_det_jacobian += log_det_transformation
+
+            apply_flow_to_top_partition = not apply_flow_to_top_partition
+
+        return z1, z2, log_det_jacobian
+
 
     def forward(self, z0: torch.Tensor):
 
@@ -118,24 +143,10 @@ class RNVPAux(approximatePosterior, BaseFlow):
 
         # ensure flow is applied to whole part of latent by alternating half to which flow is applied.
         # in each flow transformation jacobian remains triangular because half is unchanged.
-        apply_flow_to_top_partition = True
-
         log_det_jacobian = torch.zeros(z0.shape[0])
-
-        # this implements 9, 10 from https://arxiv.org/pdf/1801.03558.pdf
         for f in range(self.num_flows):
-            if apply_flow_to_top_partition:
-                sigma_map = self._mapping_forward(self.flow_sigma_modules[f], z2)
-                z1 = z1 * torch.exp(sigma_map) + self._mapping_forward(self.flow_mu_modules[f], z2)
-            else:
-                sigma_map = self._mapping_forward(self.flow_sigma_modules[f], z1)
-                z2 = z2 * torch.exp(sigma_map) + self._mapping_forward(self.flow_mu_modules[f], z1)
-            
-            # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
-            log_det_transformation = torch.sum(sigma_map, axis=1)
+            z1, z2, log_det_transformation = self.flow_forward(z1, z2)
             log_det_jacobian += log_det_transformation
-
-            apply_flow_to_top_partition = not apply_flow_to_top_partition
 
         z = torch.cat([z1, z2], dim=1)
 
