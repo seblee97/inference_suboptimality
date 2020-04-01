@@ -10,11 +10,8 @@ class RNVPAuxLocalAmmortisation(BaseLocalAmmortisation):
     def __init__(self, config):
         BaseLocalAmmortisation.__init__(self, config)
 
-    def get_parameters(self):
-        # start with unit normal prior
-        mean = torch.zeros()
-        logvar = torch.zeros()
-        return mean, logvar
+        self._flow_module = None
+        self._config = config
 
     def sample_latent_vector(self):
         pass
