@@ -348,8 +348,8 @@ class VAERunner():
             num_cycles_without_improvement = 0
                 
             # start with unit normal prior
-            mean = torch.zeros((self.batch_size * self.mc_samples, self.latent_dimension), requires_grad=True)
-            logvar = torch.zeros((self.batch_size * self.mc_samples, self.latent_dimension), requires_grad=True)
+            mean = torch.zeros((self.batch_size * self.mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
+            logvar = torch.zeros((self.batch_size * self.mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
 
             # for gaussian case, mean and logvar are only encoder parameters. For flow etc. there are others
             additional_optimisation_parameters = self.localised_ammortisation_network.get_additional_parameters()
