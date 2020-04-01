@@ -214,11 +214,16 @@ class VAERunner():
         return Decoder(network=network)
 
     def _setup_loss_module(self):
-        if self.approximate_posterior_type == "gaussian":
+        if self.optimise_local:
+            approximate_posterior_type = self.local_approximate_posterior
+        else:
+            approximate_posterior_type = self.approximate_posterior_type
+
+        if approximate_posterior_type == "gaussian":
             self.loss_module = gaussianLoss()
-        elif self.approximate_posterior_type == "rnvp_norm_flow":
+        elif approximate_posterior_type == "rnvp_norm_flow":
             self.loss_module = RNVPLoss()
-        elif self.approximate_posterior_type == "rnvp_aux_flow":
+        elif approximate_posterior_type == "rnvp_aux_flow":
             self.loss_module = RNVPAuxLoss()
         else:
             raise ValueError("Loss module not correctly specified")
