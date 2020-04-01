@@ -295,12 +295,11 @@ class VAERunner():
 
     def _setup_local_ammortisation(self, config: Dict):
 
-        local_approximate_posterior = config.get(["local_ammortisation", "approximate_posterior"])
-        if local_approximate_posterior == "gaussian":
+        if self.local_approximate_posterior == "gaussian":
             local_ammortisation_module = GaussianLocalAmmortisation(config=config)
-        elif local_approximate_posterior == "rnvp_norm_flow":
+        elif self.local_approximate_posterior == "rnvp_norm_flow":
             local_ammortisation_module = RNVPLocalAmmortisation(config=config)
-        elif local_approximate_posterior == "rnvp_aux_flow":
+        elif self.local_approximate_posterior == "rnvp_aux_flow":
             local_ammortisation_module = RNVPAuxLocalAmmortisation(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised for local ammortisation".format(local_approximate_posterior))
