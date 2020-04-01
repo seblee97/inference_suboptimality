@@ -5,7 +5,7 @@ from models.approximate_posteriors import RNVPAux
 
 class RNVPAuxLocalAmmortisation(BaseLocalAmmortisation):
     """
-    *FFG from paper
+    *AF from paper
     """
     def __init__(self, config):
         BaseLocalAmmortisation.__init__(self, config)
