@@ -1,6 +1,7 @@
 import torch
 
 from .base_local_ammortisation import BaseLocalAmmortisation
+from models.approximate_posteriors import RNVPAux
 
 class RNVPAuxLocalAmmortisation(BaseLocalAmmortisation):
     """
