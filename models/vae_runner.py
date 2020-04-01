@@ -353,7 +353,7 @@ class VAERunner():
 
             # for gaussian case, mean and logvar are only encoder parameters. For flow etc. there are others
             additional_optimisation_parameters = self.localised_ammortisation_network.get_additional_parameters()
-            parameters_to_optimise = [mean, logvar] + additional_optimisation_parameters
+            parameters_to_optimise = [{'params': [mean, logvar]}, {'params': additional_optimisation_parameters}]
             
             local_optimiser = self.localised_ammortisation_network.get_local_optimiser(parameters=parameters_to_optimise)
 
