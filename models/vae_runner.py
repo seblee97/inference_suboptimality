@@ -124,6 +124,12 @@ class VAERunner():
             self.convergence_check_period = config.get(["local_ammortisation", "convergence_check_period"])
             self.cycles_until_convergence = config.get(["local_ammortisation", "cycles_until_convergence"])
             self.mc_samples = config.get(["local_ammortisation", "mc_samples"])
+            self.local_approximate_posterior = config.get(["local_ammortisation", "approximate_posterior"])
+
+            # account for different inference net output : latent dimension ratio
+            factors = {"gaussian": 2, "rnvp_norm_flow": 2, "rnvp_aux_flow": 1}
+            self.sample_factor = factors[self.local_approximate_posterior] / 2
+            # self.factor = config.get(["local_ammortisation", "encoder", "output_dimension_factor"]) // 2
 
     def checkpoint_df(self, step: int) -> None:
         """save dataframe"""
