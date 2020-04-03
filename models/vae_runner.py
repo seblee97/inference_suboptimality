@@ -109,6 +109,7 @@ class VAERunner():
         self.warm_up_program = config.get(["training", "warm_up_program"])
         self.num_epochs = config.get(["training", "num_epochs"])
         self.learning_rate = config.get(["training", "learning_rate"])
+        self.lr_scheduler = config.get(["training", "lr_scheduler"])
 
         self.test_frequency = config.get(["testing", "test_frequency"])
         self.visualise_test = config.get(["testing", "visualise"])
@@ -403,8 +404,20 @@ class VAERunner():
         self.vae.train()
 
         step_count = 0
-
+        
+        #for lr_scheduler
+        pow = 0
+        epoch_elapsed = 0
+        
         for e in range(self.num_epochs):
+            
+            if self.lr_scheduler:
+                if epoch_elapsed >= 3 ** pow:
+                    self.learning_rate *= 10. ** (-1. / 7.)
+                    pow += 1
+                    epoch_elapsed = 0
+                epoch_elapsed += 1
+            
             for batch_input, _ in self.dataloader: # target discarded
 
                 step_count += 1
