@@ -361,7 +361,7 @@ class VAERunner():
                 
                 z, params = self.localised_ammortisation_network.sample_latent_vector([mean, logvar])
 
-                reconstruction = torch.sigmoid(self.vae.decoder(z))
+                reconstruction = self.vae.decoder(z)
                 vae_output = {'x_hat': reconstruction, 'z': z, 'params': params}
 
                 loss, loss_metrics, _ = self.loss_module.compute_loss(x=copied_batch, vae_output=vae_output, warm_up=1)
@@ -390,7 +390,7 @@ class VAERunner():
 
             # evaluation
             test_z, test_params = self.localised_ammortisation_network.sample_latent_vector([mean, logvar])
-            test_reconstruction = torch.sigmoid(self.vae.decoder(z))
+            test_reconstruction = self.vae.decoder(z)
             vae_output = {'x_hat': test_reconstruction, 'z': test_z, 'params': test_params}
             loss, _, _ = self.loss_module.compute_loss(x=test_reconstruction, vae_output=vae_output, warm_up=1)
 
@@ -462,7 +462,7 @@ class VAERunner():
                 index = random.randint(0, vae_output['x_hat'].size()[0]-1)
                 if self.dataset == "cifar":
                     #Test 1: closeness output-input
-                    reconstructed_image = vae_output['x_hat'][index]
+                    reconstructed_image = torch.sigmoid(vae_output['x_hat'][index])
                     numpy_image = np.transpose(((reconstructed_image.detach().cpu()>= 0.5).float()).numpy(), (1, 2, 0))
                     numpy_input = np.transpose(self.test_data[index].detach().cpu().float().numpy(), (1, 2, 0))
 
@@ -482,7 +482,7 @@ class VAERunner():
 
                 else:
                     #Test 1: closeness output-input
-                    reconstructed_image = vae_output['x_hat'][index]
+                    reconstructed_image = torch.sigmoid(vae_output['x_hat'][index])
                     numpy_image = reconstructed_image.detach().cpu().numpy().reshape((28, 28))
                     numpy_input = self.test_data[index].detach().cpu().numpy().reshape((28, 28))
 
