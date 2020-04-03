@@ -13,8 +13,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml') # base_config.yaml or base_config_CIFAR.yaml
 parser.add_argument('-additional_configs', '--ac', type=str, help='path to folder containing additional configuration files (e.g. for flow)', default='additional_configs/')
 
+# General
 parser.add_argument('--experiment_name', type=str, default=None)
 
+# Training
 parser.add_argument('-learning_rate', '--lr', type=float, default=None)
 parser.add_argument('--dataset', type=str, default=None)
 parser.add_argument('--params', nargs='+', type=float, default=None)
@@ -23,6 +25,7 @@ parser.add_argument('-number_epochs', '--ne', type=int, default=None)
 parser.add_argument('-warm_up','--wu', type=int, default=None)
 parser.add_argument('-loss_function', '--lf', type=str, default=None)
 
+# Architecture VAE
 parser.add_argument('-latent_dimension', '--ld', type=float, default=None)
 parser.add_argument('-approximate_posterior', '--ap', type=str, default=None)
 parser.add_argument('-is_estimator', '--ie', action='store_true')
@@ -35,9 +38,18 @@ parser.add_argument('-decoder_hidden_dimensions', '--dhd', type=str, default=Non
 parser.add_argument('-decoder_unfreeze_ratio', '--dur', type=float, default=None)
 parser.add_argument('-encoder_unfreeze_ratio', '--eur', type=float, default=None)
 
+# Estimator likelihood
 parser.add_argument('-estimator_type', '--et', type=str, default=None)
 parser.add_argument('-IWAE_samples', '--IWAEs', type=float, default=None)
 parser.add_argument('-IWAE_batch_size', '--IWAEbs', type=float, default=None)
+
+# Local amortisation
+parser.add_argument('-optimise_local', '--ol', type=str, default=None)
+
+# Flows
+
+# Auxiliary Flows
+
 
 args = parser.parse_args()
 
@@ -67,7 +79,7 @@ if __name__ == "__main__":
         raise ValueError("approximate_posterior_configuration {} not recognised. Please use 'gaussian', \
                 'rnvp_norm_flow', or 'rnvp_aux_flow'".format(approximate_posterior_configuration))
 
-    # update parameters with (optional) args given in command line
+    # Update parameters with (optional) args given in command line
     # Experiment level
     if args.experiment_name:
         inference_gap_parameters._config["experiment_name"] = args.experiment_name
@@ -139,6 +151,14 @@ if __name__ == "__main__":
         inference_gap_parameters._config["estimator"]["iwae"]["samples"] = args.IWAEs
     if args.IWAEbs:
         inference_gap_parameters._config["estimator"]["iwae"]["batch_size"] = args.IWAEbs
+
+    # Local amortisation level
+    if args.ol:
+        if args.ol == "True":
+            args.ol = True
+        else:
+            args.ol = False
+        inference_gap_parameters._config["model"]["optimise_local"] = args.ol
 
     is_estimator = inference_gap_parameters.get(["model", "is_estimator"])
     if is_estimator:
