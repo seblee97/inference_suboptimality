@@ -11,6 +11,7 @@ from typing import Dict
 class PlanarPosterior(approximatePosterior, BaseFlow):
 
     """Applied Planar normalising flows (https://github.com/riannevdberg/sylvester-flows/blob/master/models/VAE.py)"""
+    """ applying paper: https://arxiv.org/pdf/1803.05649.pdf"""
 
     def __init__(self, config: Dict):
 
@@ -86,7 +87,7 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         #z2 = z0[:, self.input_dimension:]
 
         print("z0: ", z0.shape)
-        zk = z0
+        zk = z0.unsqueeze(2)
         print("zk: ", zk.shape)
 
         uw = u * w
@@ -101,12 +102,20 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         print("u_hat: ", u_hat.shape)
         wz = (w * zk)
         wzb = wz + b
-        z = zk + u_hat * self.activation(wzb)
+        print("activation: ", self.activation(wzb).shape)
+        uwzb = u_hat * self.activation(wzb)
+        z = zk + uwzb
         z = z.squeeze(2)
 
         # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
         psi = w * self.deriv_tanh(wzb)
         log_det_jacobian = torch.log(torch.abs(1 + (psi * u_hat)))
+        print("1: ", log_det_jacobian.shape)
+        log_det_jacobian = log_det_jacobian.squeeze()
+        print("2: ", log_det_jacobian.shape)
+        #log_det_jacobian = log_det_jacobian.squeeze(1)
+        print("3: ", log_det_jacobian.shape)
+
         #print(log_det_jacobian)
         #log_det_jacobian += log_det_transformation
 
@@ -142,12 +151,18 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
         #print("u: ", u)
 
+        #z_out = torch.zeros(z0.shape[0])
+
+        print("z: ", z.shape)
+        #print("z[0]: ", z[0].shape)
         # pass latent sample through same flow module multiple times
         # !note! distinction between num_flow_transformations and num_flow_passes
         for k in range(self.num_flow_passes):
-            z_k, pass_log_det_jacobian = self.forward(z[k], u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
-            z.append(z_k)
+            z, pass_log_det_jacobian = self.forward(z, u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
+            print("log-det: ", log_det_jacobian.shape)
+            print("pass: ", pass_log_det_jacobian.shape)
             log_det_jacobian += pass_log_det_jacobian
+
 
         #print(z, mean, log_var, z0, log_det_jacobian)
 
