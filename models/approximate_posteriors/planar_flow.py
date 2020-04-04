@@ -110,10 +110,9 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
         psi = w * self.deriv_tanh(wzb)
         log_det_jacobian = torch.log(torch.abs(1 + (psi * u_hat)))
-        print("1: ", log_det_jacobian.shape)
-        log_det_jacobian = log_det_jacobian.squeeze()
+        log_det_jacobian = torch.sum(log_det_jacobian, axis=2)
         print("2: ", log_det_jacobian.shape)
-        #log_det_jacobian = log_det_jacobian.squeeze(1)
+        log_det_jacobian = torch.sum(log_det_jacobian, axis=1)
         print("3: ", log_det_jacobian.shape)
 
         #print(log_det_jacobian)
@@ -149,20 +148,39 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         w = w0
         b = b0
 
+        #z1 = z0[:, :self.input_dimension]
+        #z2 = z0[:, self.input_dimension:]
+        #z = [z1, z2]
         #print("u: ", u)
 
         #z_out = torch.zeros(z0.shape[0])
 
-        print("z: ", z.shape)
+        #print("z: ", z.shape)
         #print("z[0]: ", z[0].shape)
         # pass latent sample through same flow module multiple times
         # !note! distinction between num_flow_transformations and num_flow_passes
-        for k in range(self.num_flow_passes):
-            z, pass_log_det_jacobian = self.forward(z, u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
-            print("log-det: ", log_det_jacobian.shape)
-            print("pass: ", pass_log_det_jacobian.shape)
-            log_det_jacobian += pass_log_det_jacobian
 
+        #z_k = []
+
+        """
+        # NOTE: flow works on 1 pass, when the loop below is removed. the loop goes through the latent dimension 0 to 50)
+        This raises an error in the loss module (cross entropy error), but this passes.
+        to replace z with z[k] in this loop like in the paper, zk = z0 instead of z0.unsqueeze(2)
+        in the paper, their number of transformations defaults to 4, which would be too low
+        !log_det_jacobian was summed to get these dimensions, doesn't match paper
+
+
+        """
+
+        #for k in range(self.num_flow_transformations):
+        k=0
+        z, pass_log_det_jacobian = self.forward(z, u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
+        #z_k.append(z_k)
+        #print("log-det: ", log_det_jacobian.shape)
+        #print("pass: ", pass_log_det_jacobian.shape)
+        log_det_jacobian += pass_log_det_jacobian
+
+        print("z out: ", z.shape)
 
         #print(z, mean, log_var, z0, log_det_jacobian)
 
