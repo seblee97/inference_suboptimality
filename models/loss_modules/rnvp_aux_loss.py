@@ -30,7 +30,7 @@ class RNVPAuxLoss(baseLoss):
         #        = E[log p(x|z) + log p(z) - log q(z|x)]
         #          explicit flow expression
         #        = E[log p(x|z) + log p(z) - log q_0(z_0|x) + sum(log_det_jacobian)]
-        log_p_xz = -F.binary_cross_entropy(vae_reconstruction, x, reduction='none').sum(-1)
+        log_p_xz = -F.binary_cross_entropy_with_logits(vae_reconstruction, x, reduction='none').sum(-1)
         log_p_z = -0.5 * vae_latent.pow(2).sum(1)
         log_q_zx = -0.5 * (log_var.sum(1) + ((z0 - mean).pow(2) / torch.exp(log_var)).sum(1)) - log_det_jacobian
 
