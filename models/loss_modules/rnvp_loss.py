@@ -23,6 +23,7 @@ class RNVPLoss(baseLoss):
         vae_latent = vae_output['z']
         mean, log_var, z0, log_det_jacobian = vae_output['params']
 
+
         # Calculate the logs in the ELBO with ONE sample from the expectation.
         # Flow adds extra term - the sum of the logs of the determinants of the transformation Jacobians.
         #   ELBO = E[log(p(x,z) / q(z|x))]

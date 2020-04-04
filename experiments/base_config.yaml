@@ -14,7 +14,7 @@ model:
   input_dimension:                  784                       # Number of input (and output) dimensions.
   latent_dimension:                 50                        # Number of latent dimensions.
   is_estimator:                     False                     # Use a log-likelihood estimator.
-  optimise_local:                   True
+  optimise_local:                   False
 
   encoder:
     network_type:                     feedforward             # Type of encoder network (i.e., feedforward or convolutional).

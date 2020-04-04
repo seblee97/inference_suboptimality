@@ -25,6 +25,7 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
         # input to flow maps will be half of latent dimension (i.e. output of first part of inference network)
         self.input_dimension = config.get(["model", "latent_dimension"]) // 2
+        self.batch_size = config.get(["training", "batch_size"])
 
         #assert (self.num_flow_transformations == len(self.sigma_flow_layers)) and (self.num_flow_transformations == len(self.mu_flow_layers)), \
         #    "Number of flows (num_flow_transformations) does not match flow layers specified"
@@ -41,9 +42,9 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         self.flow_b_modules = nn.ModuleList([])
 
         # do we need weights here?
-        self.flow_u_modules.append(self._initialise_weights(nn.Linear(2 * self.input_dimension, self.input_dimension)))
-        self.flow_w_modules.append(self._initialise_weights(nn.Linear(2 * self.input_dimension, self.input_dimension)))
-        self.flow_u_modules.append(self._initialise_weights(nn.Linear(2 * self.input_dimension, self.num_flow_transformations)))
+        self.flow_u_modules.append(self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations * self.input_dimension)))
+        self.flow_w_modules.append(self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations * self.input_dimension)))
+        self.flow_b_modules.append(self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations)))
 
 
     def _mapping_forward(self, mapping_network: nn.ModuleList, z_partition: torch.Tensor) -> torch.Tensor:
@@ -56,11 +57,25 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
     def forward(self, z0: torch.Tensor, u, w, b):
 
+        """
+        Forward pass. Assumes amortized u, w and b. Conditions on diagonals of u and w for invertibility
+        will be be satisfied inside this function. Computes the following transformation:
+        z' = z + u h( w^T z + b)
+        or actually
+        z'^T = z^T + h(z^T w + b)u^T
+        Assumes the following input shapes:
+        shape u = (batch_size, z_size, 1)
+        shape w = (batch_size, 1, z_size)
+        shape b = (batch_size, 1, 1)
+        shape z = (batch_size, z_size).
+        """
+
         #z1 = z0[:, :self.input_dimension]
         #z2 = z0[:, self.input_dimension:]
-        zk = zk.unsqueeze(2)
+        #zk = zk.unsqueeze(2)
+        zk = z0
         print(zk)
-        print(zk.shape(0))
+
 
         uw = torch.bmmw(w, u)
         m_uw = -1. + self.softplus(uw)
@@ -88,14 +103,15 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         #   1. The first half represents the multidimensional mean of the Gaussian posterior.
         #   2. The second half represents the multidimensional log variance of the Gaussian posterior.
         dimensions = parameters.shape[1] // 2
+        h = parameters.view(-1, self.batch_size)
         mean = parameters[:, :dimensions]
         log_var = parameters[:, dimensions:]
-
+        print(h)
         # calculate u , w, b before reparameterization trick
-        h = parameters.view(-1, self.input_dimension * 2)
-        u0 = self.flow_u_modules(h).view(self.input_dimension * 2, self.num_flow_transformations, self.input_dimension, 1)
-        w0 = self.flow_w_modules(h).view(self.input_dimension * 2, self.num_flow_transformations, 1, self.input_dimension)
-        b0 = self.flow_b_modules(h).view(self.input_dimension * 2, self.num_flow_transformations, 1, 1)
+        #h = parameters.view(-1, self.input_dimension * 2)
+        u0 = self.flow_u_modules[0](h).view(self.batch_size, self.num_flow_transformations, self.input_dimension, 1)
+        w0 = self.flow_w_modules[0](h).view(self.batch_size, self.num_flow_transformations, 1, self.input_dimension)
+        b0 = self.flow_b_modules[0](h).view(self.batch_size, self.num_flow_transformations, 1, 1)
 
 
         # Sample the standard deviation along each dimension of the factorized Gaussian posterior.
@@ -114,11 +130,18 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
         # pass latent sample through same flow module multiple times
         # !note! distinction between num_flow_transformations and num_flow_passes
-        for f in range(self.num_flow_passes):
-            z_k, pass_log_det_jacobian = forward(z[k], u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
+        for k in range(self.num_flow_passes):
+            z_k, pass_log_det_jacobian = self.forward(z[k], u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
             z.append(z_k)
             log_det_jacobian += pass_log_det_jacobian
 
-        print(z, mean, log_var, z0, log_det_jacobian)
+        try:
+            print(z, mean, log_var, z0, log_det_jacobian)
+        except:
+            print("z: ", z)
+            print("mean: ", mean)
+            print("log_var: ", log_var)
+            print("z0: ", z0)
+            print("log_det_jacobian: ", log_det_jacobian)
 
-        return z, [mean, log_var, z0, log_det_jacobian]
+        return (z, [mean, log_var, z0, log_det_jacobian])
