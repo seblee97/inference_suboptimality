@@ -24,7 +24,7 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         self.b_flow_layers = config.get(["flow", "flow_layers"])
 
         # input to flow maps will be half of latent dimension (i.e. output of first part of inference network)
-        self.input_dimension = config.get(["model", "latent_dimension"]) // 2
+        self.input_dimension = config.get(["model", "latent_dimension"])
         self.batch_size = config.get(["training", "batch_size"])
 
         #assert (self.num_flow_transformations == len(self.sigma_flow_layers)) and (self.num_flow_transformations == len(self.mu_flow_layers)), \
@@ -55,6 +55,18 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
     def deriv_tanh(self, x):
         return 1 - self.activation(x) ** 2
 
+    def _reparameterise(self, raw_vector: torch.Tensor) -> torch.Tensor:
+        dimensions = raw_vector.shape[1] // 2
+        mean = raw_vector[:, :dimensions]
+        log_var = raw_vector[:, dimensions:]
+
+        # Sample the standard deviation along each dimension of the factorized Gaussian posterior.
+        noise = self.noise_distribution.sample(log_var.shape).squeeze()
+        # Apply the reparameterization trick.
+        reparameterised_vector = mean + torch.sqrt(torch.exp(log_var)) * noise
+
+        return reparameterised_vector, mean, log_var
+
     def forward(self, z0: torch.Tensor, u, w, b):
 
         """
@@ -73,24 +85,32 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         #z1 = z0[:, :self.input_dimension]
         #z2 = z0[:, self.input_dimension:]
         #zk = zk.unsqueeze(2)
-        zk = z0
-        print(zk)
+        print("z0: ", z0.shape)
+        zk = z0.unsqueeze(1)
+        zk = zk.unsqueeze(1)
+        print("zk: ", zk.shape)
+        #print(zk)
 
 
-        uw = torch.bmmw(w, u)
-        m_uw = -1. + self.softplus(uw)
+        uw = u * w
+        m_uw = -1. + F.softplus(uw)
         w_norm_sq = torch.sum(w ** 2, dim=2, keepdim=True)
         u_hat = u + ((m_uw - uw) * w.transpose(2, 1) / w_norm_sq)
 
         # compute flow with u_hat
-        wzb = torch.bmm(w, zk) + b
-        z = zk + u_hat * self.h(wzb)
+        print("w: ", w.shape)
+        print("zk: ", zk.shape)
+        print("b: ", b.shape)
+        print("u_hat: ", u_hat.shape)
+        wz = (w * zk)
+        wzb = wz + b
+        z = zk + u_hat * self.activation(wzb)
         z = z.squeeze(2)
 
         # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
         psi = w * self.deriv_tanh(wzb)
-        log_det_jacobian = torch.log(torch.abs(1 + torch.bmm(psi, u_hat)))
-        print(log_det_jacobian)
+        log_det_jacobian = torch.log(torch.abs(1 + (psi * u_hat)))
+        #print(log_det_jacobian)
         #log_det_jacobian += log_det_transformation
 
 
@@ -103,21 +123,18 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         #   1. The first half represents the multidimensional mean of the Gaussian posterior.
         #   2. The second half represents the multidimensional log variance of the Gaussian posterior.
         dimensions = parameters.shape[1] // 2
-        h = parameters.view(-1, self.batch_size)
-        mean = parameters[:, :dimensions]
-        log_var = parameters[:, dimensions:]
-        print(h)
+        h = parameters #.view(-1, self.batch_size)
+        #mean = parameters[:, :dimensions]
+        #log_var = parameters[:, dimensions:]
+        #print(h)
+
         # calculate u , w, b before reparameterization trick
         #h = parameters.view(-1, self.input_dimension * 2)
         u0 = self.flow_u_modules[0](h).view(self.batch_size, self.num_flow_transformations, self.input_dimension, 1)
         w0 = self.flow_w_modules[0](h).view(self.batch_size, self.num_flow_transformations, 1, self.input_dimension)
         b0 = self.flow_b_modules[0](h).view(self.batch_size, self.num_flow_transformations, 1, 1)
 
-
-        # Sample the standard deviation along each dimension of the factorized Gaussian posterior.
-        noise = self.noise_distribution.sample(log_var.shape).squeeze()
-        # Apply the reparameterization trick.
-        z0 = mean + torch.sqrt(torch.exp(log_var)) * noise
+        z0, mean, log_var = self._reparameterise(parameters)
 
         # The above is essentially identical to gaussian case, now apply flow transformations
         log_det_jacobian = torch.zeros(z0.shape[0])
@@ -126,7 +143,7 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         w = w0
         b = b0
 
-        print("u: ", u)
+        #print("u: ", u)
 
         # pass latent sample through same flow module multiple times
         # !note! distinction between num_flow_transformations and num_flow_passes
@@ -135,13 +152,6 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
             z.append(z_k)
             log_det_jacobian += pass_log_det_jacobian
 
-        try:
-            print(z, mean, log_var, z0, log_det_jacobian)
-        except:
-            print("z: ", z)
-            print("mean: ", mean)
-            print("log_var: ", log_var)
-            print("z0: ", z0)
-            print("log_det_jacobian: ", log_det_jacobian)
+        #print(z, mean, log_var, z0, log_det_jacobian)
 
         return (z, [mean, log_var, z0, log_det_jacobian])
