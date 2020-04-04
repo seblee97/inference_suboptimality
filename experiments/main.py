@@ -45,7 +45,7 @@ parser.add_argument('-IWAE_batch_size', '--IWAEbs', type=float, default=None)
 
 # Local amortisation
 parser.add_argument('-optimise_local', '--ol', type=str, default=None)
-
+parser.add_argument('-local_ammortisation_posterior', '--lap', type=str, default=None)
 # Flows
 
 # Auxiliary Flows
@@ -67,17 +67,6 @@ if __name__ == "__main__":
 
     supplementary_configs_path = args.ac
     additional_configurations = []
-
-    approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
-    if approximate_posterior_configuration == 'gaussian':
-        pass
-    elif approximate_posterior_configuration == 'rnvp_norm_flow':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
-    elif approximate_posterior_configuration == 'rnvp_aux_flow':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'aux_flow_config.yaml'))
-    else:
-        raise ValueError("approximate_posterior_configuration {} not recognised. Please use 'gaussian', \
-                'rnvp_norm_flow', or 'rnvp_aux_flow'".format(approximate_posterior_configuration))
 
     # Update parameters with (optional) args given in command line
     # Experiment level
@@ -160,6 +149,17 @@ if __name__ == "__main__":
             args.ol = False
         inference_gap_parameters._config["model"]["optimise_local"] = args.ol
 
+    approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
+    if approximate_posterior_configuration == 'gaussian':
+        pass
+    elif approximate_posterior_configuration == 'rnvp_norm_flow':
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
+    elif approximate_posterior_configuration == 'rnvp_aux_flow':
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'aux_flow_config.yaml'))
+    else:
+        raise ValueError("approximate_posterior_configuration {} not recognised. Please use 'gaussian', \
+                             'rnvp_norm_flow', or 'rnvp_aux_flow'".format(approximate_posterior_configuration))
+
     is_estimator = inference_gap_parameters.get(["model", "is_estimator"])
     if is_estimator:
         additional_configurations.append(os.path.join(supplementary_configs_path, 'estimator_config.yaml'))
@@ -176,7 +176,11 @@ if __name__ == "__main__":
 
         # update base-parameters with specific parameters
         inference_gap_parameters.update(specific_params)
-    
+
+    if optimise_local:
+        if args.lap:
+            inference_gap_parameters._config["local_ammortisation"]["approximate_posterior"] = args.lap
+
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
     experiment_name = inference_gap_parameters.get("experiment_name")
