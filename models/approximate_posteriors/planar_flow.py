@@ -59,6 +59,8 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         #z1 = z0[:, :self.input_dimension]
         #z2 = z0[:, self.input_dimension:]
         zk = zk.unsqueeze(2)
+        print(zk)
+        print(zk.shape(0))
 
         uw = torch.bmmw(w, u)
         m_uw = -1. + self.softplus(uw)
@@ -73,6 +75,7 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
         psi = w * self.deriv_tanh(wzb)
         log_det_jacobian = torch.log(torch.abs(1 + torch.bmm(psi, u_hat)))
+        print(log_det_jacobian)
         #log_det_jacobian += log_det_transformation
 
 
@@ -107,6 +110,8 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         w = w0
         b = b0
 
+        print("u: ", u)
+
         # pass latent sample through same flow module multiple times
         # !note! distinction between num_flow_transformations and num_flow_passes
         for f in range(self.num_flow_passes):
@@ -114,6 +119,6 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
             z.append(z_k)
             log_det_jacobian += pass_log_det_jacobian
 
-        print(z, [mean, log_var, z0, log_det_jacobian])
+        print(z, mean, log_var, z0, log_det_jacobian)
 
         return z, [mean, log_var, z0, log_det_jacobian]
