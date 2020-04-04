@@ -84,13 +84,10 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
         #z1 = z0[:, :self.input_dimension]
         #z2 = z0[:, self.input_dimension:]
-        #zk = zk.unsqueeze(2)
-        print("z0: ", z0.shape)
-        zk = z0.unsqueeze(1)
-        zk = zk.unsqueeze(1)
-        print("zk: ", zk.shape)
-        #print(zk)
 
+        print("z0: ", z0.shape)
+        zk = z0
+        print("zk: ", zk.shape)
 
         uw = u * w
         m_uw = -1. + F.softplus(uw)
@@ -123,7 +120,7 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         #   1. The first half represents the multidimensional mean of the Gaussian posterior.
         #   2. The second half represents the multidimensional log variance of the Gaussian posterior.
         dimensions = parameters.shape[1] // 2
-        h = parameters #.view(-1, self.batch_size)
+        h = parameters.view(-1, self.batch_size)
         #mean = parameters[:, :dimensions]
         #log_var = parameters[:, dimensions:]
         #print(h)
