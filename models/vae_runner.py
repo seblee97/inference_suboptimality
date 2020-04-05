@@ -472,7 +472,7 @@ class VAERunner():
             test_batch = repeat_batch(self.test_data, self.test_mc_samples)
 
             vae_output = self.vae(test_batch)
-            overall_test_loss, _, _ = self.loss_module.compute_loss(x=test_batch, vae_output=vae_output, warm_up=0)
+            overall_test_loss, _, _ = self.loss_module.compute_loss(x=test_batch, vae_output=vae_output)
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
             self.logger_df.at[step, "test_loss"] = float(overall_test_loss)
 

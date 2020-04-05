@@ -48,7 +48,7 @@ class IWAEEstimator(BaseEstimator):
                 inputs = batch_input[beg:end].repeat(self._num_samples, *input_repeat_shape)
                 # Compute the log-likelihood of each input.
                 outputs = vae(inputs)
-                _, _, log_p_x = loss_module.compute_loss(x=inputs, vae_output=outputs, warm_up=0)
+                _, _, log_p_x = loss_module.compute_loss(x=inputs, vae_output=outputs)
                 # Align the rows of the log-likelihoods with the inputs in the batch.
                 log_p_x = log_p_x.view(self._num_samples, -1).transpose(0, 1)
                 # Find the maximum log-likelihood to avoid numeric overflow with the

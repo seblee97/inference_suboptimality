@@ -17,7 +17,7 @@ class RNVPAuxLoss(baseLoss):
     loss module :https://github.com/chrischute/real-nvp/blob/df51ad570baf681e77df4d2265c0f1eb1b5b646c/models/real_nvp/real_nvp_loss.py
     """
 
-    def compute_loss(self, x, vae_output, warm_up):
+    def compute_loss(self, x, vae_output, warm_up=1):
 
         vae_reconstruction = vae_output['x_hat']
         vae_latent = vae_output['z']
