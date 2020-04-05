@@ -42,6 +42,7 @@ parser.add_argument('-encoder_unfreeze_ratio', '--eur', type=float, default=None
 parser.add_argument('-estimator_type', '--et', type=str, default=None)
 parser.add_argument('-IWAE_samples', '--IWAEs', type=float, default=None)
 parser.add_argument('-IWAE_batch_size', '--IWAEbs', type=float, default=None)
+parser.add_argument('-AIS_batch_size', '--AISbs', type=float, default=None)
 
 # Local amortisation
 parser.add_argument('-optimise_local', '--ol', type=str, default=None)
@@ -136,14 +137,6 @@ if __name__ == "__main__":
         inference_gap_parameters._config["model"]["decoder"]["hidden_dimensions"] = whole_structure
     if args.dur:
         inference_gap_parameters._config["model"]["decoder"]["decoder_unfreeze_ratio"] = args.dur
-    
-    # Estimator level
-    if args.et:
-        inference_gap_parameters._config["estimator"]["type"] = args.et
-    if args.IWAEs:
-        inference_gap_parameters._config["estimator"]["iwae"]["samples"] = args.IWAEs
-    if args.IWAEbs:
-        inference_gap_parameters._config["estimator"]["iwae"]["batch_size"] = args.IWAEbs
 
     # Local amortisation level
     if args.ol:
@@ -180,6 +173,16 @@ if __name__ == "__main__":
 
         # update base-parameters with specific parameters
         inference_gap_parameters.update(specific_params)
+
+    # Estimator level
+    if args.et:
+        inference_gap_parameters._config["estimator"]["type"] = args.et
+    if args.IWAEs:
+        inference_gap_parameters._config["estimator"]["iwae"]["samples"] = args.IWAEs
+    if args.IWAEbs:
+        inference_gap_parameters._config["estimator"]["iwae"]["batch_size"] = args.IWAEbs
+    if args.AISbs:
+        inference_gap_parameters._config["estimator"]["ais"]["batch_size"] = args.AISbs
 
     if optimise_local:
         if args.lap:
