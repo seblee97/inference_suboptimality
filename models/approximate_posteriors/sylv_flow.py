@@ -8,7 +8,7 @@ import torch.distributions as tdist
 
 from typing import Dict
 
-class PlanarPosterior(approximatePosterior, BaseFlow):
+class SylvesterPosterior(approximatePosterior, BaseFlow):
 
     """Applied Planar normalising flows (https://github.com/riannevdberg/sylvester-flows/blob/master/models/VAE.py)"""
     """ applying paper: https://arxiv.org/pdf/1803.05649.pdf"""
@@ -28,6 +28,7 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         self.input_dimension = config.get(["model", "latent_dimension"])
         self.batch_size = config.get(["training", "batch_size"])
 
+        self.num_q_components = 50 #either orthogonal vectors or householders. parametrise
         #assert (self.num_flow_transformations == len(self.sigma_flow_layers)) and (self.num_flow_transformations == len(self.mu_flow_layers)), \
         #    "Number of flows (num_flow_transformations) does not match flow layers specified"
 
@@ -39,13 +40,13 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
     def _construct_layers(self):
 
         self.flow_u_modules = nn.ModuleList([])
-        self.flow_w_modules = nn.ModuleList([])
+        self.flow_q_modules = nn.ModuleList([])
         self.flow_b_modules = nn.ModuleList([])
 
         # do we need weights here?
         self.flow_u_modules.append(self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations * self.input_dimension)))
-        self.flow_w_modules.append(self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations * self.input_dimension)))
-        self.flow_b_modules.append(self._initialise_weights(nn.Linear(self.batch_size, self.input_dimension)))
+        self.flow_q_modules.append(self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations * self.input_dimension * self.num_q_components)))
+        self.flow_b_modules.append(self._initialise_weights(nn.Linear(self.batch_size, 1, self.num_flow_transformations)))
 
 
     def _mapping_forward(self, mapping_network: nn.ModuleList, z_partition: torch.Tensor) -> torch.Tensor:
@@ -107,8 +108,8 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         z = zk + uwzb
         z = z.squeeze(2)
 
-        # this computes the jacobian determinant (sec 2.1 of above paper )
-             psi = w * self.deriv_tanh(wzb)
+        # this computes the jacobian determinant (sec 6.4 in supplementary of paper)
+        psi = w * self.deriv_tanh(wzb)
         log_det_jacobian = torch.log(torch.abs(1 + (psi * u_hat)))
         log_det_jacobian = torch.sum(log_det_jacobian, axis=2)
         print("2: ", log_det_jacobian.shape)
