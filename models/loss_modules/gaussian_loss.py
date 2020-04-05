@@ -20,7 +20,7 @@ class gaussianLoss(baseLoss):
     #     kl_loss = torch.sum(torch.exp(log_var) + mean**2 - 1 - log_var) / 2
     #     return reconstruction_loss + kl_loss
 
-    def compute_loss(self, x, vae_output, warm_up) -> (torch.Tensor, Dict, torch.Tensor):
+    def compute_loss(self, x, vae_output, warm_up=1) -> (torch.Tensor, Dict, torch.Tensor):
         """
         Computes the loss between the network input and output assuming the
         approximate posterior is a fully-factorized Gaussian.
