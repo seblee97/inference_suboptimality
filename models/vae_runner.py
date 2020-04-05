@@ -14,7 +14,7 @@ from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss
 from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
 from .local_ammortisation_modules import GaussianLocalAmmortisation, RNVPAuxLocalAmmortisation, RNVPLocalAmmortisation
 
-from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader
+from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader, repeat_batch
 
 from typing import Dict
 import os
@@ -43,7 +43,7 @@ class VAERunner():
         # extract relevant parameters from config
         self._extract_parameters(config)
 
-        # construct hash of current run 
+        # construct hash of current run
         self._construct_model_hash(config)
 
         # set path to save model weights for this run (make config path if necessary)
@@ -117,6 +117,9 @@ class VAERunner():
         self.optimiser_type = config.get(["training", "optimiser", "type"])
         self.optimiser_params = config.get(["training", "optimiser", "params"])
 
+        self.train_mc_samples = config.get(["training", "mc_samples"])
+        self.test_mc_samples = config.get(["testing", "mc_samples"])
+
         self.is_estimator = config.get(["model", "is_estimator"])
         self.optimise_local = config.get(["model", "optimise_local"])
 
@@ -124,7 +127,7 @@ class VAERunner():
             self.max_num_epochs = config.get(["local_ammortisation", "max_num_epochs"])
             self.convergence_check_period = config.get(["local_ammortisation", "convergence_check_period"])
             self.cycles_until_convergence = config.get(["local_ammortisation", "cycles_until_convergence"])
-            self.mc_samples = config.get(["local_ammortisation", "mc_samples"])
+            self.local_mc_samples = config.get(["local_ammortisation", "mc_samples"])
             self.local_approximate_posterior = config.get(["local_ammortisation", "approximate_posterior"])
 
             # account for different inference net output : latent dimension ratio
@@ -342,15 +345,15 @@ class VAERunner():
             print("Locally optimising ammortisation for data batch {}/{}".format(b, len(self.dataloader)))
 
             # take multiple monte carlo samples to reduce variance
-            copied_batch = batch_input.repeat(self.mc_samples, 1)
+            copied_batch = repeat_batch(batch_input, self.local_mc_samples)
 
             losses = []
             best_loss_average = np.inf
             num_cycles_without_improvement = 0
                 
             # start with unit normal prior
-            mean = torch.zeros((self.batch_size * self.mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
-            logvar = torch.zeros((self.batch_size * self.mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
+            mean = torch.zeros((self.batch_size * self.local_mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
+            logvar = torch.zeros((self.batch_size * self.local_mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
 
             # for gaussian case, mean and logvar are only encoder parameters. For flow etc. there are others
             additional_optimisation_parameters = self.localised_ammortisation_network.get_additional_parameters()
@@ -428,6 +431,9 @@ class VAERunner():
                 # Move the batch input onto the GPU if necessary.
                 batch_input = batch_input.to(self.device)
 
+                # Take multiple expectations of the ELBO to reduce variance.
+                batch_input = repeat_batch(batch_input, self.train_mc_samples)
+
                 vae_output = self.vae(batch_input)
 
                 # Get entropy-annealing factor for linear program
@@ -462,8 +468,11 @@ class VAERunner():
         self.vae.eval()
 
         with torch.no_grad():
-            vae_output = self.vae(self.test_data)
-            overall_test_loss, _, _ = self.loss_module.compute_loss(x=self.test_data, vae_output=vae_output, warm_up=0)
+            # Take multiple expectations of the ELBO to reduce variance.
+            test_batch = repeat_batch(self.test_data, self.test_mc_samples)
+
+            vae_output = self.vae(test_batch)
+            overall_test_loss, _, _ = self.loss_module.compute_loss(x=test_batch, vae_output=vae_output, warm_up=0)
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
             self.logger_df.at[step, "test_loss"] = float(overall_test_loss)
 
@@ -472,7 +481,7 @@ class VAERunner():
                 self.writer.add_scalar("estimated_loss", float(estimated_loss), step)
 
             if self.visualise_test:
-                index = random.randint(0, vae_output['x_hat'].size()[0]-1)
+                index = random.randint(0, self.test_data.size(0) - 1)
                 if self.dataset == "cifar":
                     #Test 1: closeness output-input
                     reconstructed_image = torch.sigmoid(vae_output['x_hat'][index])
