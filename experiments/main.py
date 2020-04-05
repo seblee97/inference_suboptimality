@@ -28,7 +28,7 @@ parser.add_argument('-loss_function', '--lf', type=str, default=None)
 # Architecture VAE
 parser.add_argument('-latent_dimension', '--ld', type=float, default=None)
 parser.add_argument('-approximate_posterior', '--ap', type=str, default=None)
-parser.add_argument('-is_estimator', '--ie', action='store_true')
+parser.add_argument('-is_estimator', '--ie',  type=str, default=None)
 parser.add_argument('-encoder_network_type', '--ent', type=str, default=None)
 parser.add_argument('-encoder_hidden_dimensions', '--ehd', type=str, default=None)
 parser.add_argument('-encoder_output_dimensions', '--eod', type=str, default=None)
@@ -99,6 +99,10 @@ if __name__ == "__main__":
     if args.ap:
         inference_gap_parameters._config["model"]["approximate_posterior"] = args.ap
     if args.ie:
+        if args.ie == "True":
+            args.ie = True
+        else:
+            args.ie = False
         inference_gap_parameters._config["model"]["is_estimator"] = args.ie
     if args.ent:
         inference_gap_parameters._config["model"]["encoder"]["network_type"] = args.ent
