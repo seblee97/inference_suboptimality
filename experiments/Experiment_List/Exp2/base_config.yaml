@@ -27,17 +27,15 @@ model:
 
 training:
   learning_rate:                    0.0001                    # Learning rate for gradient descent.
-  lr_scheduler:                     False                     # at 3^i epoch, multiply learning rate by 10^-i/7, for MNIST and Fashio_MNIST (CIFAR has a fixed learning rate)
+  lr_scheduler:                     True                      # at 3^i epoch, multiply learning rate by 10^-i/7, for MNIST and Fashio_MNIST (CIFAR has a fixed learning rate)
   optimiser:
     type:                           adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
     params:                         [0.9, 0.999, 0.0001]
   dataset:                          binarised_mnist           # Dataset to use for training and testing (e.g., mnist, binarised_mnist, fashion_mnist, or cifar).
   batch_size:                       100                       # Size of the training batches.
-  num_epochs:                       300                       # Number of training epochs.
+  num_epochs:                       3280                      # Number of training epochs.
   warm_up_program:                  400                       # Limit of linear entropy-annealing (= warm-up) program (set to 0 if no entropy annealing wanted). 400 is the default
-  mc_samples:                       1                         # Number of samples to take in the ELBO expectation.
 
 testing:
   test_frequency:                   100                       # Number of training steps between tests.
   visualise:                        True                      # Capture the output image of the test.
-  mc_samples:                       1                         # Number of samples to take in the ELBO expectation.

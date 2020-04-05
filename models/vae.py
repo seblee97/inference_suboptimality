@@ -49,7 +49,7 @@ class VAE(nn.Module):
         encoder_output = self.encoder(x)
 
         latent_vector = encoder_output['z']
-        decoding = torch.sigmoid(self.decoder(latent_vector))
+        decoding = self.decoder(latent_vector)
 
         return {**encoder_output, **{'x_hat': decoding}}
         
