@@ -461,7 +461,7 @@ class VAERunner():
                 if step_count % self.test_frequency == 0:
                     self._perform_test_loop(step=step_count)
 
-            print("Training loss after {} epochs: {}".format(epoch, float(loss)))
+            print("Training loss after {} epochs ({} steps): {}".format(epoch, step_count, float(loss)))
 
     def _perform_test_loop(self, step:int):
         # explicitly set model to evaluation mode
@@ -475,10 +475,12 @@ class VAERunner():
             overall_test_loss, _, _ = self.loss_module.compute_loss(x=test_batch, vae_output=vae_output)
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
             self.logger_df.at[step, "test_loss"] = float(overall_test_loss)
+            print("Testing loss after {} steps: {}".format(step, float(overall_test_loss)))
 
             if self.is_estimator:
                 estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
                 self.writer.add_scalar("estimated_loss", float(estimated_loss), step)
+                print("Estimated loss after {} steps: {}".format(step, float(estimated_loss)))
 
             if self.visualise_test:
                 index = random.randint(0, self.test_data.size(0) - 1)
