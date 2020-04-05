@@ -408,16 +408,16 @@ class VAERunner():
 
         step_count = 0
         
-        #for lr_scheduler
-        pow = 0
+        # For the LR scheduler.  See https://arxiv.org/abs/1509.00519 for more details.
+        exponent_of_3 = 0
         epoch_elapsed = 0
         
-        for e in range(self.num_epochs):
+        for epoch in range(1, self.num_epochs + 1):
             
             if self.lr_scheduler:
-                if epoch_elapsed >= 3 ** pow:
-                    self.learning_rate *= 10. ** (-1. / 7.)
-                    pow += 1
+                if epoch_elapsed >= 3 ** exponent_of_3:
+                    self.learning_rate *= 10 ** (-1 / 7)
+                    exponent_of_3 += 1
                     epoch_elapsed = 0
                 epoch_elapsed += 1
             
@@ -439,7 +439,7 @@ class VAERunner():
                 # Get entropy-annealing factor for linear program
                 warm_up_factor = 1.0
                 if self.warm_up_program != 0:
-                    warm_up_factor= min(1.0, e/self.warm_up_program)
+                    warm_up_factor = min(1.0, epoch / self.warm_up_program)
 
                 loss, loss_metrics, _ = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output, warm_up=warm_up_factor)
 
@@ -461,7 +461,7 @@ class VAERunner():
                 if step_count % self.test_frequency == 0:
                     self._perform_test_loop(step=step_count)
 
-            print("Training loss after {} epochs: {}".format(e + 1, float(loss)))
+            print("Training loss after {} epochs: {}".format(epoch, float(loss)))
 
     def _perform_test_loop(self, step:int):
         # explicitly set model to evaluation mode
