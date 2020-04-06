@@ -20,13 +20,13 @@ python main.py --experiment_name exp6_fashion_MNIST_Locally_Optimised_FFG_FFG --
 # Flow
 
 #Likelihood estimator for fashion-MNIST trained on flow
-python main.py --experiment_name exp6_fashion_MNIST_likelihood_Flow --dataset fashion_mnist --ie True --ap rnvp_flow
+python main.py --experiment_name exp6_fashion_MNIST_likelihood_Flow --dataset fashion_mnist --ie True --ap rnvp_norm_flow
 
 #Basic flow fashion-MNIST trained on flow
-python main.py --experiment_name exp6_fashion_MNIST_Flow --dataset fashion_mnist --ap rnvp_flow
+python main.py --experiment_name exp6_fashion_MNIST_Flow --dataset fashion_mnist --ap rnvp_norm_flow
 
 #Locally optimised Flow fashion-MNIST trained on flow
-python main.py --experiment_name exp6_fashion_MNIST_Locally_Optimised_Flow_flow --dataset fashion_mnist --ol True --ap rnvp_aux_flow --lap rnvp_aux_flow
+python main.py --experiment_name exp6_fashion_MNIST_Locally_Optimised_Flow_flow --dataset fashion_mnist --ol True --ap rnvp_norm_flow --lap rnvp_norm_flow
 
 ###############################################################################################
 
