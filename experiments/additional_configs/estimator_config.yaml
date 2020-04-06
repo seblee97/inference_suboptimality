@@ -1,4 +1,5 @@
 estimator:
+  frequency: 60000                                            # Number of training steps between estimations.
   type: "MAX"                                                 # Type of log-likelihood estimator (e.g., AIS, IWAE, MAX)
   iwae:
     num_samples: 5000                                         # Number of samples.

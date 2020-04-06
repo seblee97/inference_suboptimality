@@ -294,6 +294,7 @@ class VAERunner():
             else:
                 raise ValueError("Estimator {} not recognised".format(estimator_type))
 
+        self.estimator_frequency = config.get(['estimator', 'frequency'])
         estimator_type = config.get(["estimator", "type"]).upper()
         return construct_estimator(estimator_type)
 
@@ -461,6 +462,11 @@ class VAERunner():
                 if step_count % self.test_frequency == 0:
                     self._perform_test_loop(step=step_count)
 
+                if self.is_estimator and step_count % self.estimator_frequency == 0:
+                    estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
+                    self.writer.add_scalar("estimated_loss", float(estimated_loss), step_count)
+                    print("Estimated loss after {} steps: {}".format(step_count, float(estimated_loss)))
+
             print("Training loss after {} epochs ({} steps): {}".format(epoch, step_count, float(loss)))
 
     def _perform_test_loop(self, step:int):
@@ -476,11 +482,6 @@ class VAERunner():
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
             self.logger_df.at[step, "test_loss"] = float(overall_test_loss)
             print("Testing loss after {} steps: {}".format(step, float(overall_test_loss)))
-
-            if self.is_estimator:
-                estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
-                self.writer.add_scalar("estimated_loss", float(estimated_loss), step)
-                print("Estimated loss after {} steps: {}".format(step, float(estimated_loss)))
 
             if self.visualise_test:
                 index = random.randint(0, self.test_data.size(0) - 1)
