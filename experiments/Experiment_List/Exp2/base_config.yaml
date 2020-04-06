@@ -35,7 +35,9 @@ training:
   batch_size:                       100                       # Size of the training batches.
   num_epochs:                       3280                      # Number of training epochs.
   warm_up_program:                  400                       # Limit of linear entropy-annealing (= warm-up) program (set to 0 if no entropy annealing wanted). 400 is the default
+  mc_samples:                       1                         # Number of samples to take in the ELBO expectation.
 
 testing:
   test_frequency:                   1000                      # Number of training steps between tests.
   visualise:                        True                      # Capture the output image of the test.
+  mc_samples:                       1                         # Number of samples to take in the ELBO expectation.
