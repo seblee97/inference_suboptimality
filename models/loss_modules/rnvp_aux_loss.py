@@ -40,7 +40,7 @@ class RNVPAuxLoss(baseLoss):
         log_r_vxz = -0.5 * (rv_log_var.sum(1) + ((rv - rv_mean).pow(2) / torch.exp(rv_log_var)).sum(1))
 
         # TODO: Add a warm-up constant to the last two terms.
-        log_p_x = log_p_xz + log_p_z - warm_up * log_q_zx + log_r_vxz
+        log_p_x = log_p_xz + log_p_z - warm_up * (log_q_zx - log_r_vxz)
 
         # The ELBO is defined to be the mean of the logs in the batch.
         elbo = torch.mean(log_p_x)
