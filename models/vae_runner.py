@@ -420,6 +420,9 @@ class VAERunner():
                     self.learning_rate *= 10 ** (-1 / 7)
                     exponent_of_3 += 1
                     epoch_elapsed = 0
+                    # Update the learning rate of the optimiser.
+                    for param_group in self.optimiser.param_groups:
+                        param_group['lr'] = self.learning_rate
                 epoch_elapsed += 1
             
             for batch_input, _ in self.dataloader: # target discarded
