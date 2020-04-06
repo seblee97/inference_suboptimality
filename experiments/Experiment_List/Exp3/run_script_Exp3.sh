@@ -1,7 +1,7 @@
 # Experiment 3
 ###############################################################################################
 #Convention: last posterior in the name is the trained one.
-#Here it runs exactly as in 2 except the config file no longer has warmup.
+#Here it runs exactly as in 2 except the config file has a large encoder.
 ###############################################################################################
 # MNIST
 #Likelihood estimator for MNIST trained on FFG
