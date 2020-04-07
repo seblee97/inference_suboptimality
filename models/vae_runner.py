@@ -337,7 +337,8 @@ class VAERunner():
         # set model to evaluation mode i.e. freeze weights
         self.vae.eval()
 
-        vae_elbos = []
+        # artificial step-count for logging purposes
+        log_step_count = 0
 
         # loop through every datapoint and optimise for each individually
         for b, (batch_input, _) in enumerate(self.dataloader): # target discarded
@@ -362,6 +363,11 @@ class VAERunner():
             local_optimiser = self.localised_ammortisation_network.get_local_optimiser(parameters=parameters_to_optimise)
 
             for e in range(self.max_num_epochs):
+
+                log_step_count += 1
+
+                if self.log_to_df:
+                    self.logger_df.append(pd.Series(name=log_step_count))
                 
                 z, params = self.localised_ammortisation_network.sample_latent_vector([mean, logvar])
 
@@ -376,6 +382,9 @@ class VAERunner():
             
                 losses.append(float(loss))
 
+                if self.log_to_df:
+                    self.logger_df.at[log_step_count, "local_loss"] = float(loss)
+
                 # check for threshold
                 if e % self.convergence_check_period == 0:
                     average_loss = np.mean(losses)
@@ -389,7 +398,6 @@ class VAERunner():
                             break
 
                     # clear losses list
-                    print(np.mean(losses))
                     losses = []
 
             # evaluation
@@ -399,7 +407,11 @@ class VAERunner():
             loss, _, _ = self.loss_module.compute_loss(x=test_reconstruction, vae_output=vae_output, warm_up=1)
 
             test_elbo = -loss
-            vae_elbos.append(test_elbo)
+            
+            if self.log_to_df:
+                    self.logger_df.at[log_step_count, "test_loss"] = float(loss)
+
+            self.checkpoint_df(log_step_count)
 
     def train(self):
 
