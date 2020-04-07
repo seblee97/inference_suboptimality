@@ -391,7 +391,7 @@ class VAERunner():
                     average_loss = np.mean(losses)
 
                     if average_loss < best_loss_average:
-                        base_loss_average = average_loss
+                        best_loss_average = average_loss
                         num_cycles_without_improvement = 0
                     else:
                         num_cycles_without_improvement += 1
