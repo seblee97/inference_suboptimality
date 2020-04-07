@@ -40,7 +40,7 @@ class SummaryPlot:
 
         self.number_of_graphs = len(self.plot_keys)
 
-        self.scale_axes = self.plot_config["num_steps"]
+        self.scale_axes = self.plot_config["num_epochs"]
 
         self.rows = LAYOUTS[self.number_of_graphs][0]
         self.columns = LAYOUTS[self.number_of_graphs][1]
@@ -66,7 +66,7 @@ class SummaryPlot:
         fig_sub.plot(x_data, plot_data)
         
         # labelling
-        fig_sub.set_xlabel("Step")
+        fig_sub.set_xlabel("Epoch")
         fig_sub.set_ylabel(title)
     
         # grids
