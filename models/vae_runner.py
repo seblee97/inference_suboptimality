@@ -14,12 +14,11 @@ from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss
 from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
 from .local_ammortisation_modules import GaussianLocalAmmortisation, RNVPAuxLocalAmmortisation, RNVPLocalAmmortisation
 
-from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader, repeat_batch
+from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader, repeat_batch, partition_batch
 
 from typing import Dict
 import os
 from pathlib import Path
-import copy
 import random
 import numpy as np
 import pandas as pd
@@ -113,6 +112,7 @@ class VAERunner():
 
         self.test_frequency = config.get(["testing", "test_frequency"])
         self.visualise_test = config.get(["testing", "visualise"])
+        self.test_batch_size = config.get(["testing", "batch_size"])
 
         self.optimiser_type = config.get(["training", "optimiser", "type"])
         self.optimiser_params = config.get(["training", "optimiser", "params"])
@@ -540,3 +540,32 @@ class VAERunner():
                     self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
         # set model back to train mode
         self.vae.train()
+
+    def analyse(self) -> None:
+        # Load the model to be analysed.
+        correct_hash_saved_weights_path = os.path.join(self.saved_models_path, self.config_hash)
+        consistent_saved_run_paths = sorted(Path(correct_hash_saved_weights_path).iterdir(), key=os.path.getmtime)
+        if consistent_saved_run_paths:
+            self._load_checkpointed_model(os.path.join(consistent_saved_run_paths[-1], "saved_vae_weights.pt"))
+        else:
+            raise Exception("Saved weights for specified config could not be found in specified path. \
+                             To analyse the test loss, a pretrained model is required.")
+
+        self.vae.eval()
+
+        # Compute the average test loss using |self.test_mc_samples| samples from
+        # each element of the test set.
+        mean_loss = torch.Tensor([0.0])
+        for minibatch in partition_batch(self.test_data, self.test_batch_size):
+            minibatch = repeat_batch(minibatch, self.test_mc_samples)
+            vae_output = self.vae(minibatch)
+            loss, _, _ = self.loss_module.compute_loss(x=minibatch, vae_output=vae_output)
+            print(minibatch.shape)
+            mean_loss += loss * len(minibatch)
+        mean_loss /= len(self.test_data) * self.test_mc_samples
+        print("Test loss using {} MC samples: {}.".format(self.test_mc_samples, float(mean_loss)))
+
+        # Compute the estimated test loss (if applicable).
+        if self.is_estimator:
+            estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
+            print("Estimated loss: {}.".format(float(estimated_loss)))

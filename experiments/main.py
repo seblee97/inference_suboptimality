@@ -51,6 +51,9 @@ parser.add_argument('-local_ammortisation_posterior', '--lap', type=str, default
 
 # Auxiliary Flows
 
+# Analysis
+parser.add_argument('-analyse', action='store_true', default=None)
+
 
 args = parser.parse_args()
 
@@ -229,7 +232,9 @@ if __name__ == "__main__":
 
     runner = models.VAERunner(config=inference_gap_parameters)
 
-    if optimise_local:
+    if args.analyse:
+        runner.analyse()
+    elif optimise_local:
         runner.train_local_optimisation()
     else:
         runner.train()

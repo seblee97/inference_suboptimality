@@ -38,6 +38,7 @@ training:
   mc_samples:                       1                         # Number of samples to take in the ELBO expectation.
 
 testing:
-  test_frequency:                   1000                      # Number of training steps between tests.
+  test_frequency:                   100                       # Number of training steps between tests.
   visualise:                        True                      # Capture the output image of the test.
-  mc_samples:                       1                         # Number of samples to take in the ELBO expectation.
+  mc_samples:                       1                         # Number of samples to take in the ELBO expectation (use 5000 for analysis).
+  batch_size:                       10000                     # Number of test images to analyse at once.
