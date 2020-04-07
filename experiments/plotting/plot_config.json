@@ -1,0 +1,8 @@
+{   
+    "width": 5,
+    "height": 5,
+    "num_steps": 3000,
+    "base_keys": ["elbo", "log p(x|z)", "log p(z)", "log q(z|x)", "test_loss", "training_loss"],
+    "nf_keys": [],
+    "af_keys": []
+}
