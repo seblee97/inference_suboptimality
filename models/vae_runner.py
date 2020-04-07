@@ -141,11 +141,18 @@ class VAERunner():
         """save dataframe"""
         print("Checkpointing Dataframe...")
         # check for existing dataframe
-        if step > self.checkpoint_frequency:
-            previous_df = pd.read_csv(self.df_log_path, index_col=0)
-            merged_df = pd.concat([previous_df, self.logger_df])
+        if self.optimise_local:
+            try:
+                previous_df = pd.read_csv(self.df_log_path, index_col=0)
+                merged_df = pd.concat([previous_df, self.logger_df])
+            except:
+                merged_df = self.logger_df
         else:
-            merged_df = self.logger_df
+            if step > self.checkpoint_frequency:
+                previous_df = pd.read_csv(self.df_log_path, index_col=0)
+                merged_df = pd.concat([previous_df, self.logger_df])
+            else:
+                merged_df = self.logger_df
 
         merged_df.to_csv(self.df_log_path)
         if self.log_to_df:
@@ -419,7 +426,7 @@ class VAERunner():
             test_elbo = -loss
             
             if self.log_to_df:
-                    self.logger_df.at[log_step_count, "test_loss"] = float(loss)
+                self.logger_df.at[log_step_count, "test_loss"] = float(loss)
 
             self.checkpoint_df(log_step_count)
 
