@@ -52,7 +52,7 @@ python main.py --experiment_name exp2_fashion_MNIST_Locally_Optimised_AF_FFG --d
 python main.py --experiment_name exp2_fashion_MNIST_Locally_Optimised_FFG_AF --dataset fashion_mnist --ol True --ap rnvp_aux_flow
 
 #Locally optimised AF fashion-MNIST trained on AF
-python main.py --experiment_name exp2_fashion_MNIST_Locally_Optimised_FFG_AF --dataset fashion_mnist --ol True --ap rnvp_aux_flow --lap rnvp_aux_flow
+python main.py --experiment_name exp2_fashion_MNIST_Locally_Optimised_AF_AF --dataset fashion_mnist --ol True --ap rnvp_aux_flow --lap rnvp_aux_flow
 
 ###############################################################################################
 

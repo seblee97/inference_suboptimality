@@ -1,0 +1,42 @@
+experiment_name:                    test                      # Name of the experiment.
+use_gpu:                            True                      # Use a gpu if one is available.
+seed:                               1                         # Random seed to ensure reproducibility.
+relative_data_path:                 ../data/                  # Path to the dataset directory.
+saved_models_path:                  saved_models/             # relative path
+checkpoint_frequency:               1000                      # every n epochs at which to checkpoint model weights
+log_to_df:                          True
+
+model:
+  approximate_posterior:            gaussian                  # Family of functions to use for approximate posterior (q_\phi(z | x)).
+  initialisation:                   xavier_uniform
+  initialisation_std:               0.1                       # Standard deviation of the weight and bias initialization.
+  nonlinearity:                     elu                       # Activation function (e.g., sigmoid, elu, ReLU, tanh, etc.).
+  input_dimension:                  784                       # Number of input (and output) dimensions.
+  latent_dimension:                 20                        # Number of latent dimensions.
+  is_estimator:                     False                     # Use a log-likelihood estimator.
+  optimise_local:                   False
+
+  encoder:
+    network_type:                     feedforward             # Type of encoder network (i.e., feedforward or convolutional).
+    output_dimension_factor:          2                       # multiple of latent dimensions required for output of first part of inference network. Generally 2, but 1 for auxillary flows.
+    hidden_dimensions:                [200, 200]              # Layer dimensions in the encoder network (excluding the input dimensions and final latent dimensions).
+
+  decoder:
+    network_type:                     feedbackward            # Type of decoder network (i.e. feedforward or (de)convolutional)
+    hidden_dimensions:                [200, 200]              # Layer dimensions in the decoder network (excluding output dimensions).
+
+training:
+  learning_rate:                    0.001                    # Learning rate for gradient descent.
+  lr_scheduler:                     True                      # at 3^i epoch, multiply learning rate by 10^-i/7, for MNIST and Fashio_MNIST (CIFAR has a fixed learning rate)
+  optimiser:
+    type:                           adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
+    params:                         [0.9, 0.999, 0.0001]
+  dataset:                          binarised_mnist           # Dataset to use for training and testing (e.g., mnist, binarised_mnist, fashion_mnist, or cifar).
+  batch_size:                       50                        # Size of the training batches.
+  num_epochs:                       3280                      # Number of training epochs.
+  warm_up_program:                  0                       # Limit of linear entropy-annealing (= warm-up) program (set to 0 if no entropy annealing wanted). 400 is the default
+  mc_samples:                       1                         # Number of samples to take in the ELBO expectation.
+testing:
+  test_frequency:                   100                       # Number of training steps between tests.
+  visualise:                        True                      # Capture the output image of the test.
+  mc_samples:                       1                         # Number of samples to take in the ELBO expectation.
