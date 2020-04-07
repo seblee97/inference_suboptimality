@@ -295,8 +295,8 @@ class VAERunner():
                 raise ValueError("Estimator {} not recognised".format(estimator_type))
 
         self.estimator_frequency = config.get(['estimator', 'frequency'])
-        estimator_type = config.get(["estimator", "type"]).upper()
-        return construct_estimator(estimator_type)
+        self.estimator_type = config.get(["estimator", "type"])
+        return construct_estimator(self.estimator_type.upper())
 
     def _setup_local_ammortisation(self, config: Dict):
 
@@ -553,19 +553,24 @@ class VAERunner():
 
         self.vae.eval()
 
-        # Compute the average test loss using |self.test_mc_samples| samples from
-        # each element of the test set.
-        mean_loss = torch.Tensor([0.0])
-        for minibatch in partition_batch(self.test_data, self.test_batch_size):
-            minibatch = repeat_batch(minibatch, self.test_mc_samples)
-            vae_output = self.vae(minibatch)
-            loss, _, _ = self.loss_module.compute_loss(x=minibatch, vae_output=vae_output)
-            print(minibatch.shape)
-            mean_loss += loss * len(minibatch)
-        mean_loss /= len(self.test_data) * self.test_mc_samples
-        print("Test loss using {} MC samples: {}.".format(self.test_mc_samples, float(mean_loss)))
+        with torch.no_grad():
+            # Compute the average test loss using |self.test_mc_samples| samples from
+            # each element of the test set.
+            mean_loss = torch.Tensor([0.0])
+            for minibatch in partition_batch(self.test_data, self.test_batch_size):
+                minibatch = repeat_batch(minibatch, self.test_mc_samples)
+                vae_output = self.vae(minibatch)
+                loss, _, _ = self.loss_module.compute_loss(x=minibatch, vae_output=vae_output)
+                mean_loss += loss * len(minibatch)
+                del minibatch, vae_output
+            mean_loss /= self.test_data.size(0) * self.test_mc_samples
+            print("Test loss using {} MC samples: {}.".format(self.test_mc_samples, float(mean_loss)))
 
-        # Compute the estimated test loss (if applicable).
-        if self.is_estimator:
-            estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
-            print("Estimated loss: {}.".format(float(estimated_loss)))
+            # Ensure the GPU has enough memory to perform the estimation.
+            if self.device == "cuda":
+                torch.cuda.empty_cache()
+
+            # Compute the estimated test loss (if applicable).
+            if self.is_estimator:
+                estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
+                print("Estimated loss using estimator '{}': {}.".format(self.estimator_type, float(estimated_loss)))
