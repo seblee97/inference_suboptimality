@@ -389,7 +389,7 @@ class VAERunner():
                 reconstruction = self.vae.decoder(z)
                 vae_output = {'x_hat': reconstruction, 'z': z, 'params': params}
 
-                loss, loss_metrics, _ = self.loss_module.compute_loss(x=copied_batch, vae_output=vae_output, warm_up=1)
+                loss, _, _ = self.loss_module.compute_loss(x=copied_batch, vae_output=vae_output, warm_up=1)
 
                 local_optimiser.zero_grad()
                 loss.backward()
