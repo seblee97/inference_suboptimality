@@ -47,6 +47,10 @@ parser.add_argument('-AIS_batch_size', '--AISbs', type=float, default=None)
 # Local amortisation
 parser.add_argument('-optimise_local', '--ol', type=str, default=None)
 parser.add_argument('-local_ammortisation_posterior', '--lap', type=str, default=None)
+
+# Saved model for local optimisation (if none provided, will attempt to find one from hash of config)
+parser.add_argument('-local_opt_saved_model', '--losm', type=str, help="path to saved model file for use in local optimisation", default=None)
+
 # Flows
 
 # Auxiliary Flows
@@ -73,6 +77,7 @@ if __name__ == "__main__":
     additional_configurations = []
 
     # Update parameters with (optional) args given in command line
+
     # Experiment level
     if args.experiment_name:
         inference_gap_parameters._config["experiment_name"] = args.experiment_name
@@ -190,6 +195,9 @@ if __name__ == "__main__":
     if optimise_local:
         if args.lap:
             inference_gap_parameters._config["local_ammortisation"]["approximate_posterior"] = args.lap
+                # Saved model path for local optimisation
+        if args.losm:
+            inference_gap_parameters._config["local_ammortisation"]["manual_saved_model_path"] = args.losm
 
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
