@@ -124,6 +124,8 @@ class VAERunner():
         self.optimise_local = config.get(["model", "optimise_local"])
 
         if self.optimise_local:
+            self.manual_saved_model_path = config.get(["local_ammortisation", "manual_saved_model_path"])
+
             self.max_num_epochs = config.get(["local_ammortisation", "max_num_epochs"])
             self.convergence_check_period = config.get(["local_ammortisation", "convergence_check_period"])
             self.cycles_until_convergence = config.get(["local_ammortisation", "cycles_until_convergence"])
@@ -327,13 +329,18 @@ class VAERunner():
 
         Loads pretrained model and freezes weights.
         """
-        # check for existing model (with hash signature) and load
-        correct_hash_saved_weights_path = os.path.join(self.saved_models_path, self.config_hash)
+        if self.manual_saved_model_path:
+            saved_model_path = self.manual_saved_model_path
+        else:
+            # check for existing model (with hash signature) and load
+            correct_hash_saved_weights_path = os.path.join(self.saved_models_path, self.config_hash)
 
-        # there may be multiple runs with consistent hash that are saved. Heuristic: choose most recent saved run
-        consistent_saved_run_paths = sorted(Path(correct_hash_saved_weights_path).iterdir(), key=os.path.getmtime)
-        if consistent_saved_run_paths:
-            self._load_checkpointed_model(os.path.join(consistent_saved_run_paths[-1], "saved_vae_weights.pt"))
+            # there may be multiple runs with consistent hash that are saved. Heuristic: choose most recent saved run
+            consistent_saved_run_paths = sorted(Path(correct_hash_saved_weights_path).iterdir(), key=os.path.getmtime)
+            if consistent_saved_run_paths:
+                saved_model_path = os.path.join(consistent_saved_run_paths[-1], "saved_vae_weights.pt")
+        
+        self._load_checkpointed_model(saved_model_path)
 
         # set model to evaluation mode i.e. freeze weights
         self.vae.eval()
@@ -389,6 +396,8 @@ class VAERunner():
                 # check for threshold
                 if e % self.convergence_check_period == 0:
                     average_loss = np.mean(losses)
+
+                    print(average_loss)
 
                     if average_loss < best_loss_average:
                         best_loss_average = average_loss
