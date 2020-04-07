@@ -16,3 +16,6 @@ local_ammortisation:
     type:                             adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
     params:                           [0.9, 0.999, 0.0001]
     learning_rate:                    0.001
+
+training:
+  batch_size:                         1                         # this overwrites the base config training batch size.
