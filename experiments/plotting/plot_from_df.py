@@ -15,9 +15,8 @@ from typing import Dict, List
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-path_to_csv", type=str, help="path to dataframe with experimental results")
+parser.add_argument("-save_path", type=str, help="path to save figures and in which to find csv data")
 parser.add_argument("-plot_keys", type=str, help="path to file containing list of attributes to plot for summary", default=None)
-parser.add_argument("-save_path", type=str, help="path to save figures")
 parser.add_argument("-exp_name", type=str, help="name of experiment")
 
 args = parser.parse_args()
@@ -104,5 +103,7 @@ if __name__ == "__main__":
     os.makedirs("{}/figures/".format(args.save_path), exist_ok=True)
     figure_save_path = "{}/figures".format(args.save_path)
 
-    sP = SummaryPlot(data_csv=args.path_to_csv, plot_config_path=args.plot_keys, save_path=figure_save_path, experiment_name=args.exp_name)
+    path_to_csv = os.path.join(args.save_path, "data_logger.csv")
+
+    sP = SummaryPlot(data_csv=path_to_csv, plot_config_path=args.plot_keys, save_path=figure_save_path, experiment_name=args.exp_name)
     sP.generate_plot()
