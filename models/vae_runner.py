@@ -328,7 +328,7 @@ class VAERunner():
             raise FileNotFoundError("Saved weights for specified config could not be found in specified path. \
                                     To train locally optimised ammortisation, pretrained model is required.")
         else:
-           self.vae.load_weights(model_path)
+           self.vae.load_weights(device=self.device, weights_path=model_path)
 
     def train_local_optimisation(self) -> None:
         """
