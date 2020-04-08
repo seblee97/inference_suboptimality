@@ -131,6 +131,7 @@ class VAERunner():
             self.cycles_until_convergence = config.get(["local_ammortisation", "cycles_until_convergence"])
             self.local_mc_samples = config.get(["local_ammortisation", "mc_samples"])
             self.local_approximate_posterior = config.get(["local_ammortisation", "approximate_posterior"])
+            self.local_num_batches = config.get(["local_ammortisation", "num_batches"])
 
             # account for different inference net output : latent dimension ratio
             factors = {"gaussian": 2, "rnvp_norm_flow": 2, "rnvp_aux_flow": 1}
@@ -355,16 +356,19 @@ class VAERunner():
         # artificial step-count for logging purposes
         log_step_count = 0
 
-        # loop through every datapoint and optimise for each individually
-        for b, (batch_input, _) in enumerate(self.dataloader): # target discarded
+        # Accumulate the total average loss after each optimisation.
+        total_average_loss = 0.0
 
-            print("Locally optimising ammortisation for data batch {}/{}".format(b, len(self.dataloader)))
+        # loop through every datapoint and optimise for each individually
+        for b, (batch_input, _) in enumerate(self.dataloader, start=1): # target discarded
+
+            print("Locally optimising ammortisation for data batch {}/{}".format(b, self.local_num_batches))
 
             # take multiple monte carlo samples to reduce variance
             copied_batch = repeat_batch(batch_input, self.local_mc_samples)
 
-            losses = []
-            best_loss_average = np.inf
+            current_average_loss = 0.0
+            best_average_loss = np.inf
             num_cycles_without_improvement = 0
                 
             # start with unit normal prior
@@ -377,7 +381,7 @@ class VAERunner():
             
             local_optimiser = self.localised_ammortisation_network.get_local_optimiser(parameters=parameters_to_optimise)
 
-            for e in range(self.max_num_epochs):
+            for e in range(1, self.max_num_epochs + 1):
 
                 log_step_count += 1
 
@@ -389,46 +393,55 @@ class VAERunner():
                 reconstruction = self.vae.decoder(z)
                 vae_output = {'x_hat': reconstruction, 'z': z, 'params': params}
 
-                loss, _, _ = self.loss_module.compute_loss(x=copied_batch, vae_output=vae_output, warm_up=1)
+                loss, _, _ = self.loss_module.compute_loss(x=copied_batch, vae_output=vae_output)
 
                 local_optimiser.zero_grad()
                 loss.backward()
                 local_optimiser.step()
-            
-                losses.append(float(loss))
+
+                # Technically, the numeric precision can be improved by dividing
+                # only once; however, with small convergence check periods, it
+                # doesn't really matter.
+                current_average_loss += float(loss) / self.convergence_check_period
 
                 if self.log_to_df:
                     self.logger_df.at[log_step_count, "local_loss"] = float(loss)
 
                 # check for threshold
                 if e % self.convergence_check_period == 0:
-                    average_loss = np.mean(losses)
+                    # Useful message for debugging.
+                    # print("Cycles = {}, Current = {}, Best = {}.".format(num_cycles_without_improvement, current_average_loss, best_average_loss))
 
-                    print(average_loss)
-
-                    if average_loss < best_loss_average:
-                        best_loss_average = average_loss
+                    if current_average_loss < best_average_loss:
+                        best_average_loss = current_average_loss
                         num_cycles_without_improvement = 0
                     else:
                         num_cycles_without_improvement += 1
                         if num_cycles_without_improvement == self.cycles_until_convergence:
                             break
 
-                    # clear losses list
-                    losses = []
+                    # Reset the current average loss.
+                    current_average_loss = 0
 
             # evaluation
             test_z, test_params = self.localised_ammortisation_network.sample_latent_vector([mean, logvar])
             test_reconstruction = self.vae.decoder(z)
             vae_output = {'x_hat': test_reconstruction, 'z': test_z, 'params': test_params}
-            loss, _, _ = self.loss_module.compute_loss(x=test_reconstruction, vae_output=vae_output, warm_up=1)
+            loss, _, _ = self.loss_module.compute_loss(x=copied_batch, vae_output=vae_output)
 
             test_elbo = -loss
+            total_average_loss += float(loss) / self.local_num_batches
             
             if self.log_to_df:
                 self.logger_df.at[log_step_count, "test_loss"] = float(loss)
 
             self.checkpoint_df(log_step_count)
+
+            # Stop after optimising |self.local_num_batches| batches.
+            if b == self.local_num_batches:
+                break
+
+        print("Average loss after {} batches: {}.".format(self.local_num_batches, total_average_loss))
 
     def train(self):
 
