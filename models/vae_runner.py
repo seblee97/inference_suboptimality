@@ -95,6 +95,7 @@ class VAERunner():
         self.saved_models_path = config.get("saved_models_path")
         self.log_to_df = config.get("log_to_df")
         self.df_log_path = config.get("df_log_path")
+        self.load_decoder_only = config.get("load_decoder_only")
 
         self.encoder_type = config.get(["model", "encoder", "network_type"])
         self.decoder_type = config.get(["model", "decoder", "network_type"])
@@ -329,7 +330,7 @@ class VAERunner():
             raise FileNotFoundError("Saved weights for specified config could not be found in specified path. \
                                     To train locally optimised ammortisation, pretrained model is required.")
         else:
-           self.vae.load_weights(device=self.device, weights_path=model_path)
+           self.vae.load_weights(device=self.device, weights_path=model_path, load_decoder_only=self.load_decoder_only)
 
     def train_local_optimisation(self) -> None:
         """
