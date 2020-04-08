@@ -1,8 +1,10 @@
 from .base_estimator import BaseEstimator
 from models.loss_modules import baseLoss
+from utils import partition_batch
 
 import torch
 import torch.nn as nn
+
 
 class IWAEEstimator(BaseEstimator):
 
@@ -38,14 +40,10 @@ class IWAEEstimator(BaseEstimator):
         # Global warming is no joke, and neither are gradient calculations.
         with torch.no_grad():
             elbo = 0
-            # Cache the input batch size; it is used several times below.
-            input_batch_size = len(batch_input)
             # Iterate over the start index of each IWAE batch.
-            for beg in range(0, input_batch_size, self._batch_size):
-                # Truncate the end index if it exceeds the size of the input batch.
-                end = min(input_batch_size, beg + self._batch_size)
-                # Duplicate the input subbatch once for each sample in |self._num_samples|.
-                inputs = batch_input[beg:end].repeat(self._num_samples, *input_repeat_shape)
+            for minibatch in partition_batch(batch_input, self._batch_size):
+                # Duplicate the input minibatch once for each sample in |self._num_samples|.
+                inputs = minibatch.repeat(self._num_samples, *input_repeat_shape)
                 # Compute the log-likelihood of each input.
                 outputs = vae(inputs)
                 _, _, log_p_x = loss_module.compute_loss(x=inputs, vae_output=outputs)
@@ -57,7 +55,7 @@ class IWAEEstimator(BaseEstimator):
                 # Calculate the IWAE ELBO.
                 elbo += torch.sum(torch.log(torch.mean(torch.exp(log_p_x - max_log_p_x), 1)) + torch.squeeze(max_log_p_x))
             # By definition, the loss is the negative average ELBO.
-            loss = -elbo / input_batch_size
+            loss = -elbo / batch_input.size(0)
 
         if training:
             vae.train()
