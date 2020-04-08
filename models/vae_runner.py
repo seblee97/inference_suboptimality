@@ -570,15 +570,27 @@ class VAERunner():
         # set model back to train mode
         self.vae.train()
 
-    def analyse(self) -> None:
-        # Load the model to be analysed.
-        correct_hash_saved_weights_path = os.path.join(self.saved_models_path, self.config_hash)
-        consistent_saved_run_paths = sorted(Path(correct_hash_saved_weights_path).iterdir(), key=os.path.getmtime)
-        if consistent_saved_run_paths:
-            self._load_checkpointed_model(os.path.join(consistent_saved_run_paths[-1], "saved_vae_weights.pt"))
-        else:
-            raise Exception("Saved weights for specified config could not be found in specified path. \
-                             To analyse the test loss, a pretrained model is required.")
+    def analyse(self, saved_model_path) -> None:
+        """
+        Calculates the average test loss and IWAE estimated loss of a saved VAE.
+
+        :param saved_model_path: path to the saved VAE model (optional).
+        """
+        # Load the model to be analysed.  This code snippet was copied from
+        # VAERunner.train_local_optimisation().
+        if not saved_model_path:
+            # check for existing model (with hash signature) and load
+            correct_hash_saved_weights_path = os.path.join(self.saved_models_path, self.config_hash)
+
+            # there may be multiple runs with consistent hash that are saved. Heuristic: choose most recent saved run
+            consistent_saved_run_paths = sorted(Path(correct_hash_saved_weights_path).iterdir(), key=os.path.getmtime)
+            if consistent_saved_run_paths:
+                saved_model_path = os.path.join(consistent_saved_run_paths[-1], "saved_vae_weights.pt")
+            else:
+                raise Exception("Saved weights for specified config could not be found in specified path. \
+                                To analyse the test loss, a pretrained model is required.")
+
+        self._load_checkpointed_model(saved_model_path)
 
         self.vae.eval()
 

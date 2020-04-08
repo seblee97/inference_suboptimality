@@ -244,7 +244,7 @@ if __name__ == "__main__":
     runner = models.VAERunner(config=inference_gap_parameters)
 
     if args.analyse:
-        runner.analyse()
+        runner.analyse(args.losm)
     elif optimise_local:
         runner.train_local_optimisation()
     else:
