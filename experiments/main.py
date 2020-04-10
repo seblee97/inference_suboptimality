@@ -155,7 +155,22 @@ if __name__ == "__main__":
             args.ol = False
         inference_gap_parameters._config["model"]["optimise_local"] = args.ol
 
-    approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
+    # import pdb; pdb.set_trace()
+
+    optimise_local = inference_gap_parameters.get(["model", "optimise_local"])
+    if optimise_local:
+        local_opt_config_path = os.path.join(supplementary_configs_path, 'local_ammortisation_config.yaml')
+        local_opt_config_full_path = os.path.join(main_file_path, local_opt_config_path)
+        with open(local_opt_config_full_path, 'r') as yaml_file:
+            specific_params = yaml.load(yaml_file, yaml.SafeLoader)
+
+        # update base-parameters with specific parameters
+        inference_gap_parameters.update(specific_params)
+        approximate_posterior_configuration = inference_gap_parameters.get(["local_ammortisation", "approximate_posterior"])
+
+    else:
+        approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
+
     if approximate_posterior_configuration == 'gaussian':
         pass
     elif approximate_posterior_configuration == 'rnvp_norm_flow':
@@ -169,10 +184,6 @@ if __name__ == "__main__":
     is_estimator = inference_gap_parameters.get(["model", "is_estimator"])
     if is_estimator:
         additional_configurations.append(os.path.join(supplementary_configs_path, 'estimator_config.yaml'))
-
-    optimise_local = inference_gap_parameters.get(["model", "optimise_local"])
-    if optimise_local:
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'local_ammortisation_config.yaml'))
 
     # specific parameters
     for additional_configuration in additional_configurations:
@@ -244,7 +255,7 @@ if __name__ == "__main__":
     runner = models.VAERunner(config=inference_gap_parameters)
 
     if args.analyse:
-        runner.analyse()
+        runner.analyse(args.losm)
     elif optimise_local:
         runner.train_local_optimisation()
     else:
