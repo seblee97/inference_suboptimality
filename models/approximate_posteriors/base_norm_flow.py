@@ -16,6 +16,8 @@ class BaseFlow(nn.Module, ABC):
         self.activation_function = config.get(["flow", "nonlinearity"])
         if self.activation_function == 'elu':
             self.activation = F.elu
+        elif self.activation_function == 'tanh':
+            self.activation = torch.tanh
 
 
     @abstractmethod

@@ -8,9 +8,9 @@ from .networks import deconvNetwork
 from .encoder import Encoder
 from .decoder import Decoder
 
-from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux
+from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux, PlanarPosterior
 
-from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss
+from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss, PlanarLoss
 from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
 from .local_ammortisation_modules import GaussianLocalAmmortisation, RNVPAuxLocalAmmortisation, RNVPLocalAmmortisation
 
@@ -72,7 +72,7 @@ class VAERunner():
         # setup likelihood estimator with parameters from config
         if self.is_estimator:
             self.estimator = self._setup_estimator(config)
-        
+
         if self.optimise_local:
             self.localised_ammortisation_network = self._setup_local_ammortisation(config)
 
@@ -162,7 +162,7 @@ class VAERunner():
     def _construct_model_hash(self, config: Dict):
         """
         Unique signature for current config architecture.
-        Note 1. Fields such as learning rate and even non-linearities are not included as they do not 
+        Note 1. Fields such as learning rate and even non-linearities are not included as they do not
         affect capacity/architecture of model and thus do not impact save/load compatibility of config.
         Note 2. The field optimise_local is not included in the config, when it is set to true a new hash
         is constructed for this run so that runs can be saved independently without conflict.
@@ -178,7 +178,12 @@ class VAERunner():
                 config.get(["model", "decoder", "hidden_dimensions"]),
             ]
 
-        if self.approximate_posterior_type == "rnvp_norm_flow":
+        if (self.approximate_posterior_type == "rnvp_norm_flow"):
+            model_specification_components.extend([
+                config.get(["flow", "flow_layers"])
+            ])
+
+        if (self.approximate_posterior_type == "planar_flow"):
             model_specification_components.extend([
                 config.get(["flow", "flow_layers"])
             ])
@@ -189,6 +194,7 @@ class VAERunner():
                 config.get(["flow", "auxillary_forward_dimensions"]),
                 config.get(["flow", "auxillary_reverse_dimensions"])
             ])
+
 
         # hash relevant elements of current config to see if trained model exists
         self.config_hash = hashlib.md5(str(model_specification_components).encode('utf-8')).hexdigest()
@@ -210,6 +216,8 @@ class VAERunner():
             approximate_posterior = RNVPPosterior(config=config)
         elif self.approximate_posterior_type == "rnvp_aux_flow":
             approximate_posterior = RNVPAux(config=config)
+        elif self.approximate_posterior_type == "planar_flow":
+            approximate_posterior = PlanarPosterior(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised".format(self.approximate_posterior_type))
 
@@ -239,6 +247,8 @@ class VAERunner():
             self.loss_module = RNVPLoss()
         elif approximate_posterior_type == "rnvp_aux_flow":
             self.loss_module = RNVPAuxLoss()
+        elif self.approximate_posterior_type == "planar_flow":
+            self.loss_module = PlanarLoss()
         else:
             raise ValueError("Loss module not correctly specified")
 
@@ -316,9 +326,11 @@ class VAERunner():
             local_ammortisation_module = RNVPLocalAmmortisation(config=config)
         elif self.local_approximate_posterior == "rnvp_aux_flow":
             local_ammortisation_module = RNVPAuxLocalAmmortisation(config=config)
+        elif local_approximate_posterior == "planar_flow":
+            local_ammortisation_module = RNVPLocalAmmortisation(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised for local ammortisation".format(local_approximate_posterior))
-            
+
         return local_ammortisation_module
 
     def _load_checkpointed_model(self, model_path: str) -> None:
@@ -333,7 +345,7 @@ class VAERunner():
 
     def train_local_optimisation(self) -> None:
         """
-        Local optimisation (per data batch) of ammortisation network. 
+        Local optimisation (per data batch) of ammortisation network.
 
         Loads pretrained model and freezes weights.
         """
@@ -370,13 +382,14 @@ class VAERunner():
             current_average_loss = 0.0
             best_average_loss = np.inf
             num_cycles_without_improvement = 0
-                
+
             # start with unit normal prior
             mean = torch.zeros((self.batch_size * self.local_mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
             logvar = torch.zeros((self.batch_size * self.local_mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
 
             # for gaussian case, mean and logvar are only encoder parameters. For flow etc. there are others
             additional_optimisation_parameters = self.localised_ammortisation_network.get_additional_parameters()
+
             parameters_to_optimise = [{'params': [mean, logvar]}, {'params': additional_optimisation_parameters}]
             
             local_optimiser = self.localised_ammortisation_network.get_local_optimiser(parameters=parameters_to_optimise)
@@ -387,7 +400,7 @@ class VAERunner():
 
                 if self.log_to_df:
                     self.logger_df.append(pd.Series(name=log_step_count))
-                
+
                 z, params = self.localised_ammortisation_network.sample_latent_vector([mean, logvar])
 
                 reconstruction = self.vae.decoder(z)
