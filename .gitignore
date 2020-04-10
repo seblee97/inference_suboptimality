@@ -10,3 +10,4 @@ experiments/saved_models/
 **.pyc
 # IDE
 .vscode
+*.DS_Store

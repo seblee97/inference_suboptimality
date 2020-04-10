@@ -17,7 +17,7 @@ class RNVPAuxLoss(baseLoss):
     loss module :https://github.com/chrischute/real-nvp/blob/df51ad570baf681e77df4d2265c0f1eb1b5b646c/models/real_nvp/real_nvp_loss.py
     """
 
-    def compute_loss(self, x, vae_output, warm_up):
+    def compute_loss(self, x, vae_output, warm_up=1):
 
         vae_reconstruction = vae_output['x_hat']
         vae_latent = vae_output['z']
@@ -30,7 +30,7 @@ class RNVPAuxLoss(baseLoss):
         #        = E[log p(x|z) + log p(z) - log q(z|x)]
         #          explicit flow expression
         #        = E[log p(x|z) + log p(z) - log q_0(z_0|x) + sum(log_det_jacobian)]
-        log_p_xz = -F.binary_cross_entropy(vae_reconstruction, x, reduction='none').sum(-1)
+        log_p_xz = -F.binary_cross_entropy_with_logits(vae_reconstruction, x, reduction='none').sum(-1)
         log_p_z = -0.5 * vae_latent.pow(2).sum(1)
         log_q_zx = -0.5 * (log_var.sum(1) + ((z0 - mean).pow(2) / torch.exp(log_var)).sum(1)) - log_det_jacobian
 
@@ -40,7 +40,7 @@ class RNVPAuxLoss(baseLoss):
         log_r_vxz = -0.5 * (rv_log_var.sum(1) + ((rv - rv_mean).pow(2) / torch.exp(rv_log_var)).sum(1))
 
         # TODO: Add a warm-up constant to the last two terms.
-        log_p_x = log_p_xz + log_p_z - warm_up * log_q_zx + log_r_vxz
+        log_p_x = log_p_xz + log_p_z - warm_up * (log_q_zx - log_r_vxz)
 
         # The ELBO is defined to be the mean of the logs in the batch.
         elbo = torch.mean(log_p_x)

@@ -13,8 +13,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml') # base_config.yaml or base_config_CIFAR.yaml
 parser.add_argument('-additional_configs', '--ac', type=str, help='path to folder containing additional configuration files (e.g. for flow)', default='additional_configs/')
 
+# General
 parser.add_argument('--experiment_name', type=str, default=None)
 
+# Training
 parser.add_argument('-learning_rate', '--lr', type=float, default=None)
 parser.add_argument('--dataset', type=str, default=None)
 parser.add_argument('--params', nargs='+', type=float, default=None)
@@ -23,9 +25,10 @@ parser.add_argument('-number_epochs', '--ne', type=int, default=None)
 parser.add_argument('-warm_up','--wu', type=int, default=None)
 parser.add_argument('-loss_function', '--lf', type=str, default=None)
 
+# Architecture VAE
 parser.add_argument('-latent_dimension', '--ld', type=float, default=None)
 parser.add_argument('-approximate_posterior', '--ap', type=str, default=None)
-parser.add_argument('-is_estimator', '--ie', action='store_true')
+parser.add_argument('-is_estimator', '--ie',  type=str, default=None)
 parser.add_argument('-encoder_network_type', '--ent', type=str, default=None)
 parser.add_argument('-encoder_hidden_dimensions', '--ehd', type=str, default=None)
 parser.add_argument('-encoder_output_dimensions', '--eod', type=str, default=None)
@@ -35,9 +38,28 @@ parser.add_argument('-decoder_hidden_dimensions', '--dhd', type=str, default=Non
 parser.add_argument('-decoder_unfreeze_ratio', '--dur', type=float, default=None)
 parser.add_argument('-encoder_unfreeze_ratio', '--eur', type=float, default=None)
 
+# Estimator likelihood
 parser.add_argument('-estimator_type', '--et', type=str, default=None)
 parser.add_argument('-IWAE_samples', '--IWAEs', type=float, default=None)
 parser.add_argument('-IWAE_batch_size', '--IWAEbs', type=float, default=None)
+parser.add_argument('-AIS_batch_size', '--AISbs', type=float, default=None)
+
+# Local amortisation
+parser.add_argument('-optimise_local', '--ol', type=str, default=None)
+parser.add_argument('-local_ammortisation_posterior', '--lap', type=str, default=None)
+parser.add_argument('-local_num_batches', '--lnb', type=int, default=None)
+parser.add_argument('-load_decoder_only', '--ldo', type=str, default=None)
+
+# Saved model for local optimisation (if none provided, will attempt to find one from hash of config)
+parser.add_argument('-local_opt_saved_model', '--losm', type=str, help="path to saved model file for use in local optimisation", default=None)
+
+# Flows
+
+# Auxiliary Flows
+
+# Analysis
+parser.add_argument('-analyse', action='store_true', default=None)
+
 
 args = parser.parse_args()
 
@@ -55,21 +77,8 @@ if __name__ == "__main__":
 
     supplementary_configs_path = args.ac
     additional_configurations = []
-
-    approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
-    if approximate_posterior_configuration == 'gaussian':
-        pass
-    elif approximate_posterior_configuration == 'planar_flow':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'planar_config.yaml'))
-    elif approximate_posterior_configuration == 'rnvp_norm_flow':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
-    elif approximate_posterior_configuration == 'rnvp_aux_flow':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'aux_flow_config.yaml'))
-    else:
-        raise ValueError("approximate_posterior_configuration {} not recognised. Please use 'gaussian', \
-                'rnvp_norm_flow', or 'rnvp_aux_flow'".format(approximate_posterior_configuration))
-
-    # update parameters with (optional) args given in command line
+    
+    # Update parameters with (optional) args given in command line
     # Experiment level
     if args.experiment_name:
         inference_gap_parameters._config["experiment_name"] = args.experiment_name
@@ -100,6 +109,10 @@ if __name__ == "__main__":
     if args.ap:
         inference_gap_parameters._config["model"]["approximate_posterior"] = args.ap
     if args.ie:
+        if args.ie == "True":
+            args.ie = True
+        else:
+            args.ie = False
         inference_gap_parameters._config["model"]["is_estimator"] = args.ie
     if args.ent:
         inference_gap_parameters._config["model"]["encoder"]["network_type"] = args.ent
@@ -134,21 +147,45 @@ if __name__ == "__main__":
     if args.dur:
         inference_gap_parameters._config["model"]["decoder"]["decoder_unfreeze_ratio"] = args.dur
 
-    # Estimator level
-    if args.et:
-        inference_gap_parameters._config["estimator"]["type"] = args.et
-    if args.IWAEs:
-        inference_gap_parameters._config["estimator"]["iwae"]["samples"] = args.IWAEs
-    if args.IWAEbs:
-        inference_gap_parameters._config["estimator"]["iwae"]["batch_size"] = args.IWAEbs
+    # Local amortisation level
+    if args.ol:
+        if args.ol == "True":
+            args.ol = True
+        else:
+            args.ol = False
+        inference_gap_parameters._config["model"]["optimise_local"] = args.ol
+
+    # import pdb; pdb.set_trace()
+
+    optimise_local = inference_gap_parameters.get(["model", "optimise_local"])
+    if optimise_local:
+        local_opt_config_path = os.path.join(supplementary_configs_path, 'local_ammortisation_config.yaml')
+        local_opt_config_full_path = os.path.join(main_file_path, local_opt_config_path)
+        with open(local_opt_config_full_path, 'r') as yaml_file:
+            specific_params = yaml.load(yaml_file, yaml.SafeLoader)
+
+        # update base-parameters with specific parameters
+        inference_gap_parameters.update(specific_params)
+        approximate_posterior_configuration = inference_gap_parameters.get(["local_ammortisation", "approximate_posterior"])
+
+    else:
+        approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
+
+    if approximate_posterior_configuration == 'gaussian':
+        pass
+    elif approximate_posterior_configuration == 'rnvp_norm_flow':
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
+    elif approximate_posterior_configuration == 'rnvp_aux_flow':
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'aux_flow_config.yaml'))
+    elif approximate_posterior_configuration == 'planar_flow':
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'planar_config.yaml'))
+    else:
+        raise ValueError("approximate_posterior_configuration {} not recognised. Please use 'gaussian', \
+                             'rnvp_norm_flow', or 'rnvp_aux_flow'".format(approximate_posterior_configuration))
 
     is_estimator = inference_gap_parameters.get(["model", "is_estimator"])
     if is_estimator:
         additional_configurations.append(os.path.join(supplementary_configs_path, 'estimator_config.yaml'))
-
-    optimise_local = inference_gap_parameters.get(["model", "optimise_local"])
-    if optimise_local:
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'local_ammortisation_config.yaml'))
 
     # specific parameters
     for additional_configuration in additional_configurations:
@@ -158,6 +195,29 @@ if __name__ == "__main__":
 
         # update base-parameters with specific parameters
         inference_gap_parameters.update(specific_params)
+
+    # Estimator level
+    if args.et:
+        inference_gap_parameters._config["estimator"]["type"] = args.et
+    if args.IWAEs:
+        inference_gap_parameters._config["estimator"]["iwae"]["samples"] = args.IWAEs
+    if args.IWAEbs:
+        inference_gap_parameters._config["estimator"]["iwae"]["batch_size"] = args.IWAEbs
+    if args.AISbs:
+        inference_gap_parameters._config["estimator"]["ais"]["batch_size"] = args.AISbs
+
+    if optimise_local:
+        if args.lap:
+            inference_gap_parameters._config["local_ammortisation"]["approximate_posterior"] = args.lap
+                # Saved model path for local optimisation
+        if args.losm:
+            inference_gap_parameters._config["local_ammortisation"]["manual_saved_model_path"] = args.losm
+        if args.lnb:
+            inference_gap_parameters._config["local_ammortisation"]["num_batches"] = args.lnb
+    
+    # Override the decoder loading setting.
+    if args.ldo:
+        inference_gap_parameters._config["load_decoder_only"] = args.ldo.lower() == "true"
 
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
@@ -200,7 +260,9 @@ if __name__ == "__main__":
 
     runner = models.VAERunner(config=inference_gap_parameters)
 
-    if optimise_local:
+    if args.analyse:
+        runner.analyse(args.losm)
+    elif optimise_local:
         runner.train_local_optimisation()
     else:
         runner.train()

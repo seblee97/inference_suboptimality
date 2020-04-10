@@ -2,7 +2,8 @@
 Advanced Machine Learning 2020 HT Oxford project
 
 ## Quick Links
-* [Research Notes](https://docs.google.com/spreadsheets/d/1y8K3G4ih2Ta9uB6wM7noJpNtmomSwDDZmKUIKUfGlTk/edit#gid=0)
+* [Spreadsheet](https://docs.google.com/spreadsheets/d/1y8K3G4ih2Ta9uB6wM7noJpNtmomSwDDZmKUIKUfGlTk/edit#gid=0)
+* [Overleaf Report](https://www.overleaf.com/2537812191smnpkcprxdxs)
 * [Experiment List](https://docs.google.com/document/d/1mjVGWMD_I13s5KsolYSpAij37CbMO58AiLj4kKjfKHA/edit?usp=sharing)
 * [Research Paper](https://arxiv.org/abs/1801.03558)
 
