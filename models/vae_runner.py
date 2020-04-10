@@ -158,7 +158,12 @@ class VAERunner():
                 config.get(["model", "decoder", "hidden_dimensions"]),
             ]
 
-        if (self.approximate_posterior_type == "rnvp_norm_flow") or (self.approximate_posterior_type == "planar_flow"):
+        if (self.approximate_posterior_type == "rnvp_norm_flow"):
+            model_specification_components.extend([
+                config.get(["flow", "flow_layers"])
+            ])
+
+        if (self.approximate_posterior_type == "planar_flow"):
             model_specification_components.extend([
                 config.get(["flow", "flow_layers"])
             ])
@@ -170,10 +175,6 @@ class VAERunner():
                 config.get(["flow", "auxillary_reverse_dimensions"])
             ])
 
-        if self.approximate_posterior_type == "planar_flow":
-            model_specification_components.extend([
-                config.get(["flow", "flow_layers"]),
-            ])
 
         # hash relevant elements of current config to see if trained model exists
         self.config_hash = hashlib.md5(str(model_specification_components).encode('utf-8')).hexdigest()

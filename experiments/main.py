@@ -60,7 +60,7 @@ if __name__ == "__main__":
     if approximate_posterior_configuration == 'gaussian':
         pass
     elif approximate_posterior_configuration == 'planar_flow':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'planar_config.yaml'))
     elif approximate_posterior_configuration == 'rnvp_norm_flow':
         additional_configurations.append(os.path.join(supplementary_configs_path, 'flow_config.yaml'))
     elif approximate_posterior_configuration == 'rnvp_aux_flow':

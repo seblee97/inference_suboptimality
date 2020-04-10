@@ -17,7 +17,7 @@ class BaseFlow(nn.Module, ABC):
         if self.activation_function == 'elu':
             self.activation = F.elu
         elif self.activation_function == 'tanh':
-            self.activation = F.tanh
+            self.activation = torch.tanh
 
 
     @abstractmethod

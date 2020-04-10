@@ -10,9 +10,13 @@ from typing import Dict
 
 class PlanarPosterior(approximatePosterior, BaseFlow):
 
-    """Applied Planar normalising flows (https://github.com/riannevdberg/sylvester-flows/blob/master/models/VAE.py)
+    """Applied Planar normalising flows (https://github.com/riannevdberg/sylvester-flows/blob/master/models/VAE.py) [repo 1]
     Varientional auto-encoders with normalizing flows, applied in https://github.com/e-hulten/planar-flows/blob/master/transform.py#L4
-    both applying paper: https://arxiv.org/pdf/1803.05649.pdf"""
+    both applying paper: https://arxiv.org/pdf/1803.05649.pdf
+
+    https://arxiv.org/pdf/1505.05770.pdf"""
+
+    ## remove useless config,make new flow config with flow layers, link to the original paper
 
     def __init__(self, config: Dict):
 
@@ -27,7 +31,7 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
         # input to flow maps will be latent dimension (i.e. output of first part of inference network)
         self.input_dimension = config.get(["model", "latent_dimension"])
-        self.batch_size =  self.input_dimension * 2 #config.get(["training", "batch_size"])
+        self.batch_size = config.get(["training", "batch_size"])
 
 
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
@@ -37,14 +41,9 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
     def _construct_layers(self):
 
-
-        self.flow_u_modules = nn.ModuleList([])
-        self.flow_w_modules = nn.ModuleList([])
-        self.flow_b_modules = nn.ModuleList([])
-
-        self.flow_u_modules.append(self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations * self.input_dimension)))
-        self.flow_w_modules.append(self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations * self.input_dimension)))
-        self.flow_b_modules.append(self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations)))
+        self.flow_u_modules = self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations * self.input_dimension))
+        self.flow_w_modules = self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations * self.input_dimension))
+        self.flow_b_modules = self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations))
 
     def deriv_tanh(self, x):
         return 1 - self.activation(x) ** 2
@@ -67,59 +66,58 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         """
         Forward pass. Assumes amortized u, w and b. Conditions on diagonals of u and w for invertibility
         will be be satisfied inside this function. Computes the following transformation:
-        z' = z + u h( w^T z + b)
+        z' = z + u h( w^T z + b) (section 2.1, equation 10 from paper cited above)
         or actually
         z'^T = z^T + h(z^T w + b)u^T
-        Assumes the following input shapes:
+
+        u, w, b are matrices parametrized by a linear map.
+        z is the latent
+        h() is a smooth activation function (here, tanh)
+
+        Assumes the following input shapes: (from repo cited above)
         shape u = (batch_size, z_size, 1)
         shape w = (batch_size, 1, z_size)
         shape b = (batch_size, 1, 1)
         shape z = (batch_size, z_size).
+
+
         """
 
-
-        #print("z0: ", z0.shape)
         zk = z0.unsqueeze(2)
-        #print("zk: ", zk.shape)
+
+        # following flow code adapted from [repo 1]
 
         uw = torch.bmm(w, u)
         m_uw = -1. + F.softplus(uw)
-        #print("m_uw: ", m_uw.shape)
         w_norm_sq = torch.sum(w ** 2, dim=2, keepdim=True)
-        u_hat = u + ((m_uw - uw) * w.transpose(2, 1) / w_norm_sq)
+        u_hat = u + ((m_uw - uw) * w.transpose(2, 1) / w_norm_sq) # (u^T)
 
         # compute flow with u_hat
 
-        #print("w: ", w.shape)
-        #print("zk: ", zk.shape)
-        #print("b: ", b.shape)
-        #print("u_hat: ", u_hat.shape)
-
+        # multiply w^T and z
         wz = torch.bmm(w, zk)
         wzb = wz + b
         #print("activation: ", self.activation(wzb).shape)
         uwzb = u_hat * self.activation(wzb)
-        z = zk + uwzb
-        #print("z 1: ", z.shape)
-        z = z.squeeze(2)
-        #print("z 2: ", z.shape)
 
-        # this computes the jacobian determinant (sec 2.1 of above paper )
+        # f(z) =  z + u h (w^T z + b) = zk + u_hat * tanh(wzb) (10)
+        z_out = zk + uwzb
+        z_out = z_out.squeeze(2)
+
+        # this computes the jacobian determinant (sec 4.1, eq 11-12 of above paper )
+        # psi(z) = w * h'(w^T z + b) (11)
+        # from our variables:
+        # psi = w * tanh'(wz +b) = w * tanh'(wzb) (w transposed)
         psi = w * self.deriv_tanh(wzb)
+        # logDJ = |det (I + u psi z^T)| = |1 + u^T psi(z)| (12)
         log_det_jacobian = torch.log(torch.abs(1 + torch.bmm(psi, u_hat)))
         log_det_jacobian = log_det_jacobian.squeeze(2).squeeze(1)
 
-        #print("log det pass: ", log_det_jacobian.shape)
-
-
-        return z, log_det_jacobian
+        return z_out, log_det_jacobian
 
     def sample(self, parameters):
 
-        #print("h.shape 1: ", parameters.shape)
         h = parameters.view(-1, self.input_dimension * 2)
-
-        #print("h.shape: ", h.shape)
 
         # reparameterization trick
         z0, mean, log_var = self._reparameterise(h)
@@ -127,17 +125,12 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         z = z0
 
         # pass resized parameters into u, w, b to parametrize the matrices
-        u0 = self.flow_u_modules[0](h)
+        u0 = self.flow_u_modules(h)
         u = u0.view(-1, self.num_flow_transformations, self.input_dimension, 1)
-        w0 = self.flow_w_modules[0](h)
+        w0 = self.flow_w_modules(h)
         w = w0.view(-1, self.num_flow_transformations, 1, self.input_dimension)
-        b0 = self.flow_b_modules[0](h)
+        b0 = self.flow_b_modules(h)
         b = b0.view(-1, self.num_flow_transformations, 1, 1)
-
-        # check matrix size, should be [100, 50] then [100,50,1]
-        #print("u shape ", u0.shape)
-        #print("u shape: ", u.shape)
-
 
         # run flow transformations using latent + u, w, b parameters
 
