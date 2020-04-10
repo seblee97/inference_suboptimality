@@ -1,4 +1,4 @@
-experiment_name:                    not_test                      # Name of the experiment.
+experiment_name:                    test                      # Name of the experiment.
 use_gpu:                            True                      # Use a gpu if one is available.
 seed:                               1                         # Random seed to ensure reproducibility.
 relative_data_path:                 ../data/                  # Path to the dataset directory.
@@ -33,7 +33,7 @@ training:
   dataset:                          binarised_mnist           # Dataset to use for training and testing (e.g., mnist, binarised_mnist, fashion_mnist, or cifar).
   batch_size:                       100                       # Size of the training batches.
   num_epochs:                       300                       # Number of training epochs.
-  warm_up_program:                  0                       # Limit of linear entropy-annealing (= warm-up) program (set to 0 if no entropy annealing wanted). 400 is the default
+  warm_up_program:                  400                       # Limit of linear entropy-annealing (= warm-up) program (set to 0 if no entropy annealing wanted). 400 is the default
 
 testing:
   test_frequency:                   100                       # Number of training steps between tests.
