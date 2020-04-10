@@ -10,7 +10,7 @@ from .decoder import Decoder
 
 from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux, PlanarPosterior
 
-from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss
+from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss, PlanarLoss
 from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
 from .local_ammortisation_modules import GaussianLocalAmmortisation, RNVPAuxLocalAmmortisation, RNVPLocalAmmortisation
 
@@ -158,7 +158,7 @@ class VAERunner():
                 config.get(["model", "decoder", "hidden_dimensions"]),
             ]
 
-        if self.approximate_posterior_type == "rnvp_norm_flow":
+        if (self.approximate_posterior_type == "rnvp_norm_flow") or (self.approximate_posterior_type == "planar_flow"):
             model_specification_components.extend([
                 config.get(["flow", "flow_layers"])
             ])
@@ -222,7 +222,7 @@ class VAERunner():
         elif self.approximate_posterior_type == "rnvp_aux_flow":
             self.loss_module = RNVPAuxLoss()
         elif self.approximate_posterior_type == "planar_flow":
-            self.loss_module = RNVPLoss()
+            self.loss_module = PlanarLoss()
         else:
             raise ValueError("Loss module not correctly specified")
 
@@ -315,7 +315,7 @@ class VAERunner():
             raise FileNotFoundError("Saved weights for specified config could not be found in specified path. \
                                     To train locally optimised ammortisation, pretrained model is required.")
         else:
-           self.vae.load_weights(model_path)
+            self.vae.load_weights(model_path)
 
     def train_local_optimisation(self) -> None:
         """
@@ -421,7 +421,7 @@ class VAERunner():
                 # Get entropy-annealing factor for linear program
                 warm_up_factor = 1.0
                 if self.warm_up_program != 0:
-                    warm_up_factor= min(1.0, e/self.warm_up_program)
+                    warm_up_factor = min(1.0, e/self.warm_up_program)
 
                 loss, loss_metrics, _ = self.loss_module.compute_loss(x=batch_input, vae_output=vae_output, warm_up=warm_up_factor)
 
