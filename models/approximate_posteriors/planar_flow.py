@@ -109,17 +109,17 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         log_det_jacobian = torch.log(torch.abs(1 + torch.bmm(psi, u_hat)))
         log_det_jacobian = log_det_jacobian.squeeze(2).squeeze(1)
 
-        print("log det pass: ", log_det_jacobian.shape)
+        #print("log det pass: ", log_det_jacobian.shape)
 
 
         return z, log_det_jacobian
 
     def sample(self, parameters):
 
-        print("h.shape 1: ", parameters.shape)
-        h = parameters.view(-1, self.batch_size)
+        #print("h.shape 1: ", parameters.shape)
+        h = parameters.view(-1, self.input_dimension * 2)
 
-        print("h.shape: ", h.shape)
+        #print("h.shape: ", h.shape)
 
         # reparameterization trick
         z0, mean, log_var = self._reparameterise(h)
@@ -128,15 +128,15 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
         # pass resized parameters into u, w, b to parametrize the matrices
         u0 = self.flow_u_modules[0](h)
-        u = u0.view(self.batch_size, self.num_flow_transformations, self.input_dimension, 1)
+        u = u0.view(-1, self.num_flow_transformations, self.input_dimension, 1)
         w0 = self.flow_w_modules[0](h)
-        w = w0.view(self.batch_size, self.num_flow_transformations, 1, self.input_dimension)
+        w = w0.view(-1, self.num_flow_transformations, 1, self.input_dimension)
         b0 = self.flow_b_modules[0](h)
-        b = b0.view(self.batch_size, self.num_flow_transformations, 1, 1)
+        b = b0.view(-1, self.num_flow_transformations, 1, 1)
 
         # check matrix size, should be [100, 50] then [100,50,1]
-        print("u shape ", u0.shape)
-        print("u shape: ", u.shape)
+        #print("u shape ", u0.shape)
+        #print("u shape: ", u.shape)
 
 
         # run flow transformations using latent + u, w, b parameters
