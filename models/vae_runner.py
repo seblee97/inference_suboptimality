@@ -113,7 +113,6 @@ class VAERunner():
 
         self.test_frequency = config.get(["testing", "test_frequency"])
         self.visualise_test = config.get(["testing", "visualise"])
-        self.test_batch_size = config.get(["testing", "batch_size"])
 
         self.optimiser_type = config.get(["training", "optimiser", "type"])
         self.optimiser_params = config.get(["training", "optimiser", "params"])
@@ -596,17 +595,20 @@ class VAERunner():
         self.vae.eval()
 
         with torch.no_grad():
-            # Compute the average test loss using |self.test_mc_samples| samples from
-            # each element of the test set.
+            # Extract the training dataset for convenience.
+            training_data = torch.cat([minibatch.to(self.device) for minibatch, _ in self.dataloader], dim=0)
+
+            # Compute the average training loss using |self.train_mc_samples|
+            # samples from each element of the training set.
             mean_loss = torch.Tensor([0.0])
-            for minibatch in partition_batch(self.test_data, self.test_batch_size):
-                minibatch = repeat_batch(minibatch, self.test_mc_samples)
+            for minibatch in partition_batch(training_data, self.batch_size):
+                minibatch = repeat_batch(minibatch, self.train_mc_samples)
                 vae_output = self.vae(minibatch)
                 loss, _, _ = self.loss_module.compute_loss(x=minibatch, vae_output=vae_output)
                 mean_loss += loss * len(minibatch)
                 del minibatch, vae_output
-            mean_loss /= self.test_data.size(0) * self.test_mc_samples
-            print("Test loss using {} MC samples: {}.".format(self.test_mc_samples, float(mean_loss)))
+            mean_loss /= len(training_data) * self.train_mc_samples
+            print("Training loss using {} MC samples: {}.".format(self.train_mc_samples, float(mean_loss)))
 
             # Ensure the GPU has enough memory to perform the estimation.
             if self.device == "cuda":
@@ -614,5 +616,5 @@ class VAERunner():
 
             # Compute the estimated test loss (if applicable).
             if self.is_estimator:
-                estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
+                estimated_loss = self.estimator.estimate_log_likelihood_loss(training_data, self.vae, self.loss_module)
                 print("Estimated loss using estimator '{}': {}.".format(self.estimator_type, float(estimated_loss)))
