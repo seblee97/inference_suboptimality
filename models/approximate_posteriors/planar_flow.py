@@ -116,12 +116,9 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         z = z0
 
         # pass resized parameters into u, w, b to parametrize the matrices
-        u0 = self.flow_u_modules(parameters)
-        u = u0.view(-1, self.num_flow_transformations, self.input_dimension, 1)
-        w0 = self.flow_w_modules(parameters)
-        w = w0.view(-1, self.num_flow_transformations, 1, self.input_dimension)
-        b0 = self.flow_b_modules(parameters)
-        b = b0.view(-1, self.num_flow_transformations, 1, 1)
+        u = self.flow_u_modules(parameters).view(-1, self.num_flow_transformations, self.input_dimension)
+        w = self.flow_w_modules(parameters).view(-1, self.num_flow_transformations, self.input_dimension)
+        b = self.flow_b_modules(parameters).view(-1, self.num_flow_transformations, 1)
 
         # run flow transformations using latent + u, w, b parameters
 
