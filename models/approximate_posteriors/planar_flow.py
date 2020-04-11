@@ -117,19 +117,17 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
     def sample(self, parameters):
 
-        h = parameters.view(-1, self.input_dimension * 2)
-
         # reparameterization trick
-        z0, mean, log_var = self._reparameterise(h)
+        z0, mean, log_var = self._reparameterise(parameters)
         log_det_jacobian = torch.zeros(z0.shape[0])
         z = z0
 
         # pass resized parameters into u, w, b to parametrize the matrices
-        u0 = self.flow_u_modules(h)
+        u0 = self.flow_u_modules(parameters)
         u = u0.view(-1, self.num_flow_transformations, self.input_dimension, 1)
-        w0 = self.flow_w_modules(h)
+        w0 = self.flow_w_modules(parameters)
         w = w0.view(-1, self.num_flow_transformations, 1, self.input_dimension)
-        b0 = self.flow_b_modules(h)
+        b0 = self.flow_b_modules(parameters)
         b = b0.view(-1, self.num_flow_transformations, 1, 1)
 
         # run flow transformations using latent + u, w, b parameters
