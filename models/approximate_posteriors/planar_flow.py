@@ -16,8 +16,6 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
     https://arxiv.org/pdf/1505.05770.pdf"""
 
-    ## remove useless config,make new flow config with flow layers, link to the original paper
-
     def __init__(self, config: Dict):
 
         # get architecture of flows from config
