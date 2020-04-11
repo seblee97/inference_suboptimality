@@ -33,7 +33,6 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         self.input_dimension = config.get(["model", "latent_dimension"])
         self.batch_size = config.get(["training", "batch_size"])
 
-
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
 
         approximatePosterior.__init__(self, config)
@@ -61,7 +60,7 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
         return reparameterised_vector, mean, log_var
 
-    def forward(self, z0: torch.Tensor, u, w, b):
+    def forward(self, zk: torch.Tensor, u, w, b):
 
         """
         Forward pass. Assumes amortized u, w and b. Conditions on diagonals of u and w for invertibility
@@ -79,12 +78,7 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         shape w = (batch_size, 1, z_size)
         shape b = (batch_size, 1, 1)
         shape z = (batch_size, z_size).
-
-
-        """
-
-        zk = z0.unsqueeze(2)
-
+        """      
         # following flow code adapted from [repo 1]
 
         uw = torch.bmm(w, u)
