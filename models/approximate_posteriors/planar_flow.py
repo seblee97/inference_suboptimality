@@ -71,13 +71,13 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
         u, w, b are matrices parametrized by a linear map.
         z is the latent
-        h() is a smooth activation function (here, tanh)
+        h() is a smooth activation function
 
-        Assumes the following input shapes: (from repo cited above)
-        shape u = (batch_size, z_size, 1)
-        shape w = (batch_size, 1, z_size)
-        shape b = (batch_size, 1, 1)
-        shape z = (batch_size, z_size).
+        Assumes the following input shapes:
+        shape u = (batch_size, latent_dimension)
+        shape w = (batch_size, latent_dimension)
+        shape b = (batch_size, 1)
+        shape z = (batch_size, latent_dimension).
         """      
         # following flow code adapted from [repo 1]
 
@@ -87,17 +87,13 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         u_hat = u + ((m_uw - uw) * w / w_norm_sq) # (u^T)
 
         # compute flow with u_hat
-
-        # multiply w^T and z
+        # f(z) =  z + \hat{u} (w^T\cdot z + b)
         wz = torch.sum(w * zk, dim=1, keepdim=True)
         wzb = wz + b
         #print("activation: ", self.activation(wzb).shape)
         uwzb = u_hat * self.activation(wzb)
 
-        # f(z) =  z + u h (w^T z + b) = zk + u_hat * tanh(wzb) (10)
-        z_out = zk + uwzb
-
-        # this computes the jacobian determinant (sec 4.1, eq 11-12 of above paper )
+        # this computes the jacobian determinant (sec 4.1, eq 11-12 of above paper)
         # psi(z) = w * h'(w^T z + b) (11)
         # from our variables:
         # psi = w * tanh'(wz +b) = w * tanh'(wzb) (w transposed)
