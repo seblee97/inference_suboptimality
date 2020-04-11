@@ -41,9 +41,9 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
     def _construct_layers(self):
 
-        self.flow_u_modules = self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations * self.input_dimension))
-        self.flow_w_modules = self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations * self.input_dimension))
-        self.flow_b_modules = self._initialise_weights(nn.Linear(self.batch_size, self.num_flow_transformations))
+        self.flow_u_modules = self._initialise_weights(nn.Linear(2 * self.input_dimension, self.num_flow_transformations * self.input_dimension))
+        self.flow_w_modules = self._initialise_weights(nn.Linear(2 * self.input_dimension, self.num_flow_transformations * self.input_dimension))
+        self.flow_b_modules = self._initialise_weights(nn.Linear(2 * self.input_dimension, self.num_flow_transformations))
 
     def deriv_tanh(self, x):
         return 1 - self.activation(x) ** 2
