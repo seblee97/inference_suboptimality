@@ -54,7 +54,12 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
         return reparameterised_vector, mean, log_var
 
-    def forward(self, zk: torch.Tensor, u, w, b):
+    def _tanh_reparameterise_u(self, u: torch.Tensor, w: torch.Tensor) -> torch.Tensor:
+        uw = torch.sum(w * u, dim=1, keepdim=True)
+        m_uw = -1. + F.softplus(uw)
+        w_norm_sq = torch.sum(w * w, dim=1, keepdim=True)
+        u_hat = u + ((m_uw - uw) * w / w_norm_sq) # (u^T)
+        return u_hat
 
         """
         Forward pass. Assumes amortized u, w and b. Conditions on diagonals of u and w for invertibility
