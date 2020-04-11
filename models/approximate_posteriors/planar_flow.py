@@ -61,6 +61,7 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         u_hat = u + ((m_uw - uw) * w / w_norm_sq) # (u^T)
         return u_hat
 
+    def forward(self, zk: torch.Tensor, u: torch.Tensor, w: torch.Tensor, b: torch.Tensor):
         """
         Forward pass. Assumes amortized u, w and b. Conditions on diagonals of u and w for invertibility
         will be be satisfied inside this function. Computes the following transformation:
