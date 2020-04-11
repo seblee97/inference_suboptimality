@@ -22,8 +22,7 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         self.num_flow_transformations = config.get(["flow", "num_flow_transformations"])
 
         # input to flow maps will be latent dimension (i.e. output of first part of inference network)
-        self.input_dimension = config.get(["model", "latent_dimension"])
-        self.batch_size = config.get(["training", "batch_size"])
+        self.latent_dimension = config.get(["model", "latent_dimension"])
 
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
 
