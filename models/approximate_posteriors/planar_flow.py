@@ -34,8 +34,12 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         else:
             raise ValueError("Enforcing invertibility condition by reparameterising u currently only implemented for tanh nonlinearity")
 
-    def deriv_tanh(self, x):
-        return 1 - self.activation(x) ** 2
+    def _construct_layers(self):
+        # input to ammortization networks for u, w, b are 2 * latent_dimension, 
+        # since this is output of first part of inference network (halved in reparamterisation)
+        self.flow_u_modules = self._initialise_weights(nn.Linear(2 * self.latent_dimension, self.num_flow_transformations * self.latent_dimension))
+        self.flow_w_modules = self._initialise_weights(nn.Linear(2 * self.latent_dimension, self.num_flow_transformations * self.latent_dimension))
+        self.flow_b_modules = self._initialise_weights(nn.Linear(2 * self.latent_dimension, self.num_flow_transformations))
 
     def _reparameterise(self, raw_vector: torch.Tensor) -> torch.Tensor:
         dimensions = raw_vector.shape[1] // 2
