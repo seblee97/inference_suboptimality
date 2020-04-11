@@ -79,26 +79,21 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         shape b = (batch_size, 1)
         shape z = (batch_size, latent_dimension).
         """      
-        # following flow code adapted from [repo 1]
-
-        uw = torch.sum(w * u, dim=1, keepdim=True)
-        m_uw = -1. + F.softplus(uw)
-        w_norm_sq = torch.sum(w * w, dim=1, keepdim=True)
-        u_hat = u + ((m_uw - uw) * w / w_norm_sq) # (u^T)
+        # reparameterise u to satisfy invertibility conditions
+        u_hat = self._reparameterise_u(u, w)
 
         # compute flow with u_hat
         # f(z) =  z + \hat{u} (w^T\cdot z + b)
         wz = torch.sum(w * zk, dim=1, keepdim=True)
         wzb = wz + b
-        #print("activation: ", self.activation(wzb).shape)
-        uwzb = u_hat * self.activation(wzb)
+        z_out = zk + u_hat * self.activation(wzb)
 
         # this computes the jacobian determinant (sec 4.1, eq 11-12 of above paper)
         # psi(z) = w * h'(w^T z + b) (11)
         # from our variables:
         # psi = w * tanh'(wz +b) = w * tanh'(wzb) (w transposed)
-        psi = w * self.deriv_tanh(wzb)
-        # logDJ = |det (I + u psi z^T)| = |1 + u^T psi(z)| (12)
+        psi = w * self.activation_derivative(wzb)
+        # logDJ = log(|det (I + u psi z^T)|) = log(|1 + u^T psi(z)|) (12)
         uTpsi = torch.sum(psi * u_hat, dim=1)
         log_det_jacobian = torch.log(torch.abs(1 + uTpsi))
 
@@ -112,14 +107,13 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         z = z0
 
         # pass resized parameters into u, w, b to parametrize the matrices
-        u = self.flow_u_modules(parameters).view(-1, self.num_flow_transformations, self.input_dimension)
-        w = self.flow_w_modules(parameters).view(-1, self.num_flow_transformations, self.input_dimension)
+        u = self.flow_u_modules(parameters).view(-1, self.num_flow_transformations, self.latent_dimension)
+        w = self.flow_w_modules(parameters).view(-1, self.num_flow_transformations, self.latent_dimension)
         b = self.flow_b_modules(parameters).view(-1, self.num_flow_transformations, 1)
 
         # run flow transformations using latent + u, w, b parameters
-
         for k in range(self.num_flow_transformations):
-            z, pass_log_det_jacobian = self.forward(z, u[:, k, :], w[:, k, :], b[:, k])
-            log_det_jacobian += pass_log_det_jacobian
+            z, flow_log_det_jacobian = self.forward(z, u[:, k, :], w[:, k, :], b[:, k])
+            log_det_jacobian += flow_log_det_jacobian
 
         return z, [mean, log_var, z0, log_det_jacobian]
