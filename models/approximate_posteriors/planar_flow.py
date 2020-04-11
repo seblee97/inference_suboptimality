@@ -20,12 +20,6 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
         # get architecture of flows from config
         self.num_flow_transformations = config.get(["flow", "num_flow_transformations"])
-        self.num_flow_passes = config.get(["flow", "num_flow_passes"])
-
-        # also equivalent to s, t in https://lilianweng.github.io/lil-log/2018/10/13/flow-based-deep-generative-models#realnvp
-        self.u_flow_layers = config.get(["flow", "flow_layers"])
-        self.w_flow_layers = config.get(["flow", "flow_layers"])
-        self.b_flow_layers = config.get(["flow", "flow_layers"])
 
         # input to flow maps will be latent dimension (i.e. output of first part of inference network)
         self.input_dimension = config.get(["model", "latent_dimension"])
