@@ -122,8 +122,8 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
         # run flow transformations using latent + u, w, b parameters
 
-        for k in range(0, self.num_flow_transformations):
-            z, pass_log_det_jacobian = self.forward(z, u[:, k, :, :], w[:, k, :, :], b[:, k, :, :])
+        for k in range(self.num_flow_transformations):
+            z, pass_log_det_jacobian = self.forward(z, u[:, k, :], w[:, k, :], b[:, k])
             log_det_jacobian += pass_log_det_jacobian
 
         return z, [mean, log_var, z0, log_det_jacobian]
