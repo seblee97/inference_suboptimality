@@ -81,22 +81,21 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         """      
         # following flow code adapted from [repo 1]
 
-        uw = torch.bmm(w, u)
+        uw = torch.sum(w * u, dim=1, keepdim=True)
         m_uw = -1. + F.softplus(uw)
-        w_norm_sq = torch.sum(w ** 2, dim=2, keepdim=True)
-        u_hat = u + ((m_uw - uw) * w.transpose(2, 1) / w_norm_sq) # (u^T)
+        w_norm_sq = torch.sum(w * w, dim=1, keepdim=True)
+        u_hat = u + ((m_uw - uw) * w / w_norm_sq) # (u^T)
 
         # compute flow with u_hat
 
         # multiply w^T and z
-        wz = torch.bmm(w, zk)
+        wz = torch.sum(w * zk, dim=1, keepdim=True)
         wzb = wz + b
         #print("activation: ", self.activation(wzb).shape)
         uwzb = u_hat * self.activation(wzb)
 
         # f(z) =  z + u h (w^T z + b) = zk + u_hat * tanh(wzb) (10)
         z_out = zk + uwzb
-        z_out = z_out.squeeze(2)
 
         # this computes the jacobian determinant (sec 4.1, eq 11-12 of above paper )
         # psi(z) = w * h'(w^T z + b) (11)
@@ -104,8 +103,8 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
         # psi = w * tanh'(wz +b) = w * tanh'(wzb) (w transposed)
         psi = w * self.deriv_tanh(wzb)
         # logDJ = |det (I + u psi z^T)| = |1 + u^T psi(z)| (12)
-        log_det_jacobian = torch.log(torch.abs(1 + torch.bmm(psi, u_hat)))
-        log_det_jacobian = log_det_jacobian.squeeze(2).squeeze(1)
+        uTpsi = torch.sum(psi * u_hat, dim=1)
+        log_det_jacobian = torch.log(torch.abs(1 + uTpsi))
 
         return z_out, log_det_jacobian
 
