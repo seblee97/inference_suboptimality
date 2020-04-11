@@ -5,7 +5,7 @@ relative_data_path:                 ../data/                  # Path to the data
 saved_models_path:                  saved_models/             # relative path
 checkpoint_frequency:               1000                      # every n epochs at which to checkpoint model weights
 log_to_df:                          True
-load_decoder_only:                  True
+load_decoder_only:                  False
 
 model:
   approximate_posterior:            planar_flow                  # Family of functions to use for approximate posterior (q_\phi(z | x)).
@@ -27,7 +27,7 @@ model:
     hidden_dimensions:                [200, 200]              # Layer dimensions in the decoder network (excluding output dimensions).
 
 training:
-  learning_rate:                    0.001                    # Learning rate for gradient descent.
+  learning_rate:                    0.0001                    # Learning rate for gradient descent.
   lr_scheduler:                     True                     # at 3^i epoch, multiply learning rate by 10^-i/7, for MNIST and Fashio_MNIST (CIFAR has a fixed learning rate)
   optimiser:
     type:                           adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
