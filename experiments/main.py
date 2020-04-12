@@ -154,7 +154,6 @@ if __name__ == "__main__":
         else:
             args.ol = False
         inference_gap_parameters._config["model"]["optimise_local"] = args.ol
-
     # import pdb; pdb.set_trace()
 
     optimise_local = inference_gap_parameters.get(["model", "optimise_local"])
