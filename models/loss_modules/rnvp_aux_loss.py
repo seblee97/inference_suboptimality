@@ -34,8 +34,6 @@ class RNVPAuxLoss(baseLoss):
         log_p_z = -0.5 * vae_latent.pow(2).sum(1)
         log_q_zx = -0.5 * (log_var.sum(1) + ((z0 - mean).pow(2) / torch.exp(log_var)).sum(1)) - log_det_jacobian
 
-        # import pdb; pdb.set_trace()
-
         # reverse model log
         log_r_vxz = -0.5 * (rv_log_var.sum(1) + ((rv - rv_mean).pow(2) / torch.exp(rv_log_var)).sum(1))
 

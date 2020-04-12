@@ -16,7 +16,10 @@ class BaseFlow(nn.Module, ABC):
         self.activation_function = config.get(["flow", "nonlinearity"])
         if self.activation_function == 'elu':
             self.activation = F.elu
-
+            self.activation_derivative = self.elu_derivative
+        elif self.activation_function == 'tanh':
+            self.activation = torch.tanh
+            self.activation_derivative = self.tanh_derivative
 
     @abstractmethod
     def _construct_layers(self):
@@ -38,6 +41,12 @@ class BaseFlow(nn.Module, ABC):
             raise ValueError("Initialisation {} not recognised".format(self.initialisation))
 
         return layer
+
+    def tanh_derivative(self, x):
+        return 1 - self.activation(x) ** 2
+
+    def elu_derivative(self, x):
+        raise NotImplementedError("Derivative for elu nonlinearity not implemented")
 
     @abstractmethod
     def forward(self, z0: torch.Tensor):

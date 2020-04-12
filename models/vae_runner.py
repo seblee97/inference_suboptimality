@@ -8,9 +8,9 @@ from .networks import deconvNetwork
 from .encoder import Encoder
 from .decoder import Decoder
 
-from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux
+from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux, PlanarPosterior
 
-from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss
+from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss, PlanarLoss
 from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
 from .local_ammortisation_modules import GaussianLocalAmmortisation, RNVPAuxLocalAmmortisation, RNVPLocalAmmortisation
 
@@ -72,7 +72,7 @@ class VAERunner():
         # setup likelihood estimator with parameters from config
         if self.is_estimator:
             self.estimator = self._setup_estimator(config)
-        
+
         if self.optimise_local:
             self.localised_ammortisation_network = self._setup_local_ammortisation(config)
 
@@ -113,7 +113,6 @@ class VAERunner():
 
         self.test_frequency = config.get(["testing", "test_frequency"])
         self.visualise_test = config.get(["testing", "visualise"])
-        self.test_batch_size = config.get(["testing", "batch_size"])
 
         self.optimiser_type = config.get(["training", "optimiser", "type"])
         self.optimiser_params = config.get(["training", "optimiser", "params"])
@@ -163,7 +162,7 @@ class VAERunner():
     def _construct_model_hash(self, config: Dict):
         """
         Unique signature for current config architecture.
-        Note 1. Fields such as learning rate and even non-linearities are not included as they do not 
+        Note 1. Fields such as learning rate and even non-linearities are not included as they do not
         affect capacity/architecture of model and thus do not impact save/load compatibility of config.
         Note 2. The field optimise_local is not included in the config, when it is set to true a new hash
         is constructed for this run so that runs can be saved independently without conflict.
@@ -179,7 +178,12 @@ class VAERunner():
                 config.get(["model", "decoder", "hidden_dimensions"]),
             ]
 
-        if self.approximate_posterior_type == "rnvp_norm_flow":
+        if (self.approximate_posterior_type == "rnvp_norm_flow"):
+            model_specification_components.extend([
+                config.get(["flow", "flow_layers"])
+            ])
+
+        if (self.approximate_posterior_type == "planar_flow"):
             model_specification_components.extend([
                 config.get(["flow", "flow_layers"])
             ])
@@ -190,6 +194,7 @@ class VAERunner():
                 config.get(["flow", "auxillary_forward_dimensions"]),
                 config.get(["flow", "auxillary_reverse_dimensions"])
             ])
+
 
         # hash relevant elements of current config to see if trained model exists
         self.config_hash = hashlib.md5(str(model_specification_components).encode('utf-8')).hexdigest()
@@ -211,6 +216,8 @@ class VAERunner():
             approximate_posterior = RNVPPosterior(config=config)
         elif self.approximate_posterior_type == "rnvp_aux_flow":
             approximate_posterior = RNVPAux(config=config)
+        elif self.approximate_posterior_type == "planar_flow":
+            approximate_posterior = PlanarPosterior(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised".format(self.approximate_posterior_type))
 
@@ -240,6 +247,8 @@ class VAERunner():
             self.loss_module = RNVPLoss()
         elif approximate_posterior_type == "rnvp_aux_flow":
             self.loss_module = RNVPAuxLoss()
+        elif self.approximate_posterior_type == "planar_flow":
+            self.loss_module = PlanarLoss()
         else:
             raise ValueError("Loss module not correctly specified")
 
@@ -249,7 +258,7 @@ class VAERunner():
             dataloader = mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
             test_data = iter(mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         elif self.dataset == "binarised_mnist":
-            dataloader = binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
+            dataloader = binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True, local=self.optimise_local)
             test_data = iter(binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         elif self.dataset == "fashion_mnist":
             dataloader = fashion_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
@@ -317,9 +326,11 @@ class VAERunner():
             local_ammortisation_module = RNVPLocalAmmortisation(config=config)
         elif self.local_approximate_posterior == "rnvp_aux_flow":
             local_ammortisation_module = RNVPAuxLocalAmmortisation(config=config)
+        elif local_approximate_posterior == "planar_flow":
+            local_ammortisation_module = RNVPLocalAmmortisation(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised for local ammortisation".format(local_approximate_posterior))
-            
+
         return local_ammortisation_module
 
     def _load_checkpointed_model(self, model_path: str) -> None:
@@ -334,7 +345,7 @@ class VAERunner():
 
     def train_local_optimisation(self) -> None:
         """
-        Local optimisation (per data batch) of ammortisation network. 
+        Local optimisation (per data batch) of ammortisation network.
 
         Loads pretrained model and freezes weights.
         """
@@ -371,13 +382,14 @@ class VAERunner():
             current_average_loss = 0.0
             best_average_loss = np.inf
             num_cycles_without_improvement = 0
-                
+
             # start with unit normal prior
             mean = torch.zeros((self.batch_size * self.local_mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
             logvar = torch.zeros((self.batch_size * self.local_mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
 
             # for gaussian case, mean and logvar are only encoder parameters. For flow etc. there are others
             additional_optimisation_parameters = self.localised_ammortisation_network.get_additional_parameters()
+
             parameters_to_optimise = [{'params': [mean, logvar]}, {'params': additional_optimisation_parameters}]
             
             local_optimiser = self.localised_ammortisation_network.get_local_optimiser(parameters=parameters_to_optimise)
@@ -388,7 +400,7 @@ class VAERunner():
 
                 if self.log_to_df:
                     self.logger_df.append(pd.Series(name=log_step_count))
-                
+
                 z, params = self.localised_ammortisation_network.sample_latent_vector([mean, logvar])
 
                 reconstruction = self.vae.decoder(z)
@@ -596,17 +608,20 @@ class VAERunner():
         self.vae.eval()
 
         with torch.no_grad():
-            # Compute the average test loss using |self.test_mc_samples| samples from
-            # each element of the test set.
+            # Extract the training dataset for convenience.
+            training_data = torch.cat([minibatch.to(self.device) for minibatch, _ in self.dataloader], dim=0)
+
+            # Compute the average training loss using |self.train_mc_samples|
+            # samples from each element of the training set.
             mean_loss = torch.Tensor([0.0])
-            for minibatch in partition_batch(self.test_data, self.test_batch_size):
-                minibatch = repeat_batch(minibatch, self.test_mc_samples)
+            for minibatch in partition_batch(training_data, self.batch_size):
+                minibatch = repeat_batch(minibatch, self.train_mc_samples)
                 vae_output = self.vae(minibatch)
                 loss, _, _ = self.loss_module.compute_loss(x=minibatch, vae_output=vae_output)
                 mean_loss += loss * len(minibatch)
                 del minibatch, vae_output
-            mean_loss /= self.test_data.size(0) * self.test_mc_samples
-            print("Test loss using {} MC samples: {}.".format(self.test_mc_samples, float(mean_loss)))
+            mean_loss /= len(training_data) * self.train_mc_samples
+            print("Training loss using {} MC samples: {}.".format(self.train_mc_samples, float(mean_loss)))
 
             # Ensure the GPU has enough memory to perform the estimation.
             if self.device == "cuda":
@@ -614,5 +629,5 @@ class VAERunner():
 
             # Compute the estimated test loss (if applicable).
             if self.is_estimator:
-                estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
+                estimated_loss = self.estimator.estimate_log_likelihood_loss(training_data, self.vae, self.loss_module)
                 print("Estimated loss using estimator '{}': {}.".format(self.estimator_type, float(estimated_loss)))
