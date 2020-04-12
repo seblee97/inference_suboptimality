@@ -5,6 +5,7 @@ relative_data_path:                 ../data/                  # Path to the data
 saved_models_path:                  saved_models/             # relative path
 checkpoint_frequency:               1000                      # every n epochs at which to checkpoint model weights
 log_to_df:                          True
+load_decoder_only:                  False
 
 model:
   approximate_posterior:            gaussian                  # Family of functions to use for approximate posterior (q_\phi(z | x)).
@@ -39,4 +40,4 @@ training:
 testing:
   test_frequency:                   100                       # Number of training steps between tests.
   visualise:                        True                      # Capture the output image of the test.
-  mc_samples:                       1                         # Number of samples to take in the ELBO expectation.
+  mc_samples:                       1                         # Number of samples to take in the ELBO expectation (use 5000 for analysis).

@@ -36,9 +36,14 @@ class VAE(nn.Module):
         for param in self.encoder.parameters():
             param.requires_grad = True
 
-    def load_weights(self, weights_path: str) -> None:
-        """Load saved weights into model"""
-        self.load_state_dict(torch.load(weights_path))
+    def load_weights(self, device: str, weights_path: str, load_decoder_only: bool) -> None:
+        """Load saved weights into model on the specified device"""
+        saved_weights = torch.load(weights_path, map_location=torch.device(device))
+        if load_decoder_only:
+            decoder_saved_weights = {k[len('decoder') + 1:]: v for k, v in saved_weights.items() if 'decoder' in k}
+            self.decoder.load_state_dict(decoder_saved_weights)
+        else:
+            self.load_state_dict(saved_weights)
 
     def checkpoint_model_weights(self, path: str) -> None:
         os.makedirs(path, exist_ok=True)

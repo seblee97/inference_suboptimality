@@ -5,6 +5,7 @@ relative_data_path:                 ../data/                  # Path to the data
 saved_models_path:                  saved_models/             # relative path
 checkpoint_frequency:               1000                      # every n epochs at which to checkpoint model weights
 log_to_df:                          True
+load_decoder_only:                  False
 
 model:
   approximate_posterior:            gaussian                  # Family of functions to use for approximate posterior (q_\phi(z | x)).
@@ -27,7 +28,7 @@ model:
 
 training:
   learning_rate:                    0.0001                    # Learning rate for gradient descent.
-  lr_scheduler:                     False                     # at 3^i epoch, multiply learning rate by 10^-i/7, for MNIST and Fashio_MNIST (CIFAR has a fixed learning rate)
+  lr_scheduler:                     True                     # at 3^i epoch, multiply learning rate by 10^-i/7, for MNIST and Fashio_MNIST (CIFAR has a fixed learning rate)
   optimiser:
     type:                           adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
     params:                         [0.9, 0.999, 0.0001]
@@ -40,4 +41,5 @@ training:
 testing:
   test_frequency:                   100                       # Number of training steps between tests.
   visualise:                        True                      # Capture the output image of the test.
-  mc_samples:                       1                         # Number of samples to take in the ELBO expectation.
+  mc_samples:                       1                         # Number of samples to take in the ELBO expectation (use 5000 for analysis).
+  batch_size:                       10000                     # Number of test images to analyse at once.

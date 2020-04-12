@@ -8,18 +8,17 @@ from .networks import deconvNetwork
 from .encoder import Encoder
 from .decoder import Decoder
 
-from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux
+from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux, PlanarPosterior
 
-from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss
+from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss, PlanarLoss
 from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
 from .local_ammortisation_modules import GaussianLocalAmmortisation, RNVPAuxLocalAmmortisation, RNVPLocalAmmortisation
 
-from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader, repeat_batch
+from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader, repeat_batch, partition_batch
 
 from typing import Dict
 import os
 from pathlib import Path
-import copy
 import random
 import numpy as np
 import pandas as pd
@@ -73,7 +72,7 @@ class VAERunner():
         # setup likelihood estimator with parameters from config
         if self.is_estimator:
             self.estimator = self._setup_estimator(config)
-        
+
         if self.optimise_local:
             self.localised_ammortisation_network = self._setup_local_ammortisation(config)
 
@@ -96,6 +95,7 @@ class VAERunner():
         self.saved_models_path = config.get("saved_models_path")
         self.log_to_df = config.get("log_to_df")
         self.df_log_path = config.get("df_log_path")
+        self.load_decoder_only = config.get("load_decoder_only")
 
         self.encoder_type = config.get(["model", "encoder", "network_type"])
         self.decoder_type = config.get(["model", "decoder", "network_type"])
@@ -124,11 +124,14 @@ class VAERunner():
         self.optimise_local = config.get(["model", "optimise_local"])
 
         if self.optimise_local:
+            self.manual_saved_model_path = config.get(["local_ammortisation", "manual_saved_model_path"])
+
             self.max_num_epochs = config.get(["local_ammortisation", "max_num_epochs"])
             self.convergence_check_period = config.get(["local_ammortisation", "convergence_check_period"])
             self.cycles_until_convergence = config.get(["local_ammortisation", "cycles_until_convergence"])
             self.local_mc_samples = config.get(["local_ammortisation", "mc_samples"])
             self.local_approximate_posterior = config.get(["local_ammortisation", "approximate_posterior"])
+            self.local_num_batches = config.get(["local_ammortisation", "num_batches"])
 
             # account for different inference net output : latent dimension ratio
             factors = {"gaussian": 2, "rnvp_norm_flow": 2, "rnvp_aux_flow": 1}
@@ -139,11 +142,18 @@ class VAERunner():
         """save dataframe"""
         print("Checkpointing Dataframe...")
         # check for existing dataframe
-        if step > self.checkpoint_frequency:
-            previous_df = pd.read_csv(self.df_log_path, index_col=0)
-            merged_df = pd.concat([previous_df, self.logger_df])
+        if self.optimise_local:
+            try:
+                previous_df = pd.read_csv(self.df_log_path, index_col=0)
+                merged_df = pd.concat([previous_df, self.logger_df])
+            except:
+                merged_df = self.logger_df
         else:
-            merged_df = self.logger_df
+            if step > self.checkpoint_frequency:
+                previous_df = pd.read_csv(self.df_log_path, index_col=0)
+                merged_df = pd.concat([previous_df, self.logger_df])
+            else:
+                merged_df = self.logger_df
 
         merged_df.to_csv(self.df_log_path)
         if self.log_to_df:
@@ -152,7 +162,7 @@ class VAERunner():
     def _construct_model_hash(self, config: Dict):
         """
         Unique signature for current config architecture.
-        Note 1. Fields such as learning rate and even non-linearities are not included as they do not 
+        Note 1. Fields such as learning rate and even non-linearities are not included as they do not
         affect capacity/architecture of model and thus do not impact save/load compatibility of config.
         Note 2. The field optimise_local is not included in the config, when it is set to true a new hash
         is constructed for this run so that runs can be saved independently without conflict.
@@ -168,7 +178,12 @@ class VAERunner():
                 config.get(["model", "decoder", "hidden_dimensions"]),
             ]
 
-        if self.approximate_posterior_type == "rnvp_norm_flow":
+        if (self.approximate_posterior_type == "rnvp_norm_flow"):
+            model_specification_components.extend([
+                config.get(["flow", "flow_layers"])
+            ])
+
+        if (self.approximate_posterior_type == "planar_flow"):
             model_specification_components.extend([
                 config.get(["flow", "flow_layers"])
             ])
@@ -179,6 +194,7 @@ class VAERunner():
                 config.get(["flow", "auxillary_forward_dimensions"]),
                 config.get(["flow", "auxillary_reverse_dimensions"])
             ])
+
 
         # hash relevant elements of current config to see if trained model exists
         self.config_hash = hashlib.md5(str(model_specification_components).encode('utf-8')).hexdigest()
@@ -200,6 +216,8 @@ class VAERunner():
             approximate_posterior = RNVPPosterior(config=config)
         elif self.approximate_posterior_type == "rnvp_aux_flow":
             approximate_posterior = RNVPAux(config=config)
+        elif self.approximate_posterior_type == "planar_flow":
+            approximate_posterior = PlanarPosterior(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised".format(self.approximate_posterior_type))
 
@@ -229,6 +247,8 @@ class VAERunner():
             self.loss_module = RNVPLoss()
         elif approximate_posterior_type == "rnvp_aux_flow":
             self.loss_module = RNVPAuxLoss()
+        elif self.approximate_posterior_type == "planar_flow":
+            self.loss_module = PlanarLoss()
         else:
             raise ValueError("Loss module not correctly specified")
 
@@ -238,7 +258,7 @@ class VAERunner():
             dataloader = mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
             test_data = iter(mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         elif self.dataset == "binarised_mnist":
-            dataloader = binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
+            dataloader = binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True, local=self.optimise_local)
             test_data = iter(binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         elif self.dataset == "fashion_mnist":
             dataloader = fashion_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
@@ -295,8 +315,8 @@ class VAERunner():
                 raise ValueError("Estimator {} not recognised".format(estimator_type))
 
         self.estimator_frequency = config.get(['estimator', 'frequency'])
-        estimator_type = config.get(["estimator", "type"]).upper()
-        return construct_estimator(estimator_type)
+        self.estimator_type = config.get(["estimator", "type"])
+        return construct_estimator(self.estimator_type.upper())
 
     def _setup_local_ammortisation(self, config: Dict):
 
@@ -306,9 +326,11 @@ class VAERunner():
             local_ammortisation_module = RNVPLocalAmmortisation(config=config)
         elif self.local_approximate_posterior == "rnvp_aux_flow":
             local_ammortisation_module = RNVPAuxLocalAmmortisation(config=config)
+        elif local_approximate_posterior == "planar_flow":
+            local_ammortisation_module = RNVPLocalAmmortisation(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised for local ammortisation".format(local_approximate_posterior))
-            
+
         return local_ammortisation_module
 
     def _load_checkpointed_model(self, model_path: str) -> None:
@@ -319,21 +341,26 @@ class VAERunner():
             raise FileNotFoundError("Saved weights for specified config could not be found in specified path. \
                                     To train locally optimised ammortisation, pretrained model is required.")
         else:
-           self.vae.load_weights(model_path)
+           self.vae.load_weights(device=self.device, weights_path=model_path, load_decoder_only=self.load_decoder_only)
 
     def train_local_optimisation(self) -> None:
         """
-        Local optimisation (per data batch) of ammortisation network. 
+        Local optimisation (per data batch) of ammortisation network.
 
         Loads pretrained model and freezes weights.
         """
-        # check for existing model (with hash signature) and load
-        correct_hash_saved_weights_path = os.path.join(self.saved_models_path, self.config_hash)
+        if self.manual_saved_model_path:
+            saved_model_path = self.manual_saved_model_path
+        else:
+            # check for existing model (with hash signature) and load
+            correct_hash_saved_weights_path = os.path.join(self.saved_models_path, self.config_hash)
 
-        # there may be multiple runs with consistent hash that are saved. Heuristic: choose most recent saved run
-        consistent_saved_run_paths = sorted(Path(correct_hash_saved_weights_path).iterdir(), key=os.path.getmtime)
-        if consistent_saved_run_paths:
-            self._load_checkpointed_model(os.path.join(consistent_saved_run_paths[-1], "saved_vae_weights.pt"))
+            # there may be multiple runs with consistent hash that are saved. Heuristic: choose most recent saved run
+            consistent_saved_run_paths = sorted(Path(correct_hash_saved_weights_path).iterdir(), key=os.path.getmtime)
+            if consistent_saved_run_paths:
+                saved_model_path = os.path.join(consistent_saved_run_paths[-1], "saved_vae_weights.pt")
+        
+        self._load_checkpointed_model(saved_model_path)
 
         # set model to evaluation mode i.e. freeze weights
         self.vae.eval()
@@ -341,78 +368,93 @@ class VAERunner():
         # artificial step-count for logging purposes
         log_step_count = 0
 
-        # loop through every datapoint and optimise for each individually
-        for b, (batch_input, _) in enumerate(self.dataloader): # target discarded
+        # Accumulate the total average loss after each optimisation.
+        total_average_loss = 0.0
 
-            print("Locally optimising ammortisation for data batch {}/{}".format(b, len(self.dataloader)))
+        # loop through every datapoint and optimise for each individually
+        for b, (batch_input, _) in enumerate(self.dataloader, start=1): # target discarded
+
+            print("Locally optimising ammortisation for data batch {}/{}".format(b, self.local_num_batches))
 
             # take multiple monte carlo samples to reduce variance
             copied_batch = repeat_batch(batch_input, self.local_mc_samples)
 
-            losses = []
-            best_loss_average = np.inf
+            current_average_loss = 0.0
+            best_average_loss = np.inf
             num_cycles_without_improvement = 0
-                
+
             # start with unit normal prior
             mean = torch.zeros((self.batch_size * self.local_mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
             logvar = torch.zeros((self.batch_size * self.local_mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
 
             # for gaussian case, mean and logvar are only encoder parameters. For flow etc. there are others
             additional_optimisation_parameters = self.localised_ammortisation_network.get_additional_parameters()
+
             parameters_to_optimise = [{'params': [mean, logvar]}, {'params': additional_optimisation_parameters}]
             
             local_optimiser = self.localised_ammortisation_network.get_local_optimiser(parameters=parameters_to_optimise)
 
-            for e in range(self.max_num_epochs):
+            for e in range(1, self.max_num_epochs + 1):
 
                 log_step_count += 1
 
                 if self.log_to_df:
                     self.logger_df.append(pd.Series(name=log_step_count))
-                
+
                 z, params = self.localised_ammortisation_network.sample_latent_vector([mean, logvar])
 
                 reconstruction = self.vae.decoder(z)
                 vae_output = {'x_hat': reconstruction, 'z': z, 'params': params}
 
-                loss, loss_metrics, _ = self.loss_module.compute_loss(x=copied_batch, vae_output=vae_output, warm_up=1)
+                loss, _, _ = self.loss_module.compute_loss(x=copied_batch, vae_output=vae_output)
 
                 local_optimiser.zero_grad()
                 loss.backward()
                 local_optimiser.step()
-            
-                losses.append(float(loss))
+
+                # Technically, the numeric precision can be improved by dividing
+                # only once; however, with small convergence check periods, it
+                # doesn't really matter.
+                current_average_loss += float(loss) / self.convergence_check_period
 
                 if self.log_to_df:
                     self.logger_df.at[log_step_count, "local_loss"] = float(loss)
 
                 # check for threshold
                 if e % self.convergence_check_period == 0:
-                    average_loss = np.mean(losses)
+                    # Useful message for debugging.
+                    # print("Cycles = {}, Current = {}, Best = {}.".format(num_cycles_without_improvement, current_average_loss, best_average_loss))
 
-                    if average_loss < best_loss_average:
-                        base_loss_average = average_loss
+                    if current_average_loss < best_average_loss:
+                        best_average_loss = current_average_loss
                         num_cycles_without_improvement = 0
                     else:
                         num_cycles_without_improvement += 1
                         if num_cycles_without_improvement == self.cycles_until_convergence:
                             break
 
-                    # clear losses list
-                    losses = []
+                    # Reset the current average loss.
+                    current_average_loss = 0
 
             # evaluation
             test_z, test_params = self.localised_ammortisation_network.sample_latent_vector([mean, logvar])
             test_reconstruction = self.vae.decoder(z)
             vae_output = {'x_hat': test_reconstruction, 'z': test_z, 'params': test_params}
-            loss, _, _ = self.loss_module.compute_loss(x=test_reconstruction, vae_output=vae_output, warm_up=1)
+            loss, _, _ = self.loss_module.compute_loss(x=copied_batch, vae_output=vae_output)
 
             test_elbo = -loss
+            total_average_loss += float(loss) / self.local_num_batches
             
             if self.log_to_df:
-                    self.logger_df.at[log_step_count, "test_loss"] = float(loss)
+                self.logger_df.at[log_step_count, "test_loss"] = float(loss)
 
             self.checkpoint_df(log_step_count)
+
+            # Stop after optimising |self.local_num_batches| batches.
+            if b == self.local_num_batches:
+                break
+
+        print("Average loss after {} batches: {}.".format(self.local_num_batches, total_average_loss))
 
     def train(self):
 
@@ -540,3 +582,52 @@ class VAERunner():
                     self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
         # set model back to train mode
         self.vae.train()
+
+    def analyse(self, saved_model_path) -> None:
+        """
+        Calculates the average test loss and IWAE estimated loss of a saved VAE.
+
+        :param saved_model_path: path to the saved VAE model (optional).
+        """
+        # Load the model to be analysed.  This code snippet was copied from
+        # VAERunner.train_local_optimisation().
+        if not saved_model_path:
+            # check for existing model (with hash signature) and load
+            correct_hash_saved_weights_path = os.path.join(self.saved_models_path, self.config_hash)
+
+            # there may be multiple runs with consistent hash that are saved. Heuristic: choose most recent saved run
+            consistent_saved_run_paths = sorted(Path(correct_hash_saved_weights_path).iterdir(), key=os.path.getmtime)
+            if consistent_saved_run_paths:
+                saved_model_path = os.path.join(consistent_saved_run_paths[-1], "saved_vae_weights.pt")
+            else:
+                raise Exception("Saved weights for specified config could not be found in specified path. \
+                                To analyse the test loss, a pretrained model is required.")
+
+        self._load_checkpointed_model(saved_model_path)
+
+        self.vae.eval()
+
+        with torch.no_grad():
+            # Extract the training dataset for convenience.
+            training_data = torch.cat([minibatch.to(self.device) for minibatch, _ in self.dataloader], dim=0)
+
+            # Compute the average training loss using |self.train_mc_samples|
+            # samples from each element of the training set.
+            mean_loss = torch.Tensor([0.0])
+            for minibatch in partition_batch(training_data, self.batch_size):
+                minibatch = repeat_batch(minibatch, self.train_mc_samples)
+                vae_output = self.vae(minibatch)
+                loss, _, _ = self.loss_module.compute_loss(x=minibatch, vae_output=vae_output)
+                mean_loss += loss * len(minibatch)
+                del minibatch, vae_output
+            mean_loss /= len(training_data) * self.train_mc_samples
+            print("Training loss using {} MC samples: {}.".format(self.train_mc_samples, float(mean_loss)))
+
+            # Ensure the GPU has enough memory to perform the estimation.
+            if self.device == "cuda":
+                torch.cuda.empty_cache()
+
+            # Compute the estimated test loss (if applicable).
+            if self.is_estimator:
+                estimated_loss = self.estimator.estimate_log_likelihood_loss(training_data, self.vae, self.loss_module)
+                print("Estimated loss using estimator '{}': {}.".format(self.estimator_type, float(estimated_loss)))

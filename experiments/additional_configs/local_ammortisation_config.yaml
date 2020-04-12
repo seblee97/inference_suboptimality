@@ -1,11 +1,14 @@
 local_ammortisation:
 
+  manual_saved_model_path:
+
   approximate_posterior:              rnvp_aux_flow               # gaussian, rnvp_aux_flow, rnvp_norm_flow
   max_num_epochs:                     999999
   convergence_check_period:           100
   cycles_until_convergence:           10
 
-  mc_samples:                         100
+  mc_samples:                         100                       # Number of samples to take for each loss computation.
+  num_batches:                        100                       # Number of batches to optimise.
 
   model:
     output_dimension_factor:          2                       # multiple of latent dimensions required for output of first part of inference network. Generally 2, but 1 for auxillary flows.
@@ -14,3 +17,6 @@ local_ammortisation:
     type:                             adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
     params:                           [0.9, 0.999, 0.0001]
     learning_rate:                    0.001
+
+training:
+  batch_size:                         1                         # this overwrites the base config training batch size.

@@ -29,6 +29,20 @@ python main.py --experiment_name exp3_MNIST_Locally_Optimised_FFG_AF --ol True -
 python main.py --experiment_name exp3_MNIST_Locally_Optimised_FFG_AF --ol True --ap rnvp_aux_flow --lap rnvp_aux_flow
 
 ###############################################################################################
+# MNIST Large decoder
+python main.py --experiment_name exp3_MNIST_LD_FFG --ie True --ehd "200 200" --dhd "500 500"
+
+#Basic FFG MNIST trained on FFG
+python main.py --experiment_name exp3_MNIST_LD_FFG --ehd "200 200" --dhd "500 500"
+
+#Locally optimised FFG MNIST trained on FFG
+python main.py --experiment_name exp3_MNIST_LD_Locally_Optimised_FFG_FFG --ol True --ehd "200 200" --dhd "500 500"
+
+#Locally optimised AF MNIST trained on FFG
+python main.py --experiment_name exp3_MNIST_LD_Locally_Optimised_AF_FFG --ol True --lap rnvp_aux_flow --ehd "200 200" --dhd "500 500"
+
+
+###############################################################################################
 
 # fashion-MNIST
 #Likelihood estimator for fashion-MNIST trained on FFG
