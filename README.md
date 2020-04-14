@@ -48,7 +48,7 @@ We do not provide the datasets directly in this repository. However we are using
 
 Standalone experiments can be run from the experiment folder using the main.py script. Configuration for such an experiment can be set using the base_config.yaml file for general attributes of the experiment as well as specific config files in the additional_configs/ folder (e.g. for setting parameters of a flow module). 
 
-Running a specific experiment from the paper can be done by accessing the relevant hard coded configuration files in the Experiment_List folder, which have been made to match the specifications of the paper. For example to reproduce the configuration of a fully-factorised gaussian approximate posterior with an amortised inference network ($\mathcal{L}_{VAE}[q] | q_{FFG}$ from Table 2. in the paper), run from the experiments folder:
+Running a specific experiment from the paper can be done by accessing the relevant hard coded configuration files in the Experiment_List folder, which have been made to match the specifications of the paper. For example to reproduce the configuration of a fully-factorised gaussian approximate posterior with an amortised inference network ($$\mathcal{L}_{VAE}[q] | q_{FFG}$$ from Table 2. in the paper), run from the experiments folder:
 
 ```python main.py -config Experiment_List/Exp2/base_config.yaml -additional_configs Experiment_List/Exp2/additional_configs/```
 
