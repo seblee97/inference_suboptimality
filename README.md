@@ -48,7 +48,7 @@ We do not provide the datasets directly in this repository. However we are using
 
 Standalone experiments can be run from the experiment folder using the main.py script. Configuration for such an experiment can be set using the base_config.yaml file for general attributes of the experiment as well as specific config files in the additional_configs/ folder (e.g. for setting parameters of a flow module). 
 
-Running a specific experiment from the paper can be done by accessing the relevant hard coded configuration files in the Experiment_List folder, which have been made to match the specifications of the paper. For example to reproduce the configuration of a fully-factorised gaussian approximate posterior with an amortised inference network ($$\mathcal{L}_{VAE}[q] | q_{FFG}$$ from Table 2. in the paper), run from the experiments folder:
+Running a specific experiment from the paper can be done by accessing the relevant hard coded configuration files in the Experiment_List folder, which have been made to match the specifications of the paper. For example to reproduce the configuration of a fully-factorised gaussian approximate posterior with an amortised inference network ($ \mathcal{L}_{VAE}[q] | q_{FFG} $ from Table 2. in the paper), run from the experiments folder:
 
 ```python main.py -config Experiment_List/Exp2/base_config.yaml -additional_configs Experiment_List/Exp2/additional_configs/```
 
@@ -56,9 +56,13 @@ Alternatively, all results from a given experiment can be run at once in sequenc
 
 ## Accessing Experimental Results
 
+Results of an experiment are by default saved in experiments/results/X/ where X is a timestamp for the experiment. Here you will find a copy of the configuration used to run that experiment, a .csv file containing logging of relevant metrics (e.g. train/test loss), and tensorboard events files. To view the tensorboard logs navigate to this folder and run:
 
+```tensorboard --logdir .```
 
-```python main.py```
+ Alternatively run the command from elsewhere and modify the path accordingly.
+
+Weights of the models being trained in a given experiment are also saved by default in experiment/saved_models/Y/X/ where Y is a hash of the configuration file and X is a timestamp for the experiment. Saved models can be loaded (e.g. to run local optimisation) by specifying the saved model path in the base config (Note they are saved weights and not full checkpoints so cannot be used to resume training).
 
 ## Code Structure
 
