@@ -17,14 +17,17 @@ class feedBackwardNetwork(baseNetwork):
     def _construct_layers(self):
         
         self.layers = nn.ModuleList([])
-        
-        latent_to_hidden_layer = self._initialise_weights(nn.Linear(self.latent_dimension, self.hidden_dimensions[0]))
-        self.layers.append(latent_to_hidden_layer)
+        if(len(self.hidden_dimensions) == 0):
+            only_layer = self._initialise_weights(nn.Linear(self.latent_dimension, self.input_dimension))
+            self.layers.append(only_layer)
+        else:
+            latent_to_hidden_layer = self._initialise_weights(nn.Linear(self.latent_dimension, self.hidden_dimensions[0]))
+            self.layers.append(latent_to_hidden_layer)
 
-        for h in range(len(self.hidden_dimensions[:-1])):
-            hidden_layer = self._initialise_weights(nn.Linear(self.hidden_dimensions[h], self.hidden_dimensions[h + 1]))
-            self.layers.append(hidden_layer)
+            for h in range(len(self.hidden_dimensions[:-1])):
+                hidden_layer = self._initialise_weights(nn.Linear(self.hidden_dimensions[h], self.hidden_dimensions[h + 1]))
+                self.layers.append(hidden_layer)
 
-        # final decoding layer (back to input dimension)
-        output_layer = self._initialise_weights(nn.Linear(self.hidden_dimensions[-1], self.input_dimension))
-        self.layers.append(output_layer)
+            # final decoding layer (back to input dimension)
+            output_layer = self._initialise_weights(nn.Linear(self.hidden_dimensions[-1], self.input_dimension))
+            self.layers.append(output_layer)
