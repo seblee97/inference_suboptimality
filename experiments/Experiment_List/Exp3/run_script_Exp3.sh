@@ -41,6 +41,19 @@ python main.py --experiment_name exp3_MNIST_LD_Locally_Optimised_FFG_FFG --ol Tr
 #Locally optimised AF MNIST trained on FFG
 python main.py --experiment_name exp3_MNIST_LD_Locally_Optimised_AF_FFG --ol True --lap rnvp_aux_flow --ehd "200 200" --dhd "500 500"
 
+###############################################################################################
+# MNIST Small decoder
+python main.py --experiment_name exp3_MNIST_SD_FFG --ie True --ehd "200 200" --dhd " "
+
+#Basic FFG MNIST trained on FFG
+python main.py --experiment_name exp3_MNIST_SD_FFG --ehd "200 200" --dhd " "
+
+#Locally optimised FFG MNIST trained on FFG
+python main.py --experiment_name exp3_MNIST_SD_Locally_Optimised_FFG_FFG --ol True --ehd "200 200" --dhd " "
+
+#Locally optimised AF MNIST trained on FFG
+python main.py --experiment_name exp3_MNIST_SD_Locally_Optimised_AF_FFG --ol True --lap rnvp_aux_flow --ehd "200 200" --dhd " "
+
 
 ###############################################################################################
 

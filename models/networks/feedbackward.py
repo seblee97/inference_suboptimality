@@ -18,13 +18,8 @@ class feedBackwardNetwork(baseNetwork):
         
         self.layers = nn.ModuleList([])
         
-        latent_to_hidden_layer = self._initialise_weights(nn.Linear(self.latent_dimension, self.hidden_dimensions[0]))
-        self.layers.append(latent_to_hidden_layer)
+        self.layer_config = [self.latent_dimension] + self.hidden_dimensions + [self.input_dimension]
+        
+        for h in range(len(self.layer_config)-1):
+            self.layers.append(self._initialise_weights(nn.Linear(self.layer_config[h], self.layer_config[h + 1])))
 
-        for h in range(len(self.hidden_dimensions[:-1])):
-            hidden_layer = self._initialise_weights(nn.Linear(self.hidden_dimensions[h], self.hidden_dimensions[h + 1]))
-            self.layers.append(hidden_layer)
-
-        # final decoding layer (back to input dimension)
-        output_layer = self._initialise_weights(nn.Linear(self.hidden_dimensions[-1], self.input_dimension))
-        self.layers.append(output_layer)
