@@ -40,7 +40,7 @@ To run experiments with a GPU, it is essential to use Python **3.7.5** (on Windo
 
 ## Datasets
 
-We do not provide the datasets directly in this repository. However we are using standard datasets (e.g. MNIST, CIFAR10) that can be loaded with the torchvision datasets module. To retrieve the datasets, run:
+We do not provide the datasets directly in this repository. However we are using modifications of standard datasets (e.g. MNIST, CIFAR10) that can be loaded with the torchvision datasets module. To retrieve the datasets, and make the requisite modifications (the binarisation specified by [Larochelle et al](https://dl.acm.org/doi/abs/10.1145/1390156.1390224)) run:
 
 ```python data/get_datasets.py```
 
