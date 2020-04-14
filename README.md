@@ -3,6 +3,18 @@ This repository contains code for a project undertaken as part of the Advanced T
 
 It is a reproduction of the code for the paper [_Inference Suboptimality in Variational Autoencoders_](https://arxiv.org/pdf/1801.03558.pdf) by Cremer, Li & Duvenaud. 
 
+Our code contains the following features relevant to replicating results from the paper:
+
+* Flexible encoder/decoder architectures
+* Various approximate posteriors inlcuding:
+    * Factorised Gaussian
+    * R-NVP flows
+    * R-NVP flows with auxiliary variables
+* Local optimisation training loop
+* AIS and IWAE log-likelihood estimators
+
+Additionally we implemented a planar flows approximate posterior.
+
 ## Quick Links
 * [Spreadsheet](https://docs.google.com/spreadsheets/d/1y8K3G4ih2Ta9uB6wM7noJpNtmomSwDDZmKUIKUfGlTk/edit#gid=0)
 * [Overleaf Report](https://www.overleaf.com/2537812191smnpkcprxdxs)
@@ -28,7 +40,7 @@ To run experiments with a GPU, it is essential to use Python **3.7.5** (on Windo
 
 ## Datasets
 
-We do not provide the datasets directly in this repository. However we are using standard datasets (e.g. MNIST, CIFAR10) that can be loaded with the torchvision datasets module. To retrive the datasets, run:
+We do not provide the datasets directly in this repository. However we are using standard datasets (e.g. MNIST, CIFAR10) that can be loaded with the torchvision datasets module. To retrieve the datasets, run:
 
 ```python data/get_datasets.py```
 
