@@ -132,26 +132,6 @@ Below is the structure of the relevant files in our repository.
 │    ├── vae_runner.py
 │    └── vae.py
 │    
-├── utils
-│    │
-│    │
-│    ├── __init__.py 
-│    ├── model.py 
-│    └── sinusoid.py
-│     
-├── tests
-│    │
-│    │
-│    ├── test_configs
-│    │   │
-│    │   ├── test_base_config.yaml
-│    │   └── test_maml_config.yaml
-│    │
-│    ├── __init__.py 
-│    ├── context.py
-│    ├── test_base_priority_queue.py
-│    └── test_sin_priority_queue.py
-│     
 └── utils
      │
      │
