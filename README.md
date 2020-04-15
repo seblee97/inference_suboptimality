@@ -1,3 +1,17 @@
+# TODO
+
+Things we should polish on our code base before we submit. Most of this is cosmetic so I suggest we wait until at least the experiments are finished to absolutely minimise risk of breaking something.
+
+* Spelling mistakes (e.g. ammortise -> amortise)
+* Anonymise (e.g. authors below but let's make sure there are no other traces)
+* Linked to the above: squash commits. I suggest we copy this code over to the anonymised repos and squash them there since the commit histroy is useful to have here.
+* Renaming of stuff (e.g. feedforward and feedbackward)
+* Make Experiment_List lower case? I've weirdly grown to like it, given it contains all the hard coded stuff
+* Remove files that aren't used (math_operations? Sylv Flows if we don't get around to them? Do we use the other base configs in the experiment dir?)
+* Linked to above I think early one some pycache folders etc. creeped in before we firmed up the gitignore, we should remove these
+* Run another lint session and get all the type hinting and docstrings etc. in there 
+* ...
+
 # Oxford2020AdvML
 This repository contains code for a project undertaken as part of the Advanced Topics in Machine Learning course (HT 2020) at Oxford. The code here was written by Mikhail Andrenkov, Maxence Draguet, Sebastian Lee, and Diane Magnin.
 
@@ -10,6 +24,10 @@ Our code contains the following features relevant to replicating results from th
     * Factorised Gaussian
     * R-NVP flows
     * R-NVP flows with auxiliary variables
+* Relevant binarised image datasets inlcuding:
+    * MNIST
+    * Fashion-MNIST
+    * CIFAR-10
 * Local optimisation training loop
 * AIS and IWAE log-likelihood estimators
 
