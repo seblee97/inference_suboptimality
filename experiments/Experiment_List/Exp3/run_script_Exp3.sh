@@ -48,6 +48,9 @@ python main.py --experiment_name exp3_MNIST_SD_FFG --ie True --ehd "200 200" --d
 #Basic FFG MNIST trained on FFG
 python main.py --experiment_name exp3_MNIST_SD_FFG --ehd "200 200" --dhd " "
 
+#Basic AF MNIST trained on AF
+python main.py --experiment_name exp3_MNIST_SD_AF --ehd "200 200" --dhd " " --ap rnvp_aux_flow
+
 #Locally optimised FFG MNIST trained on FFG
 python main.py --experiment_name exp3_MNIST_SD_Locally_Optimised_FFG_FFG --ol True --ehd "200 200" --dhd " "
 
