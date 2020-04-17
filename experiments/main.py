@@ -165,7 +165,7 @@ if __name__ == "__main__":
 
         # update base-parameters with specific parameters
         inference_gap_parameters.update(specific_params)
-        approximate_posterior_configuration = inference_gap_parameters.get(["local_ammortisation", "approximate_posterior"])
+        approximate_posterior_configuration = args.lap or inference_gap_parameters.get(["local_ammortisation", "approximate_posterior"])
 
     else:
         approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
