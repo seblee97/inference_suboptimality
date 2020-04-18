@@ -26,10 +26,10 @@ python main.py --experiment_name exp3_MNIST_Locally_Optimised_AF_FFG --ol True -
 python main.py --experiment_name exp3_MNIST_Locally_Optimised_FFG_AF --ol True --ap rnvp_aux_flow
 
 #Locally optimised AF MNIST trained on AF
-python main.py --experiment_name exp3_MNIST_Locally_Optimised_FFG_AF --ol True --ap rnvp_aux_flow --lap rnvp_aux_flow
+python main.py --experiment_name exp3_MNIST_Locally_Optimised_AF_AF --ol True --ap rnvp_aux_flow --lap rnvp_aux_flow
 
 ###############################################################################################
-# MNIST Large decoder
+# MNIST with Large decoder
 python main.py --experiment_name exp3_MNIST_LD_FFG --ie True --ehd "200 200" --dhd "500 500"
 
 #Basic FFG MNIST trained on FFG
@@ -89,12 +89,4 @@ python main.py --experiment_name exp3_fashion_MNIST_Locally_Optimised_FFG_AF --d
 
 #Locally optimised AF fashion-MNIST trained on AF
 python main.py --experiment_name exp3_fashion_MNIST_Locally_Optimised_FFG_AF --dataset fashion_mnist --ol True --ap rnvp_aux_flow --lap rnvp_aux_flow
-
-###############################################################################################
-
-# CIFAR: This still should be adapted
-#python main.py --experiment_name exp3_CIFAR --lr 0.001 --dataset cifar --params 0.9 0.999 0.0001 --bs 100 --ne 300 --wu 50 --ap gaussian --ent convolutional --ehd "3 64 4 2 0, 64 128 4 2 0, 128 256 4 2 0, 1024 100" --dnt deconvolutional --dhd "50 1024, 256 128 4 2 0, 128 64 4 2 1, 64 3 4 2 0" --dur 1 --eur 1
-
-###############################################################################################
-# Experiment 2B: as in 2
 
