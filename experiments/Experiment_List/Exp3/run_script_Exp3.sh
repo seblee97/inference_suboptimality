@@ -57,6 +57,11 @@ python main.py --experiment_name exp3_MNIST_SD_Locally_Optimised_FFG_FFG --ol Tr
 #Locally optimised AF MNIST trained on FFG
 python main.py --experiment_name exp3_MNIST_SD_Locally_Optimised_AF_FFG --ol True --lap rnvp_aux_flow --ehd "200 200" --dhd " "
 
+#Locally optimised FFG MNIST trained on AF
+python main.py --experiment_name exp3_MNIST_SD_Locally_Optimised_FFG_AF --ol True --lap gaussian --ehd "200 200" --dhd " "
+
+#Locally optimised AF MNIST trained on AF
+python main.py --experiment_name exp3_MNIST_SD_Locally_Optimised_AF_AF --ol True --lap rnvp_aux_flow --ehd "200 200" --dhd " "
 
 ###############################################################################################
 
