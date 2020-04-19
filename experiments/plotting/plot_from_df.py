@@ -1,14 +1,14 @@
-import pandas as pd 
-import numpy as np 
+import pandas as pd
+import numpy as np
 import itertools
 import copy
 
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-import argparse 
-import os 
+import argparse
+import os
 import json
 
 from typing import Dict, List
@@ -18,6 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-save_path", type=str, help="path to save figures and in which to find csv data")
 parser.add_argument("-plot_keys", type=str, help="path to file containing list of attributes to plot for summary", default=None)
 parser.add_argument("-exp_name", type=str, help="name of experiment")
+parser.add_argument("-rolling_mean", type=int, help="number of data points to calculate mean over")
 
 args = parser.parse_args()
 
@@ -55,7 +56,7 @@ class SummaryPlot:
 
         self.spec = gridspec.GridSpec(nrows=self.rows, ncols=self.columns, width_ratios=widths, height_ratios=heights)
 
-    def add_subplot(self, plot_data, row_index: int, column_index: int, title: str): #, labels: List, ylimits: List
+    def add_subplot(self, rolling_mean, plot_data, row_index: int, column_index: int, title: str): #, labels: List, ylimits: List
 
         fig_sub = self.fig.add_subplot(self.spec[row_index, column_index])
 
@@ -63,14 +64,18 @@ class SummaryPlot:
         scaling = self.scale_axes / len(plot_data)
         x_data = [i * scaling for i in range(len(plot_data))]
 
-        fig_sub.plot(x_data, plot_data)
-        
+        if args.rolling_mean:
+            fig_sub.plot(x_data, rolling_mean, label='20 pt MEAN', color='orange')
+        else:
+            fig_sub.plot(x_data, plot_data)
+
         # labelling
         fig_sub.set_xlabel("Epoch")
         fig_sub.set_ylabel(title)
-    
+
         # grids
         fig_sub.minorticks_on()
+        fig_sub.legend(loc='lower right')
         fig_sub.grid(which='major', linestyle='-', linewidth='0.5', color='red', alpha=0.5)
         fig_sub.grid(which='minor', linestyle=':', linewidth='0.5', color='black', alpha=0.5)
 
@@ -78,23 +83,36 @@ class SummaryPlot:
 
         for row in range(self.rows):
             for col in range(self.columns):
-        
+
                 graph_index = (row) * self.columns + col
 
                 if graph_index < self.number_of_graphs:
 
-                    print(graph_index)
+                    #print("index: ", graph_index)
 
                     attribute_title = self.plot_keys[graph_index]
                     attribute_data = self.data[attribute_title].dropna()
 
-                    self.add_subplot(
+                    #print(attribute_data)
+                    if args.rolling_mean:
+
+                        rolling_mean_data = attribute_data.rolling(window=args.rolling_mean).mean()
+
+                        self.add_subplot(
+                            rolling_mean=rolling_mean_data,
+                            plot_data=attribute_data, row_index=row, column_index=col, title=attribute_title
+                            )
+                    #print(rolling_mean)
+                    else:
+                        self.add_subplot(
+                            rolling_mean='NONE',
                             plot_data=attribute_data, row_index=row, column_index=col, title=attribute_title
                             )
 
+
         self.fig.suptitle("Summary Plot: {}".format(self.experiment_name))
 
-        self.fig.savefig("{}/summary_plot.pdf".format(self.save_path), dpi=500)
+        self.fig.savefig("{}/{}_summary_plot.pdf".format(self.save_path, args.exp_name), dpi=500)
         plt.close()
 
 
