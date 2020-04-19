@@ -126,6 +126,8 @@ class VAERunner():
         if self.optimise_local:
             self.manual_saved_model_path = config.get(["local_ammortisation", "manual_saved_model_path"])
 
+            self.use_balanced_dataset = config.get(["local_ammortisation", "use_balanced_dataset"])
+
             self.max_num_epochs = config.get(["local_ammortisation", "max_num_epochs"])
             self.convergence_check_period = config.get(["local_ammortisation", "convergence_check_period"])
             self.cycles_until_convergence = config.get(["local_ammortisation", "cycles_until_convergence"])
@@ -258,7 +260,8 @@ class VAERunner():
             dataloader = mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
             test_data = iter(mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         elif self.dataset == "binarised_mnist":
-            dataloader = binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True, local=self.optimise_local)
+            balanced = self.optimise_local and self.use_balanced_dataset
+            dataloader = binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True, balanced=balanced)
             test_data = iter(binarised_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         elif self.dataset == "fashion_mnist":
             dataloader = fashion_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)

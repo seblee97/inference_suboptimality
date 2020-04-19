@@ -27,14 +27,14 @@ def mnist_dataloader(data_path: str, batch_size: int, train:bool=True):
 
     return dataloader
 
-def binarised_mnist_dataloader(data_path: str, batch_size: int, train=True, local=False):
+def binarised_mnist_dataloader(data_path: str, batch_size: int, train=True, balanced=False):
     """
     Load binarised mnist image data from specified, convert to  tensors, flatten, return dataloader
     
     :param data_path: full path to data directory
     :param batch_size: batch size for dataloader
     :param train: whether to load train or test data
-    :param local: whether to load local training data (if |train| is True).
+    :param balanced: whether to load balanced training data (if |train| is True).
     :return dataloader: pytorch dataloader for mnist training dataset
     """
     def read_file_to_numpy(file_name):
@@ -47,7 +47,7 @@ def binarised_mnist_dataloader(data_path: str, batch_size: int, train=True, loca
     train_file, valid_file, test_file, local_file = [os.path.join(data_path, 'binarizedMNIST/binarized_mnist_' + ds + '.amat') for ds in ['train', 'valid', 'test', 'local']]
 
     if train:
-        if local:
+        if balanced:
             local_ar = read_file_to_numpy(local_file)
             tensorData = torch.Tensor(local_ar)
         else:

@@ -1,6 +1,5 @@
 local_ammortisation:
-
-  manual_saved_model_path:            results/exp2_MNIST_likelihood_FFG/saved_vae_weights.pt
+  use_balanced_dataset:               True                       # Use a balanced dataset for local optimisation (only implemented for binarised MNIST).
 
   approximate_posterior:              gaussian               # gaussian, rnvp_aux_flow, rnvp_norm_flow
   max_num_epochs:                     999999

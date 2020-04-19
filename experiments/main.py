@@ -49,6 +49,7 @@ parser.add_argument('-optimise_local', '--ol', type=str, default=None)
 parser.add_argument('-local_ammortisation_posterior', '--lap', type=str, default=None)
 parser.add_argument('-local_num_batches', '--lnb', type=int, default=None)
 parser.add_argument('-load_decoder_only', '--ldo', type=str, default=None)
+parser.add_argument('-use_balanced_dataset', '--ubd', type=str, default=None)
 
 # Saved model for local optimisation (if none provided, will attempt to find one from hash of config)
 parser.add_argument('-local_opt_saved_model', '--losm', type=str, help="path to saved model file for use in local optimisation", default=None)
@@ -213,6 +214,8 @@ if __name__ == "__main__":
             inference_gap_parameters._config["local_ammortisation"]["manual_saved_model_path"] = args.losm
         if args.lnb:
             inference_gap_parameters._config["local_ammortisation"]["num_batches"] = args.lnb
+        if args.ubd:
+            inference_gap_parameters._config["local_ammortisation"]["use_balanced_dataset"] = args.ubd.lower() == 'true'
     
     # Override the decoder loading setting.
     if args.ldo:
