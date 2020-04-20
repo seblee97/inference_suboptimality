@@ -113,6 +113,7 @@ class VAERunner():
 
         self.test_frequency = config.get(["testing", "test_frequency"])
         self.visualise_test = config.get(["testing", "visualise"])
+        self.test_batch_size = config.get(["testing", "batch_size"])
 
         self.optimiser_type = config.get(["training", "optimiser", "type"])
         self.optimiser_params = config.get(["training", "optimiser", "params"])
@@ -534,20 +535,30 @@ class VAERunner():
         self.vae.eval()
 
         with torch.no_grad():
-            # Take multiple expectations of the ELBO to reduce variance.
-            test_batch = repeat_batch(self.test_data, self.test_mc_samples)
+            # Compute the average test loss using |self.test_mc_samples| samples
+            # with a batch size of |self.test_batch_size|.
+            overall_test_loss = torch.Tensor([0.0])
+            for minibatch in partition_batch(self.test_data, self.test_batch_size):
+                minibatch = repeat_batch(minibatch, self.test_mc_samples)
+                vae_output = self.vae(minibatch)
+                loss, _, _ = self.loss_module.compute_loss(x=minibatch, vae_output=vae_output)
+                overall_test_loss += loss * len(minibatch)
+                del minibatch, vae_output
+            overall_test_loss /= len(self.test_data) * self.test_mc_samples
 
-            vae_output = self.vae(test_batch)
-            overall_test_loss, _, _ = self.loss_module.compute_loss(x=test_batch, vae_output=vae_output)
             self.writer.add_scalar("test_loss", float(overall_test_loss), step)
             self.logger_df.at[step, "test_loss"] = float(overall_test_loss)
             print("Testing loss after {} steps: {}".format(step, float(overall_test_loss)))
 
             if self.visualise_test:
                 index = random.randint(0, self.test_data.size(0) - 1)
+
+                # Reconstruct the test image at the selected index.
+                test_image_batch = torch.unsqueeze(self.test_data[index], 0)
+                reconstructed_image = self.vae(test_image_batch)['x_hat'][0]
+
                 if self.dataset == "cifar":
                     #Test 1: closeness output-input
-                    reconstructed_image = torch.sigmoid(vae_output['x_hat'][index])
                     numpy_image = np.transpose(((reconstructed_image.detach().cpu()>= 0.5).float()).numpy(), (1, 2, 0))
                     numpy_input = np.transpose(self.test_data[index].detach().cpu().float().numpy(), (1, 2, 0))
 
@@ -567,7 +578,6 @@ class VAERunner():
 
                 else:
                     #Test 1: closeness output-input
-                    reconstructed_image = torch.sigmoid(vae_output['x_hat'][index])
                     numpy_image = reconstructed_image.detach().cpu().numpy().reshape((28, 28))
                     numpy_input = self.test_data[index].detach().cpu().numpy().reshape((28, 28))
 
