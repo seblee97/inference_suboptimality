@@ -42,7 +42,7 @@ Additionally we implemented a planar flows approximate posterior.
 * [Overleaf Report](https://www.overleaf.com/2537812191smnpkcprxdxs)
 * [Experiment List](https://docs.google.com/document/d/1mjVGWMD_I13s5KsolYSpAij37CbMO58AiLj4kKjfKHA/edit?usp=sharing)
 * [Research Paper](https://arxiv.org/abs/1801.03558)
-* [Conference Poster](https://docs.google.com/presentation/d/1sgkaef6lSHZtU6eBMmfr-AtU_yjEadXdqj8ZBqy02gM/edit?usp=sharing)
+* [Conference Poster](https://unioxfordnexus-my.sharepoint.com/:p:/g/personal/hert5869_ox_ac_uk/EeDaJHDlDnhNr4R5VdsCbaoBEgjwqa5hrsuq-I7QbCKh8Q?e=uGHYxV)
 
 ## Prerequisites
 
