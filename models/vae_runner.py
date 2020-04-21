@@ -121,6 +121,10 @@ class VAERunner():
         self.train_mc_samples = config.get(["training", "mc_samples"])
         self.test_mc_samples = config.get(["testing", "mc_samples"])
 
+        self.early_stopping_enabled = config.get(["training", "early_stopping_enabled"])
+        self.early_stopping_patience = config.get(["training", "early_stopping_patience"])
+        self.early_stopping_frequency = config.get(["training", "early_stopping_frequency"])
+
         self.is_estimator = config.get(["model", "is_estimator"])
         self.optimise_local = config.get(["model", "optimise_local"])
 
@@ -381,7 +385,7 @@ class VAERunner():
             print("Locally optimising ammortisation for data batch {}/{}".format(b, self.local_num_batches))
 
             # take multiple monte carlo samples to reduce variance
-            copied_batch = repeat_batch(batch_input, self.local_mc_samples)
+            copied_batch = repeat_batch(batch_input.to(self.device), self.local_mc_samples)
 
             current_average_loss = 0.0
             best_average_loss = np.inf
@@ -466,7 +470,12 @@ class VAERunner():
         self.vae.train()
 
         step_count = 0
-        
+
+        # Track the minimum IWAE test loss as well as the number of early stopping
+        # checks that have elapsed since the minimum test loss was computed.
+        best_estimated_loss = np.inf
+        worse_loss_streak = 0
+
         # For the LR scheduler.  See https://arxiv.org/abs/1509.00519 for more details.
         exponent_of_3 = 0
         epoch_elapsed = 0
@@ -528,6 +537,18 @@ class VAERunner():
                     self.writer.add_scalar("estimated_loss", float(estimated_loss), step_count)
                     print("Estimated loss after {} steps: {}".format(step_count, float(estimated_loss)))
 
+            # Perform an early stopping check if desired.
+            if self.early_stopping_enabled and epoch % self.early_stopping_frequency == 0:
+                estimated_loss = self.estimator.estimate_log_likelihood_loss(self.test_data, self.vae, self.loss_module)
+                if estimated_loss < best_estimated_loss:
+                    best_estimated_loss = estimated_loss
+                    worse_loss_streak = 0
+                else:
+                    worse_loss_streak += 1
+                if worse_loss_streak >= self.early_stopping_patience:
+                    print(f"Early stopping triggered: test loss did not improve after {self.early_stopping_patience} checks.")
+                    break
+
             print("Training loss after {} epochs ({} steps): {}".format(epoch, step_count, float(loss)))
 
     def _perform_test_loop(self, step:int):
@@ -535,20 +556,11 @@ class VAERunner():
         self.vae.eval()
 
         with torch.no_grad():
-            # Compute the average test loss using |self.test_mc_samples| samples
-            # with a batch size of |self.test_batch_size|.
-            overall_test_loss = torch.Tensor([0.0])
-            for minibatch in partition_batch(self.test_data, self.test_batch_size):
-                minibatch = repeat_batch(minibatch, self.test_mc_samples)
-                vae_output = self.vae(minibatch)
-                loss, _, _ = self.loss_module.compute_loss(x=minibatch, vae_output=vae_output)
-                overall_test_loss += loss * len(minibatch)
-                del minibatch, vae_output
-            overall_test_loss /= len(self.test_data) * self.test_mc_samples
-
-            self.writer.add_scalar("test_loss", float(overall_test_loss), step)
-            self.logger_df.at[step, "test_loss"] = float(overall_test_loss)
-            print("Testing loss after {} steps: {}".format(step, float(overall_test_loss)))
+            # Compute and record the average test loss.
+            overall_test_loss = self._compute_loss(batch=self.test_data, num_samples=self.test_mc_samples, minibatch_size=self.test_batch_size)
+            self.writer.add_scalar("test_loss", overall_test_loss, step)
+            self.logger_df.at[step, "test_loss"] = overall_test_loss
+            print("Testing loss after {} steps: {}".format(step, overall_test_loss))
 
             if self.visualise_test:
                 index = random.randint(0, self.test_data.size(0) - 1)
@@ -595,6 +607,26 @@ class VAERunner():
                     self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
         # set model back to train mode
         self.vae.train()
+
+    def _compute_loss(self, batch: torch.Tensor, num_samples: int, minibatch_size: int) -> float:
+        """
+        Computes the average loss of the given batch using |num_samples| samples
+        from each element and a minibatch size of |minibatch_size|.
+
+        :param batch: batch to compute the loss over
+        :param num_samples: number of samples to take from each element
+        :param minibatch_size: size of each minibatch (prior to sampling)
+        :return: the average loss.
+        """
+        mean_loss = torch.Tensor([0.0])
+        for minibatch in partition_batch(batch, minibatch_size):
+            minibatch = repeat_batch(minibatch, num_samples)
+            vae_output = self.vae(minibatch)
+            loss, _, _ = self.loss_module.compute_loss(x=minibatch, vae_output=vae_output)
+            mean_loss += loss * len(minibatch)
+            del minibatch, vae_output
+        mean_loss /= len(batch) * num_samples
+        return float(mean_loss)
 
     def analyse(self, saved_model_path) -> None:
         """

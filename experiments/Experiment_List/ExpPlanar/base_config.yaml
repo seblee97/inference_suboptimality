@@ -37,6 +37,10 @@ training:
   num_epochs:                       3280                       # Number of training epochs.
   warm_up_program:                  400                       # Limit of linear entropy-annealing (= warm-up) program (set to 0 if no entropy annealing wanted). 400 is the default
   mc_samples:                       1                         # Number of samples to take in the ELBO expectation.
+  early_stopping_enabled:           False                     # Terminate training prematurely if the test loss appears to be regressing.
+  early_stopping_patience:          10                        # Number of consecutive early stopping check failures before training is aborted.
+  early_stopping_frequency:         10                        # Number of training epochs between early stopping checks.
+
 
 testing:
   test_frequency:                   100                       # Number of training steps between tests.
