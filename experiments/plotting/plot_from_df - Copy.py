@@ -16,14 +16,8 @@ from typing import Dict, List
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-save_path", type=str, help="path to save figures and in which to find csv data")
-parser.add_argument("-csv", type=str, help="csv name", default="data_logger.csv")
 parser.add_argument("-plot_keys", type=str, help="path to file containing list of attributes to plot for summary", default=None)
 parser.add_argument("-exp_name", type=str, help="name of experiment")
-parser.add_argument("-rolling_mean", type=int, help="number of data points to calculate mean over")
-parser.add_argument("-zoom", type=int, help="number of epochs before zooming in")
-parser.add_argument("-compression", type=int, help="percentage to compress to", default=10)
-parser.add_argument("-lo", type=str, help="Local optimisation?", default=None)
-
 
 args = parser.parse_args()
 
@@ -42,10 +36,7 @@ class SummaryPlot:
         self.save_path = save_path
         self.experiment_name = experiment_name
 
-        if args.lo:
-            self.plot_keys = self.plot_config["local_opt_keys"]
-        else:
-            self.plot_keys = self.plot_config["base_keys"]
+        self.plot_keys = self.plot_config["base_keys"]
 
         self.number_of_graphs = len(self.plot_keys)
 
@@ -72,34 +63,7 @@ class SummaryPlot:
         scaling = self.scale_axes / len(plot_data)
         x_data = [i * scaling for i in range(len(plot_data))]
 
-        if args.zoom:
-            data_to_compress = int((args.zoom * len(plot_data)) / self.scale_axes)
-            upper_bound = plot_data.iloc[data_to_compress]
-            lower_bound = plot_data.iloc[0]
-
-            # shrink scale before zoom to 10%
-            lower_bound_dif = abs(upper_bound - lower_bound)
-            target_lower_bound_dif = (lower_bound_dif * args.compression) / 100
-            target_lower_bound = upper_bound - target_lower_bound_dif
-
-            for value in range(0,data_to_compress):
-                x = plot_data.iloc[value]
-                if x <= upper_bound:
-                    plot_data.iloc[value] = -1 * ((abs(upper_bound - x) * target_lower_bound_dif) / lower_bound_dif) + upper_bound
-                if x > upper_bound:
-                    plot_data.iloc[value] = -1 * ((abs(upper_bound - x) * target_lower_bound_dif) / lower_bound_dif) + upper_bound
-
-            #target_lower_bound_dif = ((abs(lower_bound - upper_bound) * 10) / 100)
-            #target_lower_bound = upper_bound - target_lower_bound_dif
-            #increase value
-            #y_data = plot
-
-        if args.rolling_mean:
-            fig_sub.plot(x_data, plot_data, label="{}pt MEAN".format(args.rolling_mean), color='orange')
-        else:
-            fig_sub.plot(x_data, plot_data)
-
-
+        fig_sub.plot(x_data, plot_data)
 
         # labelling
         fig_sub.set_xlabel("Epoch")
@@ -107,8 +71,7 @@ class SummaryPlot:
 
         # grids
         fig_sub.minorticks_on()
-        fig_sub.legend(loc='lower right')
-        fig_sub.grid(which='major', linestyle='-', linewidth='0.5', color='black', alpha=0.7)
+        fig_sub.grid(which='major', linestyle='-', linewidth='0.5', color='red', alpha=0.5)
         fig_sub.grid(which='minor', linestyle=':', linewidth='0.5', color='black', alpha=0.5)
 
     def generate_plot(self):
@@ -120,29 +83,19 @@ class SummaryPlot:
 
                 if graph_index < self.number_of_graphs:
 
-                    #print("index: ", graph_index)
+                    print(graph_index)
 
                     attribute_title = self.plot_keys[graph_index]
                     attribute_data = self.data[attribute_title].dropna()
+                    print(attribute_data)
 
-                    #print(attribute_data)
-                    if args.rolling_mean:
-
-                        attribute_data = attribute_data.rolling(window=args.rolling_mean).mean()
-
-                        self.add_subplot(
+                    self.add_subplot(
                             plot_data=attribute_data, row_index=row, column_index=col, title=attribute_title
                             )
-                    #print(rolling_mean)
-                    else:
-                        self.add_subplot(
-                            plot_data=attribute_data, row_index=row, column_index=col, title=attribute_title
-                            )
-
 
         self.fig.suptitle("Summary Plot: {}".format(self.experiment_name))
 
-        self.fig.savefig("{}/{}_summary_plot.pdf".format(self.save_path, args.exp_name), dpi=500)
+        self.fig.savefig("{}/summary_plot.pdf".format(self.save_path), dpi=500)
         plt.close()
 
 
@@ -151,7 +104,7 @@ if __name__ == "__main__":
     os.makedirs("{}/figures/".format(args.save_path), exist_ok=True)
     figure_save_path = "{}/figures".format(args.save_path)
 
-    path_to_csv = os.path.join(args.save_path, args.csv)
+    path_to_csv = os.path.join(args.save_path, "data_logger.csv")
 
     sP = SummaryPlot(data_csv=path_to_csv, plot_config_path=args.plot_keys, save_path=figure_save_path, experiment_name=args.exp_name)
     sP.generate_plot()
