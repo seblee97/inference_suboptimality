@@ -555,7 +555,7 @@ class VAERunner():
 
                 # Reconstruct the test image at the selected index.
                 test_image_batch = torch.unsqueeze(self.test_data[index], 0)
-                reconstructed_image = self.vae(test_image_batch)['x_hat'][0]
+                reconstructed_image = torch.sigmoid(self.vae(test_image_batch)['x_hat'][0])
 
                 if self.dataset == "cifar":
                     #Test 1: closeness output-input
