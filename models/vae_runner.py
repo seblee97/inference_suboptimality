@@ -12,7 +12,7 @@ from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux, P
 
 from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss, PlanarLoss
 from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
-from .local_ammortisation_modules import GaussianLocalAmmortisation, RNVPAuxLocalAmmortisation, RNVPLocalAmmortisation
+from .local_ammortisation_modules import GaussianLocalAmmortisation, RNVPAuxLocalAmmortisation, RNVPLocalAmmortisation, PlanarLocalAmmortisation
 
 from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader, repeat_batch, partition_batch
 
@@ -141,7 +141,7 @@ class VAERunner():
             self.local_num_batches = config.get(["local_ammortisation", "num_batches"])
 
             # account for different inference net output : latent dimension ratio
-            factors = {"gaussian": 2, "rnvp_norm_flow": 2, "rnvp_aux_flow": 1}
+            factors = {"gaussian": 2, "rnvp_norm_flow": 2, "rnvp_aux_flow": 1, "planar_flow": 2}
             self.sample_factor = factors[self.local_approximate_posterior] / 2
             # self.factor = config.get(["local_ammortisation", "encoder", "output_dimension_factor"]) // 2
 
@@ -334,8 +334,8 @@ class VAERunner():
             local_ammortisation_module = RNVPLocalAmmortisation(config=config)
         elif self.local_approximate_posterior == "rnvp_aux_flow":
             local_ammortisation_module = RNVPAuxLocalAmmortisation(config=config)
-        elif local_approximate_posterior == "planar_flow":
-            local_ammortisation_module = RNVPLocalAmmortisation(config=config)
+        elif self.local_approximate_posterior == "planar_flow":
+            local_ammortisation_module = PlanarLocalAmmortisation(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised for local ammortisation".format(local_approximate_posterior))
 
@@ -367,7 +367,7 @@ class VAERunner():
             consistent_saved_run_paths = sorted(Path(correct_hash_saved_weights_path).iterdir(), key=os.path.getmtime)
             if consistent_saved_run_paths:
                 saved_model_path = os.path.join(consistent_saved_run_paths[-1], "saved_vae_weights.pt")
-        
+
         self._load_checkpointed_model(saved_model_path)
 
         # set model to evaluation mode i.e. freeze weights
@@ -399,7 +399,7 @@ class VAERunner():
             additional_optimisation_parameters = self.localised_ammortisation_network.get_additional_parameters()
 
             parameters_to_optimise = [{'params': [mean, logvar]}, {'params': additional_optimisation_parameters}]
-            
+
             local_optimiser = self.localised_ammortisation_network.get_local_optimiser(parameters=parameters_to_optimise)
 
             for e in range(1, self.max_num_epochs + 1):
@@ -452,7 +452,7 @@ class VAERunner():
 
             test_elbo = -loss
             total_average_loss += float(loss) / self.local_num_batches
-            
+
             if self.log_to_df:
                 self.logger_df.at[log_step_count, "test_loss"] = float(loss)
 
@@ -479,9 +479,9 @@ class VAERunner():
         # For the LR scheduler.  See https://arxiv.org/abs/1509.00519 for more details.
         exponent_of_3 = 0
         epoch_elapsed = 0
-        
+
         for epoch in range(1, self.num_epochs + 1):
-            
+
             if self.lr_scheduler:
                 if epoch_elapsed >= 3 ** exponent_of_3:
                     self.learning_rate *= 10 ** (-1 / 7)
@@ -491,7 +491,7 @@ class VAERunner():
                     for param_group in self.optimiser.param_groups:
                         param_group['lr'] = self.learning_rate
                 epoch_elapsed += 1
-            
+
             for batch_input, _ in self.dataloader: # target discarded
 
                 step_count += 1
