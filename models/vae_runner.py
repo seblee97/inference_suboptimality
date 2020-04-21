@@ -12,7 +12,7 @@ from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux, P
 
 from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss, PlanarLoss
 from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
-from .local_ammortisation_modules import GaussianLocalAmmortisation, RNVPAuxLocalAmmortisation, RNVPLocalAmmortisation
+from .local_ammortisation_modules import GaussianLocalAmmortisation, RNVPAuxLocalAmmortisation, RNVPLocalAmmortisation, PlanarLocalAmmortisation
 
 from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader, repeat_batch, partition_batch
 
@@ -330,7 +330,7 @@ class VAERunner():
         elif self.local_approximate_posterior == "rnvp_aux_flow":
             local_ammortisation_module = RNVPAuxLocalAmmortisation(config=config)
         elif self.local_approximate_posterior == "planar_flow":
-            local_ammortisation_module = RNVPLocalAmmortisation(config=config)
+            local_ammortisation_module = PlanarLocalAmmortisation(config=config)
         else:
             raise ValueError("Approximate posterior family {} not recognised for local ammortisation".format(local_approximate_posterior))
 
