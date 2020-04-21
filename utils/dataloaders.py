@@ -58,10 +58,13 @@ def binarised_mnist_dataloader(data_path: str, batch_size: int, train=True, bala
         test_ar = read_file_to_numpy(test_file)
         tensorData = torch.Tensor(test_ar)
 
+    # Do not shuffle the balanced training dataset.
+    shuffle = not (train and balanced)
+
     targets = torch.Tensor([-1 for _ in range(len(tensorData))]).view(len(tensorData), -1) # these are dummy targets to match API
 
     tensorDataset = torch.utils.data.TensorDataset(tensorData, targets)
-    dataloader = torch.utils.data.DataLoader(tensorDataset, batch_size=batch_size, shuffle=True)
+    dataloader = torch.utils.data.DataLoader(tensorDataset, batch_size=batch_size, shuffle=shuffle)
 
     return dataloader
 
