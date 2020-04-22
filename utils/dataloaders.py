@@ -90,15 +90,16 @@ def fashion_mnist_dataloader(data_path: str, batch_size: int, train:bool=True):
                                                 
     return dataloader
 
-def cifar_dataloader(data_path: str, batch_size: int, train:bool=True):
+def cifar_dataloader(data_path: str, batch_size: int, train:bool=True, balanced=False):
     """
-        Load cifar image data from specified location, convert to  tensors, binarise, and return dataloader
-        Note: Cifar already grayscaled in each channel.
+        Load CIFAR image data from specified location, convert to  tensors, binarise, and return dataloader
+        Note: CIFAR already grayscaled in each channel.
         
         :param data_path: full path to data directory
         :param batch_size: batch size for dataloader
         :param train: whether to load train or test data
-        :return dataloader: pytorch dataloader for mnist training dataset
+        :param balanced: whether to load balanced training data (if |train| is True).
+        :return dataloader: pytorch dataloader for CIFAR training dataset
         """
     # transforms to add to data
     transform = torchvision.transforms.Compose([
@@ -108,6 +109,21 @@ def cifar_dataloader(data_path: str, batch_size: int, train:bool=True):
                                                 ])
         
     CIFAR10_data = torchvision.datasets.CIFAR10(data_path, transform=transform, train=train)
-    dataloader = torch.utils.data.DataLoader(CIFAR10_data, batch_size=batch_size, shuffle=True)
-                                                
+
+    if train and balanced:
+        label_indices = [[] for i in range(10)]
+        index = 0
+        # Find at least 10 indices corresponding to each label.
+        while any(len(indices) < 10 for indices in label_indices):
+            _, label = CIFAR10_data[index]
+            label_indices[label].append(index)
+            index += 1
+        # Extract the first 10 indices of each label.
+        balanced_indices = [index for indices in label_indices for index in indices[:10]]
+        # Form a balanced (unshuffled) datset from the extracted indices.
+        CIFAR10_subset = torch.utils.data.Subset(CIFAR10_data, balanced_indices)
+        dataloader = torch.utils.data.DataLoader(CIFAR10_subset, batch_size=batch_size, shuffle=False)
+    else:
+        dataloader = torch.utils.data.DataLoader(CIFAR10_data, batch_size=batch_size, shuffle=True)
+
     return dataloader
