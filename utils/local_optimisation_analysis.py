@@ -36,7 +36,8 @@ new_balanced_digits = [8, 9, 9, 5, 1, 5, 7, 8, 2, 0,
 
 if args.sample_type == 'balanced':
     # nested list where list i corresponds to elbos of digit i
-    by_digit = np.array([[elbo for e, elbo in enumerate(lo_elbos) if new_balanced_digits[e] == i] for i in range(10)])
+    by_digit = np.array([lo_elbos[10*i:10*(i+1)] for i in range(10)])
+    # by_digit = np.array([[elbo for e, elbo in enumerate(lo_elbos) if new_balanced_digits[e] == i] for i in range(10)])
     per_digit_mean = [np.mean(digit_elbo) for digit_elbo in by_digit]
     per_digit_variance = [np.std(digit_elbo) for digit_elbo in by_digit]
     print("Per digit mean: ", per_digit_mean)
