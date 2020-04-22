@@ -272,7 +272,8 @@ class VAERunner():
             dataloader = fashion_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
             test_data = iter(fashion_mnist_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         elif self.dataset == "cifar":
-            dataloader = cifar_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True)
+            balanced = self.optimise_local and self.use_balanced_dataset
+            dataloader = cifar_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=self.batch_size, train=True, balanced=balanced)
             test_data = iter(cifar_dataloader(data_path=os.path.join(file_path, self.relative_data_path), batch_size=10000, train=False)).next()[0]
         else:
             raise ValueError("Dataset {} not recognised".format(self.dataset))
