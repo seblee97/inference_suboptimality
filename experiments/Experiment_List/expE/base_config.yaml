@@ -5,7 +5,7 @@ relative_data_path:                 ../data/                  # Path to the data
 saved_models_path:                  saved_models/             # relative path
 checkpoint_frequency:               1000                      # every n epochs at which to checkpoint model weights
 log_to_df:                          True
-load_decoder_only:                  False
+load_decoder_only:                  True
 
 model:
   approximate_posterior:            gaussian                  # Family of functions to use for approximate posterior (q_\phi(z | x)).
@@ -16,12 +16,12 @@ model:
   latent_dimension:                 50                        # Number of latent dimensions.
   is_estimator:                     False                     # Use a log-likelihood estimator.
   optimise_local:                   False
-  run_frozen_decoder:               False
+  run_frozen_decoder:               True
 
   encoder:
     network_type:                     feedforward             # Type of encoder network (i.e., feedforward or convolutional).
     output_dimension_factor:          2                       # multiple of latent dimensions required for output of first part of inference network. Generally 2, but 1 for auxillary flows.
-    hidden_dimensions:                [200, 200]              # Layer dimensions in the encoder network (excluding the input dimensions and final latent dimensions).
+    hidden_dimensions:                []                     # Layer dimensions in the encoder network (excluding the input dimensions and final latent dimensions).
 
   decoder:
     network_type:                     feedbackward            # Type of decoder network (i.e. feedforward or (de)convolutional)
