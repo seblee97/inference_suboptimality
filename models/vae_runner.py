@@ -127,7 +127,8 @@ class VAERunner():
 
         self.is_estimator = config.get(["model", "is_estimator"])
         self.optimise_local = config.get(["model", "optimise_local"])
-
+        self.run_frozen_decoder = config.get(["model", "run_frozen_decoder"])
+        
         if self.optimise_local:
             self.manual_saved_model_path = config.get(["local_ammortisation", "manual_saved_model_path"])
 
@@ -144,6 +145,9 @@ class VAERunner():
             factors = {"gaussian": 2, "rnvp_norm_flow": 2, "rnvp_aux_flow": 1, "planar_flow": 2}
             self.sample_factor = factors[self.local_approximate_posterior] / 2
             # self.factor = config.get(["local_ammortisation", "encoder", "output_dimension_factor"]) // 2
+
+        if self.run_frozen_decoder:
+            self.manual_saved_model_path = config.get(["model", "decoder", "manual_saved_model_path"])
 
     def checkpoint_df(self, step: int) -> None:
         """save dataframe"""
@@ -201,7 +205,11 @@ class VAERunner():
                 config.get(["flow", "auxillary_forward_dimensions"]),
                 config.get(["flow", "auxillary_reverse_dimensions"])
             ])
-
+        
+        if self.run_frozen_decoder:
+            model_specification_components.extend([
+                config.get(["model", "run_frozen_decoder"])
+            ])
 
         # hash relevant elements of current config to see if trained model exists
         self.config_hash = hashlib.md5(str(model_specification_components).encode('utf-8')).hexdigest()
@@ -469,7 +477,16 @@ class VAERunner():
 
         # explicitly set model to train mode
         self.vae.train()
-
+        
+        # If run with a frozen decoder from other model
+        if self.run_frozen_decoder:
+            if self.manual_saved_model_path:
+                saved_model_path = self.manual_saved_model_path
+            else:
+                raise ValueError("A precise decoder model path is needed".format(self.manual_saved_model_path))
+            self._load_checkpointed_model(saved_model_path)
+            self.vae.freeze_decoder()
+                
         step_count = 0
 
         # Track the minimum IWAE test loss as well as the number of early stopping
@@ -608,6 +625,8 @@ class VAERunner():
                     self.writer.add_figure("test_autoencoding_random_latent", fig2, step)
         # set model back to train mode
         self.vae.train()
+        if self.run_frozen_decoder:
+            self.vae.freeze_decoder()
 
     def _compute_loss(self, batch: torch.Tensor, num_samples: int, minibatch_size: int) -> float:
         """
