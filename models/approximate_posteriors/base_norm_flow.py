@@ -35,6 +35,9 @@ class BaseFlow(nn.Module, ABC):
         elif self.initialisation == "xavier_normal":
             nn.init.xavier_normal_(layer.weight)
             nn.init.constant_(layer.bias, 0)
+        elif self.initialisation == "planar_normal":
+            nn.init.normal_(layer.weight, std=1E-4)
+            nn.init.normal_(layer.bias, std=1E-4)
         elif self.initialisation == "default":
             pass
         else:
