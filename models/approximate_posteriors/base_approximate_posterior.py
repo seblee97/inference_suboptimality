@@ -2,14 +2,16 @@ from abc import ABC, abstractmethod
 
 from typing import Dict
 
-class approximatePosterior(ABC):
+class _ApproximatePosterior(ABC):
 
     def __init__(self, config: Dict):
         pass
 
     @abstractmethod
-    def sample(self):
-        #approximate_posterior.sample should return the latent and a log-probability
-
-        #return z, logp
-        pass
+    def sample(self) -> (torch.Tensor, List):
+        """
+        Should returns the latent vector as well as other values 
+        necessary to compute the elbo e.g. the mean and variance to 
+        compute log-probability. 
+        """
+        raise NotImplementedError("Base class method.")
