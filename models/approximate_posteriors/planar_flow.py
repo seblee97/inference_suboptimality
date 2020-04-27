@@ -1,5 +1,5 @@
-from .base_norm_flow import BaseFlow
-from .base_approximate_posterior import approximatePosterior
+from .base_norm_flow import _BaseFlow
+from .base_approximate_posterior import _ApproximatePosterior
 
 import torch
 import torch.nn as nn
@@ -8,7 +8,7 @@ import torch.distributions as tdist
 
 from typing import Dict
 
-class PlanarPosterior(approximatePosterior, BaseFlow):
+class PlanarPosterior(_ApproximatePosterior, _BaseFlow):
 
     """Applied Planar normalising flows (https://github.com/riannevdberg/sylvester-flows/blob/master/models/VAE.py) [repo 1]
     Varientional auto-encoders with normalizing flows, applied in https://github.com/e-hulten/planar-flows/blob/master/transform.py#L4
@@ -26,8 +26,8 @@ class PlanarPosterior(approximatePosterior, BaseFlow):
 
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
 
-        approximatePosterior.__init__(self, config)
-        BaseFlow.__init__(self, config)
+        _ApproximatePosterior.__init__(self, config)
+        _BaseFlow.__init__(self, config)
 
         if self.activation_function == 'tanh':
             self._reparameterise_u = self._tanh_reparameterise_u

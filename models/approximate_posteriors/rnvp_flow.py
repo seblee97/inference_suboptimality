@@ -1,5 +1,5 @@
-from .base_norm_flow import BaseFlow
-from .base_approximate_posterior import approximatePosterior
+from .base_norm_flow import _BaseFlow
+from .base_approximate_posterior import _ApproximatePosterior
 
 import torch
 import torch.nn as nn
@@ -8,7 +8,7 @@ import torch.distributions as tdist
 
 from typing import Dict
 
-class RNVPPosterior(approximatePosterior, BaseFlow):
+class RNVPPosterior(_ApproximatePosterior, _BaseFlow):
 
     """Applied Real-NVP normalising flows (Dinh et al https://arxiv.org/abs/1605.08803)"""
 
@@ -30,8 +30,8 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
 
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
 
-        approximatePosterior.__init__(self, config)
-        BaseFlow.__init__(self, config)
+        _ApproximatePosterior.__init__(self, config)
+        _BaseFlow.__init__(self, config)
 
     def _construct_layers(self):
 
