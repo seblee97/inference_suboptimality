@@ -1,6 +1,6 @@
 from .vae import VAE
 
-from .networks import FullyConnectedEncoderNetwork, FullyConnectedDecoderNetwork, convNetwork, deconvNetwork
+from .networks import FullyConnectedEncoderNetwork, FullyConnectedDecoderNetwork, ConvNetwork, DeconvNetwork
 
 from .encoder import Encoder
 from .decoder import Decoder
@@ -217,7 +217,7 @@ class VAERunner():
         if self.encoder_type == "fully_connected":
             network = FullyConnectedEncoderNetwork(config=config)
         elif self.encoder_type == "convolutional":
-            network = convNetwork(config=config)
+            network = ConvNetwork(config=config)
         else:
             raise ValueError("Encoder type {} not recognised".format(self.encoder_type))
 
@@ -241,7 +241,7 @@ class VAERunner():
         if self.decoder_type == "fully_connected":
             network = FullyConnectedDecoderNetwork(config=config)
         elif self.decoder_type == "deconvolutional":
-            network = deconvNetwork(config=config)
+            network = DeconvNetwork(config=config)
         else:
             raise ValueError("Decoder type {} not recognised".format(self.decoder_type))
 
