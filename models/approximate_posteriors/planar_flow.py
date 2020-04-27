@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.distributions as tdist
 
-from typing import Dict
+from typing import Dict, List
 
 class PlanarPosterior(_ApproximatePosterior, _BaseFlow):
 
@@ -16,7 +16,7 @@ class PlanarPosterior(_ApproximatePosterior, _BaseFlow):
 
     https://arxiv.org/pdf/1505.05770.pdf"""
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict) -> None:
 
         # get architecture of flows from config
         self.num_flow_transformations = config.get(["flow", "num_flow_transformations"])
@@ -34,14 +34,14 @@ class PlanarPosterior(_ApproximatePosterior, _BaseFlow):
         else:
             raise ValueError("Enforcing invertibility condition by reparameterising u currently only implemented for tanh nonlinearity")
 
-    def _construct_layers(self):
+    def _construct_layers(self) -> None:
         # input to amortization networks for u, w, b are 2 * latent_dimension, 
         # since this is output of first part of inference network (halved in reparamterisation)
         self.flow_u_modules = self._initialise_weights(nn.Linear(2 * self.latent_dimension, self.num_flow_transformations * self.latent_dimension))
         self.flow_w_modules = self._initialise_weights(nn.Linear(2 * self.latent_dimension, self.num_flow_transformations * self.latent_dimension))
         self.flow_b_modules = self._initialise_weights(nn.Linear(2 * self.latent_dimension, self.num_flow_transformations))
 
-    def _reparameterise(self, raw_vector: torch.Tensor) -> torch.Tensor:
+    def _reparameterise(self, raw_vector: torch.Tensor) -> (torch.Tensor, torch.Tensor, torch.Tensor):
         dimensions = raw_vector.shape[1] // 2
         mean = raw_vector[:, :dimensions]
         log_var = raw_vector[:, dimensions:]
@@ -61,17 +61,13 @@ class PlanarPosterior(_ApproximatePosterior, _BaseFlow):
         u_hat = u + ((m_uw - uw) * w / w_norm_sq) # (u^T)
         return u_hat
 
-    def forward(self, zk: torch.Tensor, u: torch.Tensor, w: torch.Tensor, b: torch.Tensor):
+    def forward(self, zk: torch.Tensor, u: torch.Tensor, w: torch.Tensor, b: torch.Tensor) -> (torch.Tensor, torch.Tensor):
         """
         Forward pass. Assumes amortized u, w and b. Conditions on diagonals of u and w for invertibility
         will be be satisfied inside this function. Computes the following transformation:
         z' = z + u h( w^T z + b) (section 2.1, equation 10 from paper cited above)
         or actually
         z'^T = z^T + h(z^T w + b)u^T
-
-        u, w, b are matrices parametrized by a linear map.
-        z is the latent
-        h() is a smooth activation function
 
         Assumes the following input shapes:
         shape u = (batch_size, latent_dimension)
@@ -99,8 +95,7 @@ class PlanarPosterior(_ApproximatePosterior, _BaseFlow):
 
         return z_out, log_det_jacobian
 
-    def sample(self, parameters):
-
+    def sample(self, parameters: torch.Tensor) -> (torch.Tensor, List):
         # reparameterization trick
         z0, mean, log_var = self._reparameterise(parameters)
         log_det_jacobian = torch.zeros(z0.shape[0])
