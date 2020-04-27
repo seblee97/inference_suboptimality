@@ -183,8 +183,8 @@ Below is the structure of the relevant files in our repository.
 │    │   ├── base_network.py
 │    │   ├── convolutional.py
 │    │   ├── deconvolutional.py
-│    │   ├── feedbackward.py
-│    │   └── feedforward.py
+│    │   ├── fc_encoder.py
+│    │   └── fc_decoder.py
 │    │
 │    ├── decoder.py
 │    ├── encoder.py
