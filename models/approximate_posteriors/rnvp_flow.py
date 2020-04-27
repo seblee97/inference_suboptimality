@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.distributions as tdist
 
-from typing import Dict
+from typing import Dict, List
 
 class RNVPPosterior(_ApproximatePosterior, _BaseFlow):
 
@@ -33,7 +33,7 @@ class RNVPPosterior(_ApproximatePosterior, _BaseFlow):
         _ApproximatePosterior.__init__(self, config)
         _BaseFlow.__init__(self, config)
 
-    def _construct_layers(self):
+    def _construct_layers(self) -> None:
 
         self.flow_sigma_modules = nn.ModuleList([])
         self.flow_mu_modules = nn.ModuleList([])
@@ -62,7 +62,7 @@ class RNVPPosterior(_ApproximatePosterior, _BaseFlow):
             z_partition = self.activation(layer(z_partition))
         return z_partition
 
-    def forward(self, z0: torch.Tensor):
+    def forward(self, z0: torch.Tensor) -> (torch.Tensor, torch.Tensor):
 
         z1 = z0[:, :self.input_dimension]
         z2 = z0[:, self.input_dimension:]
@@ -92,10 +92,7 @@ class RNVPPosterior(_ApproximatePosterior, _BaseFlow):
 
         return z, log_det_jacobian
 
-    def sample(self, parameters):
-        # There are two dimensions to |parameters|; the second one consists of two halves:
-        #   1. The first half represents the multidimensional mean of the Gaussian posterior.
-        #   2. The second half represents the multidimensional log variance of the Gaussian posterior.
+    def sample(self, parameters: torch.Tensor) -> (torch.Tensor, List):
         dimensions = parameters.shape[1] // 2
         mean = parameters[:, :dimensions]
         log_var = parameters[:, dimensions:]
