@@ -5,7 +5,8 @@ Things we should polish on our code base before we submit. Most of this is cosme
 - [x] Spelling mistakes (e.g. ammortise -> amortise)
 - [ ] Anonymise (e.g. authors below but let's make sure there are no other traces)
 - [ ] Linked to the above: squash commits. I suggest we copy this code over to the anonymised repos and squash them there since the commit history is useful to have here.
-- [ ] Capitalise class names
+- [x] Capitalise class names
+- [x] Underscore base class names
 - [x] Renaming of stuff (e.g. feedforward and feedbackward)
 - [ ] Make Experiment_List lower case? I've weirdly grown to like it, given it contains all the hard coded stuff
 - [x] Remove files that aren't used (math_operations? Sylv Flows if we don't get around to them? Do we use the other base configs in the experiment dir?)
@@ -107,7 +108,7 @@ Below is the structure of the relevant files in our repository.
 │    │   ├── aux_flow_config.yaml
 │    │   ├── esimator_config.yaml
 │    │   ├── flow_config.yaml
-│    │   ├── local_amortisation_config.yaml
+│    │   ├── local_optimisation_config.yaml
 │    │   └── planar_config.yaml
 │    │
 │    ├── Experiment_List (bash scripts for paper experiments)
@@ -159,14 +160,14 @@ Below is the structure of the relevant files in our repository.
 │    │   ├── iwae_estimator.yaml
 │    │   └── max_estimator.yaml
 │    │
-│    ├── local_amortisation_modules
+│    ├── local_optimisation_modules
 │    │   │
 │    │   ├── __init__.py
 │    │   │
-│    │   ├── base_local_amortisation.py
-│    │   ├── gaussian_local_amortisation.py
-│    │   ├── rnvp_aux_flow_local_amortisation.py
-│    │   └── rnvp_flow_local_amortisation.py
+│    │   ├── base_local_optimisation.py
+│    │   ├── gaussian_local_optimisation.py
+│    │   ├── rnvp_aux_flow_local_optimisation.py
+│    │   └── rnvp_flow_local_optimisation.py
 │    │
 │    ├── loss_modules
 │    │   │
