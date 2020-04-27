@@ -1,9 +1,9 @@
-from .base_network import baseNetwork
+from .base_network import _BaseNetwork
 from typing import List, Dict
 
 import torch.nn as nn
 
-class convNetwork(baseNetwork):
+class ConvNetwork(_BaseNetwork):
 
     def __init__(self, config: Dict):
         """
@@ -30,7 +30,7 @@ class convNetwork(baseNetwork):
         self.latent_dimension = config.get(["model", "latent_dimension"])
         self.hidden_dimensions = config.get(["model", "encoder", "hidden_dimensions"])
         #super(convNetwork, self).__init__()
-        baseNetwork.__init__(self, config=config)
+        _BaseNetwork.__init__(self, config=config)
     
     def _construct_layers(self):
         self.layers = nn.ModuleList([])
