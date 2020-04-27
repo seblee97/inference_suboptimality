@@ -1,9 +1,6 @@
 from .vae import VAE
 
-from .networks import feedForwardNetwork
-from .networks import feedBackwardNetwork
-from .networks import convNetwork
-from .networks import deconvNetwork
+from .networks import FullyConnectedEncoderNetwork, FullyConnectedDecoderNetwork, convNetwork, deconvNetwork
 
 from .encoder import Encoder
 from .decoder import Decoder
@@ -217,8 +214,8 @@ class VAERunner():
     def _setup_encoder(self, config: Dict):
 
         # network
-        if self.encoder_type == "feedforward":
-            network = feedForwardNetwork(config=config)
+        if self.encoder_type == "fully_connected":
+            network = FullyConnectedEncoderNetwork(config=config)
         elif self.encoder_type == "convolutional":
             network = convNetwork(config=config)
         else:
@@ -241,8 +238,8 @@ class VAERunner():
         return Encoder(network=network, approximate_posterior=approximate_posterior)
 
     def _setup_decoder(self, config: Dict):
-        if self.decoder_type == "feedbackward":
-            network = feedBackwardNetwork(config=config)
+        if self.decoder_type == "fully_connected":
+            network = FullyConnectedDecoderNetwork(config=config)
         elif self.decoder_type == "deconvolutional":
             network = deconvNetwork(config=config)
         else:
