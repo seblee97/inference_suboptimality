@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class BaseFlow(nn.Module, ABC):
+class _BaseFlow(nn.Module, ABC):
 
     def __init__(self, config):
 
