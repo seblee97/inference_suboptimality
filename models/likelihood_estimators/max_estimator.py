@@ -1,7 +1,7 @@
 from .base_estimator import _BaseEstimator
 from .ais_estimator import AISEstimator
 from .iwae_estimator import IWAEEstimator
-from models.loss_modules import baseLoss
+from models.loss_modules import _BaseLoss
 
 import torch
 
@@ -19,7 +19,7 @@ class MaxEstimator(_BaseEstimator):
         self._ais_estimator = ais_estimator
         self._iwae_estimator = iwae_estimator
 
-    def estimate_log_likelihood_loss(self, batch_input: torch.Tensor, vae: torch.nn.Module, loss_module: baseLoss) -> torch.Tensor:
+    def estimate_log_likelihood_loss(self, batch_input: torch.Tensor, vae: torch.nn.Module, loss_module: _BaseLoss) -> torch.Tensor:
         """
         Estimates the log-likelihood loss of the given input batch using the
         provided VAE and loss module.

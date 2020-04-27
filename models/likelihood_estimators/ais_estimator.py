@@ -1,5 +1,5 @@
 from .base_estimator import _BaseEstimator
-from models.loss_modules import baseLoss
+from models.loss_modules import _BaseLoss
 
 import torch
 
@@ -24,7 +24,7 @@ class AISEstimator(_BaseEstimator):
         self._num_dists = num_dists
         self._num_leapfrog_steps = num_leapfrog_steps
 
-    def estimate_log_likelihood_loss(self, batch_input: torch.Tensor, vae: torch.nn.Module, _: baseLoss) -> torch.Tensor:
+    def estimate_log_likelihood_loss(self, batch_input: torch.Tensor, vae: torch.nn.Module, _: _BaseLoss) -> torch.Tensor:
         """
         Estimates the average log-likelihood loss of the given input batch using
         the provided VAE and loss module.

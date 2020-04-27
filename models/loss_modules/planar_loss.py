@@ -1,4 +1,4 @@
-from .base_loss import baseLoss
+from .base_loss import _BaseLoss
 
 from typing import Dict
 
@@ -7,11 +7,11 @@ import torch
 import numpy as np
 from typing import Dict
 
-class PlanarLoss(baseLoss):
+class PlanarLoss(_BaseLoss):
 
     def __init__(self):
 
-        baseLoss.__init__(self)
+        _BaseLoss.__init__(self)
 
     """
     loss module :https://github.com/chrischute/real-nvp/blob/df51ad570baf681e77df4d2265c0f1eb1b5b646c/models/real_nvp/real_nvp_loss.py
