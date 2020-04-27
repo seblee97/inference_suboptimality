@@ -1,0 +1,4 @@
+from .rnvp_aux_flow_local_optimisation import RNVPAuxLocalOptimisation
+from .rnvp_flow_local_optimisation import RNVPLocalOptimisation
+from .gaussian_local_optimisation import GaussianLocalOptimisation
+from .planar_flow_local_optimisation import PlanarLocalOptimisation

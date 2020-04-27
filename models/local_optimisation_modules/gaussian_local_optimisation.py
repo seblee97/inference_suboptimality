@@ -1,14 +1,14 @@
 import torch
 import torch.distributions as tdist
 
-from .base_local_amortisation import BaseLocalAmortisation
+from .base_local_optimisation import _BaseLocalOptimisation
 
-class GaussianLocalAmortisation(BaseLocalAmortisation):
+class GaussianLocalOptimisation(_BaseLocalOptimisation):
     """
     *FFG from paper
     """
     def __init__(self, config):
-        BaseLocalAmortisation.__init__(self, config)
+        _BaseLocalOptimisation.__init__(self, config)
 
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
 

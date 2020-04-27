@@ -4,12 +4,12 @@ from abc import ABC, abstractmethod
 
 from typing import Union, List, Dict
 
-class BaseLocalmortisation(ABC):
+class _BaseLocalOptimisation(ABC):
 
     def __init__(self, config):
-        self.optimiser_type = config.get(["local_amortisation", "optimiser", "type"])
-        self.optimiser_params = config.get(["local_amortisation", "optimiser", "params"])
-        self.learning_rate = config.get(["local_amortisation", "optimiser", "learning_rate"])
+        self.optimiser_type = config.get(["local_optimisation", "optimiser", "type"])
+        self.optimiser_params = config.get(["local_optimisation", "optimiser", "params"])
+        self.learning_rate = config.get(["local_optimisation", "optimiser", "learning_rate"])
 
     def get_local_optimiser(self, parameters: Union[List, Dict]):
         if self.optimiser_type == "adam":

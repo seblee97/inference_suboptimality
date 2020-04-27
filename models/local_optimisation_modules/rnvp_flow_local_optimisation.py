@@ -1,20 +1,20 @@
 import torch
 
-from .base_local_amortisation import BaseLocalAmortisation
-from models.approximate_posteriors import PlanarPosterior
+from .base_local_optimisation import _BaseLocalOptimisation
+from models.approximate_posteriors import RNVPPosterior
 
-class PlanarLocalAmortisation(BaseLocalAmortisation):
+class RNVPLocalOptimisation(_BaseLocalOptimisation):
     """
     *NFlow from paper
     """
     def __init__(self, config):
-        BaseLocalAmortisation.__init__(self, config)
+        _BaseLocalOptimisation.__init__(self, config)
 
         self._flow_module = None
         self._config = config
 
     def get_additional_parameters(self):
-        self._flow_module = PlanarPosterior(config=self._config)
+        self._flow_module = RNVPPosterior(config=self._config)
         flow_parameters = self._flow_module.parameters()
         return flow_parameters
 
