@@ -1,10 +1,10 @@
-from .base_estimator import BaseEstimator
+from .base_estimator import _BaseEstimator
 from models.loss_modules import baseLoss
 
 import torch
 
 
-class AISEstimator(BaseEstimator):
+class AISEstimator(_BaseEstimator):
 
     def __init__(self, num_chains: float, batch_size: int, latent_size: int, num_dists: int, num_leapfrog_steps: int):
         """
@@ -17,7 +17,7 @@ class AISEstimator(BaseEstimator):
         :param num_dists: Number of intermediate distributions
         :param num_leapfrog_steps: Number of leapfrog steps in the HMC simulation
         """
-        BaseEstimator.__init__(self)
+        _BaseEstimator.__init__(self)
         self._num_chains = num_chains
         self._batch_size = batch_size
         self._latent_size = latent_size

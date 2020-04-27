@@ -1,4 +1,4 @@
-from .base_estimator import BaseEstimator
+from .base_estimator import _BaseEstimator
 from models.loss_modules import baseLoss
 from utils import partition_batch
 
@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 
-class IWAEEstimator(BaseEstimator):
+class IWAEEstimator(_BaseEstimator):
 
     def __init__(self, num_samples: float, batch_size: int):
         """
@@ -17,7 +17,7 @@ class IWAEEstimator(BaseEstimator):
         :param num_samples: number of samples
         :param batch_size: batch size
         """
-        BaseEstimator.__init__(self)
+        _BaseEstimator.__init__(self)
         self._num_samples = num_samples
         self._batch_size = batch_size
 
