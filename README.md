@@ -105,7 +105,7 @@ Below is the structure of the relevant files in our repository.
 │    │   ├── aux_flow_config.yaml
 │    │   ├── esimator_config.yaml
 │    │   ├── flow_config.yaml
-│    │   ├── local_ammortisation_config.yaml
+│    │   ├── local_amortisation_config.yaml
 │    │   └── planar_config.yaml
 │    │
 │    ├── Experiment_List (bash scripts for paper experiments)
@@ -157,14 +157,14 @@ Below is the structure of the relevant files in our repository.
 │    │   ├── iwae_estimator.yaml
 │    │   └── max_estimator.yaml
 │    │
-│    ├── local_ammortisation_modules
+│    ├── local_amortisation_modules
 │    │   │
 │    │   ├── __init__.py
 │    │   │
-│    │   ├── base_local_ammortisation.py
-│    │   ├── gaussian_local_ammortisation.py
-│    │   ├── rnvp_aux_flow_local_ammortisation.py
-│    │   └── rnvp_flow_local_ammortisation.py
+│    │   ├── base_local_amortisation.py
+│    │   ├── gaussian_local_amortisation.py
+│    │   ├── rnvp_aux_flow_local_amortisation.py
+│    │   └── rnvp_flow_local_amortisation.py
 │    │
 │    ├── loss_modules
 │    │   │
