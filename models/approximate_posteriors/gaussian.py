@@ -3,8 +3,6 @@ from .base_approximate_posterior import approximatePosterior
 import torch
 import torch.distributions as tdist
 
-from utils import log_normal
-
 from typing import Dict
 
 class gaussianPosterior(approximatePosterior):
