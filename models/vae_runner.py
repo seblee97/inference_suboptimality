@@ -12,7 +12,7 @@ from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux, P
 
 from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss, PlanarLoss
 from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
-from .local_ammortisation_modules import GaussianLocalAmmortisation, RNVPAuxLocalAmmortisation, RNVPLocalAmmortisation, PlanarLocalAmmortisation
+from .local_amortisation_modules import GaussianLocalAmortisation, RNVPAuxLocalAmortisation, RNVPLocalAmortisation, PlanarLocalAmortisation
 
 from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader, repeat_batch, partition_batch
 
@@ -74,7 +74,7 @@ class VAERunner():
             self.estimator = self._setup_estimator(config)
 
         if self.optimise_local:
-            self.localised_ammortisation_network = self._setup_local_ammortisation(config)
+            self.localised_amortisation_network = self._setup_local_amortisation(config)
 
         # initialise general tensorboard writer
         self.writer = SummaryWriter(self.log_path)
@@ -130,21 +130,21 @@ class VAERunner():
         self.run_frozen_decoder = config.get(["model", "run_frozen_decoder"])
         
         if self.optimise_local:
-            self.manual_saved_model_path = config.get(["local_ammortisation", "manual_saved_model_path"])
+            self.manual_saved_model_path = config.get(["local_amortisation", "manual_saved_model_path"])
 
-            self.use_balanced_dataset = config.get(["local_ammortisation", "use_balanced_dataset"])
+            self.use_balanced_dataset = config.get(["local_amortisation", "use_balanced_dataset"])
 
-            self.max_num_epochs = config.get(["local_ammortisation", "max_num_epochs"])
-            self.convergence_check_period = config.get(["local_ammortisation", "convergence_check_period"])
-            self.cycles_until_convergence = config.get(["local_ammortisation", "cycles_until_convergence"])
-            self.local_mc_samples = config.get(["local_ammortisation", "mc_samples"])
-            self.local_approximate_posterior = config.get(["local_ammortisation", "approximate_posterior"])
-            self.local_num_batches = config.get(["local_ammortisation", "num_batches"])
+            self.max_num_epochs = config.get(["local_amortisation", "max_num_epochs"])
+            self.convergence_check_period = config.get(["local_amortisation", "convergence_check_period"])
+            self.cycles_until_convergence = config.get(["local_amortisation", "cycles_until_convergence"])
+            self.local_mc_samples = config.get(["local_amortisation", "mc_samples"])
+            self.local_approximate_posterior = config.get(["local_amortisation", "approximate_posterior"])
+            self.local_num_batches = config.get(["local_amortisation", "num_batches"])
 
             # account for different inference net output : latent dimension ratio
             factors = {"gaussian": 2, "rnvp_norm_flow": 2, "rnvp_aux_flow": 1, "planar_flow": 2}
             self.sample_factor = factors[self.local_approximate_posterior] / 2
-            # self.factor = config.get(["local_ammortisation", "encoder", "output_dimension_factor"]) // 2
+            # self.factor = config.get(["local_amortisation", "encoder", "output_dimension_factor"]) // 2
 
         if self.run_frozen_decoder:
             self.manual_saved_model_path = config.get(["model", "decoder", "manual_saved_model_path"])
@@ -335,20 +335,20 @@ class VAERunner():
         self.estimator_type = config.get(["estimator", "type"])
         return construct_estimator(self.estimator_type.upper())
 
-    def _setup_local_ammortisation(self, config: Dict):
+    def _setup_local_amortisation(self, config: Dict):
 
         if self.local_approximate_posterior == "gaussian":
-            local_ammortisation_module = GaussianLocalAmmortisation(config=config)
+            local_amortisation_module = GaussianLocalAmortisation(config=config)
         elif self.local_approximate_posterior == "rnvp_norm_flow":
-            local_ammortisation_module = RNVPLocalAmmortisation(config=config)
+            local_amortisation_module = RNVPLocalAmortisation(config=config)
         elif self.local_approximate_posterior == "rnvp_aux_flow":
-            local_ammortisation_module = RNVPAuxLocalAmmortisation(config=config)
+            local_amortisation_module = RNVPAuxLocalAmortisation(config=config)
         elif self.local_approximate_posterior == "planar_flow":
-            local_ammortisation_module = PlanarLocalAmmortisation(config=config)
+            local_amortisation_module = PlanarLocalAmortisation(config=config)
         else:
-            raise ValueError("Approximate posterior family {} not recognised for local ammortisation".format(local_approximate_posterior))
+            raise ValueError("Approximate posterior family {} not recognised for local amortisation".format(local_approximate_posterior))
 
-        return local_ammortisation_module
+        return local_amortisation_module
 
     def _load_checkpointed_model(self, model_path: str) -> None:
         """
@@ -356,13 +356,13 @@ class VAERunner():
         """
         if not os.path.exists(model_path):
             raise FileNotFoundError("Saved weights for specified config could not be found in specified path. \
-                                    To train locally optimised ammortisation, pretrained model is required.")
+                                    To train locally optimised amortisation, pretrained model is required.")
         else:
            self.vae.load_weights(device=self.device, weights_path=model_path, load_decoder_only=self.load_decoder_only)
 
     def train_local_optimisation(self) -> None:
         """
-        Local optimisation (per data batch) of ammortisation network.
+        Local optimisation (per data batch) of amortisation network.
 
         Loads pretrained model and freezes weights.
         """
@@ -391,7 +391,7 @@ class VAERunner():
         # loop through every datapoint and optimise for each individually
         for b, (batch_input, _) in enumerate(self.dataloader, start=1): # target discarded
 
-            print("Locally optimising ammortisation for data batch {}/{}".format(b, self.local_num_batches))
+            print("Locally optimising amortisation for data batch {}/{}".format(b, self.local_num_batches))
 
             # take multiple monte carlo samples to reduce variance
             copied_batch = repeat_batch(batch_input.to(self.device), self.local_mc_samples)
@@ -405,11 +405,11 @@ class VAERunner():
             logvar = torch.zeros((self.batch_size * self.local_mc_samples, int(self.sample_factor * self.latent_dimension)), requires_grad=True)
 
             # for gaussian case, mean and logvar are only encoder parameters. For flow etc. there are others
-            additional_optimisation_parameters = self.localised_ammortisation_network.get_additional_parameters()
+            additional_optimisation_parameters = self.localised_amortisation_network.get_additional_parameters()
 
             parameters_to_optimise = [{'params': [mean, logvar]}, {'params': additional_optimisation_parameters}]
 
-            local_optimiser = self.localised_ammortisation_network.get_local_optimiser(parameters=parameters_to_optimise)
+            local_optimiser = self.localised_amortisation_network.get_local_optimiser(parameters=parameters_to_optimise)
 
             for e in range(1, self.max_num_epochs + 1):
 
@@ -418,7 +418,7 @@ class VAERunner():
                 if self.log_to_df:
                     self.logger_df.append(pd.Series(name=log_step_count))
 
-                z, params = self.localised_ammortisation_network.sample_latent_vector([mean, logvar])
+                z, params = self.localised_amortisation_network.sample_latent_vector([mean, logvar])
 
                 reconstruction = self.vae.decoder(z)
                 vae_output = {'x_hat': reconstruction, 'z': z, 'params': params}
@@ -454,7 +454,7 @@ class VAERunner():
                     current_average_loss = 0
 
             # evaluation
-            test_z, test_params = self.localised_ammortisation_network.sample_latent_vector([mean, logvar])
+            test_z, test_params = self.localised_amortisation_network.sample_latent_vector([mean, logvar])
             test_reconstruction = self.vae.decoder(z)
             vae_output = {'x_hat': test_reconstruction, 'z': test_z, 'params': test_params}
             loss, _, _ = self.loss_module.compute_loss(x=copied_batch, vae_output=vae_output)
