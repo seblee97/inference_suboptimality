@@ -6,13 +6,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.distributions as tdist
 
-from typing import Dict
+from typing import Dict, List, Tuple
 
 class RNVPAux(_ApproximatePosterior, _BaseFlow):
 
     """Applied Real-NVP normalising flows (Dinh et al https://arxiv.org/abs/1605.08803)"""
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict) -> None:
 
         # get architecture of flows from config
         self.num_flow_transformations = config.get(["flow", "num_flow_transformations"])
@@ -37,7 +37,7 @@ class RNVPAux(_ApproximatePosterior, _BaseFlow):
         _ApproximatePosterior.__init__(self, config)
         _BaseFlow.__init__(self, config)
 
-    def _construct_layers(self):
+    def _construct_layers(self) -> None:
 
         self.flow_sigma_modules = nn.ModuleList([])
         self.flow_mu_modules = nn.ModuleList([])
@@ -94,7 +94,7 @@ class RNVPAux(_ApproximatePosterior, _BaseFlow):
             z_partition = self.activation(layer(z_partition))
         return z_partition
 
-    def _reparameterise(self, raw_vector: torch.Tensor) -> torch.Tensor:
+    def _reparameterise(self, raw_vector: torch.Tensor) -> Tuple[torch.Tensor]:
         dimensions = raw_vector.shape[1] // 2
         mean = raw_vector[:, :dimensions]
         log_var = raw_vector[:, dimensions:]
@@ -106,8 +106,7 @@ class RNVPAux(_ApproximatePosterior, _BaseFlow):
 
         return reparameterised_vector, mean, log_var
 
-    def flow_forward(self, z1, z2):
-
+    def flow_forward(self, z1: torch.Tensor, z2: torch.Tensor) -> Tuple[torch.Tensor]:
         # ensure flow is applied to whole part of latent by alternating half to which flow is applied.
         # in each flow transformation jacobian remains triangular because half is unchanged.
         apply_flow_to_top_partition = True
@@ -131,8 +130,7 @@ class RNVPAux(_ApproximatePosterior, _BaseFlow):
 
         return z1, z2, log_det_jacobian
 
-
-    def forward(self, z0: torch.Tensor):
+    def forward(self, z0: torch.Tensor) -> Tuple[torch.Tensor]:
 
         auxillary_forward_output = self._mapping_forward(mapping_network=self.auxillary_forward_map, z_partition=z0)
 
@@ -160,10 +158,7 @@ class RNVPAux(_ApproximatePosterior, _BaseFlow):
 
         return z, log_det_jacobian, rv, rv_mean, rv_log_var
 
-    def sample(self, parameters):
-        # There are two dimensions to |parameters|; the second one consists of two halves:
-        #   1. The first half represents the multidimensional mean of the Gaussian posterior.
-        #   2. The second half represents the multidimensional log variance of the Gaussian posterior.
+    def sample(self, parameters: torch.Tensor) -> (torch.Tensor, List):
         z0, mean, log_var = self._reparameterise(parameters)
 
         # The above is identical to gaussian case, now apply flow transformations
