@@ -8,10 +8,10 @@ import numpy as np
 
 from typing import Dict
 
-class baseNetwork(nn.Module, ABC):
+class _BaseNetwork(nn.Module, ABC):
 
     def __init__(self, config: Dict):
-        super(baseNetwork, self).__init__()
+        super(_BaseNetwork, self).__init__()
 
         self.nonlinearity_name = config.get(["model", "nonlinearity"])
 
