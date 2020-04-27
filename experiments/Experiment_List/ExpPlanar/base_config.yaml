@@ -16,6 +16,7 @@ model:
   latent_dimension:                 50                        # Number of latent dimensions.
   is_estimator:                     False                     # Use a log-likelihood estimator.
   optimise_local:                   False
+  run_frozen_decoder:               False
 
   encoder:
     network_type:                     fully_connected             # Type of encoder network (i.e., fully_connected or convolutional).
