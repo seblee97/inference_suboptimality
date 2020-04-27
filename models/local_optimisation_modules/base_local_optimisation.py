@@ -2,7 +2,7 @@ import torch
 
 from abc import ABC, abstractmethod
 
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Iterable
 
 class _BaseLocalOptimisation(ABC):
 
@@ -23,9 +23,9 @@ class _BaseLocalOptimisation(ABC):
             raise ValueError("Optimiser {} not recognised". format(self.optimiser_type))
 
     @abstractmethod
-    def get_additional_parameters(self):
+    def get_additional_parameters(self) -> Iterable:
         raise NotImplementedError("Base class method")
 
     @abstractmethod
-    def sample_latent_vector(self):
+    def sample_latent_vector(self) -> (torch.Tensor, List):
         raise NotImplementedError("Base class method")
