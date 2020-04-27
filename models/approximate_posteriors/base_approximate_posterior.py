@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 
-from typing import Dict
+from typing import Dict, List
+
+import torch
 
 class _ApproximatePosterior(ABC):
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict) -> None:
         pass
 
     @abstractmethod
