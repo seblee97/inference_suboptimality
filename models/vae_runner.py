@@ -262,7 +262,7 @@ class VAERunner():
             self.loss_module = RNVPLoss()
         elif approximate_posterior_type == "rnvp_aux_flow":
             self.loss_module = RNVPAuxLoss()
-        elif self.approximate_posterior_type == "planar_flow":
+        elif approximate_posterior_type == "planar_flow":
             self.loss_module = PlanarLoss()
         else:
             raise ValueError("Loss module not correctly specified")
