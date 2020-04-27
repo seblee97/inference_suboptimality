@@ -1,0 +1,62 @@
+checkpoint_frequency: 1000
+device: cuda
+df_log_path: I:\Dev\Git\Inference Suboptimality\experiments\results\2020-04-26-04-40-10\expE_MNIST_FD_basic_PF\data_logger.csv
+experiment_name: expE_MNIST_FD_basic_PF
+experiment_timestamp: 2020-04-26-04-40-10
+flow:
+  flow_layers:
+  - 100
+  - 100
+  nonlinearity: tanh
+  num_flow_passes: 2
+  num_flow_transformations: 2
+  weight_initialisation: planar_normal
+load_decoder_only: true
+log_path: I:\Dev\Git\Inference Suboptimality\experiments\results\2020-04-26-04-40-10\expE_MNIST_FD_basic_PF
+log_to_df: true
+model:
+  approximate_posterior: planar_flow
+  decoder:
+    hidden_dimensions:
+    - 200
+    - 200
+    manual_saved_model_path: results/exp2_MNIST_basic_FFG/saved_vae_weights.pt
+    network_type: feedbackward
+  encoder:
+    hidden_dimensions: []
+    network_type: feedforward
+    output_dimension_factor: 2
+  initialisation: xavier_uniform
+  initialisation_std: 0.1
+  input_dimension: 784
+  is_estimator: false
+  latent_dimension: 50
+  nonlinearity: elu
+  optimise_local: false
+  run_frozen_decoder: true
+relative_data_path: ../data/
+saved_models_path: saved_models/
+seed: 1
+testing:
+  batch_size: 10000
+  mc_samples: 1
+  test_frequency: 100
+  visualise: true
+training:
+  batch_size: 100
+  dataset: binarised_mnist
+  early_stopping_enabled: false
+  early_stopping_frequency: 10
+  early_stopping_patience: 10
+  learning_rate: 0.001
+  lr_scheduler: true
+  mc_samples: 1
+  num_epochs: 3280
+  optimiser:
+    params:
+    - 0.9
+    - 0.999
+    - 0.0001
+    type: adam
+  warm_up_program: 400
+use_gpu: true
