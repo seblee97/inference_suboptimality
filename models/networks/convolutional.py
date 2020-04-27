@@ -32,7 +32,7 @@ class ConvNetwork(_BaseNetwork):
         #super(convNetwork, self).__init__()
         _BaseNetwork.__init__(self, config=config)
     
-    def _construct_layers(self):
+    def _construct_layers(self) -> None:
         self.layers = nn.ModuleList([])
         self.bn_layers = nn.ModuleList([])
         
@@ -55,7 +55,7 @@ class ConvNetwork(_BaseNetwork):
         hidden_to_latent_layer = self._initialise_weights(nn.Linear(param[0], param[1]))
         self.layers.append(hidden_to_latent_layer)
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         """
         Forward pass
         

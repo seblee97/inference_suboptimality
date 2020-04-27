@@ -50,7 +50,7 @@ class _BaseNetwork(nn.Module, ABC):
 
         return layer
 
-    def forward(self, x):   
+    def forward(self, x) -> torch.Tensor:   
         """
         Feeds the given input tensor through this network.  Note that the
         activation function is not applied to the output of the final layer.

@@ -15,7 +15,7 @@ class FullyConnectedEncoderNetwork(_BaseNetwork):
         
         _BaseNetwork.__init__(self, config=config)
         
-    def _construct_layers(self):
+    def _construct_layers(self) -> None:
         
         self.layers = nn.ModuleList([])
         self.layer_config = [self.input_dimension] + self.hidden_dimensions + [self.factor * self.latent_dimension]

@@ -14,7 +14,7 @@ class FullyConnectedDecoderNetwork(_BaseNetwork):
 
         _BaseNetwork.__init__(self, config=config)
 
-    def _construct_layers(self):
+    def _construct_layers(self) -> None:
         
         self.layers = nn.ModuleList([])
         
