@@ -1,10 +1,10 @@
-from .base_network import baseNetwork
+from .base_network import _BaseNetwork
 
 from typing import List, Dict
 
 import torch.nn as nn
 
-class FullyConnectedEncoderNetwork(baseNetwork):
+class FullyConnectedEncoderNetwork(_BaseNetwork):
 
     def __init__(self, config: Dict):
 
@@ -13,7 +13,7 @@ class FullyConnectedEncoderNetwork(baseNetwork):
         self.hidden_dimensions = config.get(["model", "encoder", "hidden_dimensions"])
         self.factor = config.get(["model", "encoder", "output_dimension_factor"])
         
-        baseNetwork.__init__(self, config=config)
+        _BaseNetwork.__init__(self, config=config)
         
     def _construct_layers(self):
         
