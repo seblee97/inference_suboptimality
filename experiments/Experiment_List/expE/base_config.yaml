@@ -19,12 +19,12 @@ model:
   run_frozen_decoder:               True
 
   encoder:
-    network_type:                     feedforward             # Type of encoder network (i.e., feedforward or convolutional).
+    network_type:                     fully_connected             # Type of encoder network (i.e., fully_connected or convolutional).
     output_dimension_factor:          2                       # multiple of latent dimensions required for output of first part of inference network. Generally 2, but 1 for auxillary flows.
     hidden_dimensions:                []                     # Layer dimensions in the encoder network (excluding the input dimensions and final latent dimensions).
 
   decoder:
-    network_type:                     feedbackward            # Type of decoder network (i.e. feedforward or (de)convolutional)
+    network_type:                     fully_connected            # Type of decoder network (i.e. fully_connected or deconvolutional)
     hidden_dimensions:                [200, 200]              # Layer dimensions in the decoder network (excluding output dimensions).
     manual_saved_model_path:          results/exp2_MNIST_basic_FFG/saved_vae_weights.pt        # Path to load a trained decoder (in decoder frozen mode)
 
