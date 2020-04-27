@@ -8,7 +8,7 @@ from .decoder import Decoder
 from .approximate_posteriors import GaussianPosterior, RNVPPosterior, RNVPAux, PlanarPosterior
 
 from .loss_modules import GaussianLoss, RNVPLoss, RNVPAuxLoss, PlanarLoss
-from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
+from .likelihood_estimators import _BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
 from .local_optimisation_modules import GaussianLocalOptimisation, RNVPAuxLocalOptimisation, RNVPLocalOptimisation, PlanarLocalOptimisation
 
 from utils import mnist_dataloader, binarised_mnist_dataloader, fashion_mnist_dataloader, cifar_dataloader, repeat_batch, partition_batch
@@ -298,18 +298,18 @@ class VAERunner():
         else:
             raise ValueError("Optimiser {} not recognised". format(self.optimiser_type))
 
-    def _setup_estimator(self, config: Dict) -> BaseEstimator:
+    def _setup_estimator(self, config: Dict) -> _BaseEstimator:
         """
         Sets up the likelihood estimator for this VAERunner.
 
         :param config: parsed configuration file.
         """
-        def construct_estimator(estimator_type: str) -> BaseEstimator:
+        def construct_estimator(estimator_type: str) -> _BaseEstimator:
             """
-            Constructs a BaseEstimator of the given type.
+            Constructs a _BaseEstimator of the given type.
 
             :param estimator_type: Type of the estimator (capitalized)
-            :return: The BaseEstimator object.
+            :return: The _BaseEstimator object.
             """
             if estimator_type == "IWAE":
                 num_samples = config.get(['estimator', 'iwae', 'num_samples'])
