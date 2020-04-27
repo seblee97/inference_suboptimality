@@ -5,7 +5,7 @@ from .networks import FullyConnectedEncoderNetwork, FullyConnectedDecoderNetwork
 from .encoder import Encoder
 from .decoder import Decoder
 
-from .approximate_posteriors import gaussianPosterior, RNVPPosterior, RNVPAux, PlanarPosterior
+from .approximate_posteriors import GaussianPosterior, RNVPPosterior, RNVPAux, PlanarPosterior
 
 from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss, PlanarLoss
 from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
@@ -223,7 +223,7 @@ class VAERunner():
 
         # approximate posterior family
         if self.approximate_posterior_type == "gaussian":
-            approximate_posterior = gaussianPosterior(config=config)
+            approximate_posterior = GaussianPosterior(config=config)
         elif self.approximate_posterior_type == "rnvp_norm_flow":
             approximate_posterior = RNVPPosterior(config=config)
         elif self.approximate_posterior_type == "rnvp_aux_flow":

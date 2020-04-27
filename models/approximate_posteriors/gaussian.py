@@ -1,14 +1,14 @@
-from .base_approximate_posterior import approximatePosterior
+from .base_approximate_posterior import _ApproximatePosterior
 
 import torch
 import torch.distributions as tdist
 
 from typing import Dict
 
-class gaussianPosterior(approximatePosterior):
+class GaussianPosterior(_ApproximatePosterior):
 
     def __init__(self, config: Dict):
-        approximatePosterior.__init__(self, config)
+        _ApproximatePosterior.__init__(self, config)
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
 
     def sample(self, parameters):
