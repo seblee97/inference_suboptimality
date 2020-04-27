@@ -1,4 +1,4 @@
-local_amortisation:
+local_optimisation:
   use_balanced_dataset:               True                       # Use a balanced dataset for local optimisation (only implemented for binarised MNIST).
 
   approximate_posterior:              gaussian               # gaussian, rnvp_aux_flow, rnvp_norm_flow

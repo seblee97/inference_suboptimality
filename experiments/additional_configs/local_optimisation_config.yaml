@@ -1,5 +1,8 @@
-local_amortisation:
-  use_balanced_dataset:               True                       # Use a balanced dataset for local optimisation (only implemented for binarised MNIST).
+local_optimisation:
+
+  manual_saved_model_path:
+
+  use_balanced_dataset:               True                        # Use a balanced dataset for local optimisation (only implemented for binarised MNIST).
 
   approximate_posterior:              rnvp_aux_flow               # gaussian, rnvp_aux_flow, rnvp_norm_flow
   max_num_epochs:                     999999
