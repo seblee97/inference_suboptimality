@@ -54,13 +54,8 @@ parser.add_argument('-use_balanced_dataset', '--ubd', type=str, default=None)
 # Saved model for local optimisation (if none provided, will attempt to find one from hash of config)
 parser.add_argument('-local_opt_saved_model', '--losm', type=str, help="path to saved model file for use in local optimisation", default=None)
 
-# Flows
-
-# Auxiliary Flows
-
 # Analysis
 parser.add_argument('-analyse', action='store_true', default=None)
-
 
 args = parser.parse_args()
 
