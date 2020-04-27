@@ -1,14 +1,14 @@
-from .base_loss import baseLoss
+from .base_loss import _BaseLoss
 
 from typing import Dict
 
 import torch.nn.functional as F
 import torch
 
-class gaussianLoss(baseLoss):
+class GaussianLoss(_BaseLoss):
 
     def __init__(self):
-        baseLoss.__init__(self)
+        _BaseLoss.__init__(self)
 
     # def compute_loss2(self, x, vae_output):
     #     vae_reconstruction = vae_output['x_hat']

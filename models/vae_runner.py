@@ -7,7 +7,7 @@ from .decoder import Decoder
 
 from .approximate_posteriors import GaussianPosterior, RNVPPosterior, RNVPAux, PlanarPosterior
 
-from .loss_modules import gaussianLoss, RNVPLoss, RNVPAuxLoss, PlanarLoss
+from .loss_modules import GaussianLoss, RNVPLoss, RNVPAuxLoss, PlanarLoss
 from .likelihood_estimators import BaseEstimator, AISEstimator, IWAEEstimator, MaxEstimator
 from .local_optimisation_modules import GaussianLocalOptimisation, RNVPAuxLocalOptimisation, RNVPLocalOptimisation, PlanarLocalOptimisation
 
@@ -254,7 +254,7 @@ class VAERunner():
             approximate_posterior_type = self.approximate_posterior_type
 
         if approximate_posterior_type == "gaussian":
-            self.loss_module = gaussianLoss()
+            self.loss_module = GaussianLoss()
         elif approximate_posterior_type == "rnvp_norm_flow":
             self.loss_module = RNVPLoss()
         elif approximate_posterior_type == "rnvp_aux_flow":
