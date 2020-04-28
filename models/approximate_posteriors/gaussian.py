@@ -3,15 +3,15 @@ from .base_approximate_posterior import _ApproximatePosterior
 import torch
 import torch.distributions as tdist
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 class GaussianPosterior(_ApproximatePosterior):
 
-    def __init__(self, config: Dict) -> None:
+    def __init__(self, config: Dict):
         _ApproximatePosterior.__init__(self, config)
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
 
-    def sample(self, parameters: torch.Tensor) -> (torch.Tensor, List):
+    def sample(self, parameters: torch.Tensor) -> Tuple[torch.Tensor, List]:
         """
         :param parameters: dimensions (B, X) where the first half of X represents the multidimensional 
                            mean of the Gaussian posterior. The second half of X represents the multidimensional

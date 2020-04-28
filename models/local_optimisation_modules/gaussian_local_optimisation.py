@@ -3,7 +3,7 @@ import torch.distributions as tdist
 
 from .base_local_optimisation import _BaseLocalOptimisation
 
-from typing import List
+from typing import List, Tuple
 
 class GaussianLocalOptimisation(_BaseLocalOptimisation):
     """
@@ -18,7 +18,7 @@ class GaussianLocalOptimisation(_BaseLocalOptimisation):
         # no additional parameters in FFG approximate posterior
         return []
 
-    def sample_latent_vector(self, params: torch.Tensor) -> (torch.Tensor, List):
+    def sample_latent_vector(self, params: torch.Tensor) -> Tuple[torch.Tensor, List]:
         # reparameterise to get latent TODO: add reparameterise to utils?
         noise = self.noise_distribution.sample(params[1].shape).squeeze()
         z = params[0] + noise * torch.sqrt(torch.exp(params[1]))

@@ -3,7 +3,7 @@ import torch
 from .base_local_optimisation import _BaseLocalOptimisation
 from models.approximate_posteriors import PlanarPosterior
 
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 
 class PlanarLocalOptimisation(_BaseLocalOptimisation):
     """
@@ -20,7 +20,7 @@ class PlanarLocalOptimisation(_BaseLocalOptimisation):
         flow_parameters = self._flow_module.parameters()
         return flow_parameters
 
-    def sample_latent_vector(self, params: torch.Tensor) -> (torch.Tensor, List):
+    def sample_latent_vector(self, params: torch.Tensor) -> Tuple[torch.Tensor, List]:
         params_concat = torch.cat([params[0], params[1]], dim=1)
         z, [mean, log_var, z0, log_det_jacobian] = self._flow_module.sample(params_concat)
         return z, [mean, log_var, z0, log_det_jacobian]

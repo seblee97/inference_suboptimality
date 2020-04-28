@@ -12,7 +12,7 @@ class RNVPAux(_ApproximatePosterior, _BaseFlow):
 
     """Applied Real-NVP normalising flows (Dinh et al https://arxiv.org/abs/1605.08803)"""
 
-    def __init__(self, config: Dict) -> None:
+    def __init__(self, config: Dict):
 
         # get architecture of flows from config
         self.num_flow_transformations = config.get(["flow", "num_flow_transformations"])
@@ -158,7 +158,7 @@ class RNVPAux(_ApproximatePosterior, _BaseFlow):
 
         return z, log_det_jacobian, rv, rv_mean, rv_log_var
 
-    def sample(self, parameters: torch.Tensor) -> (torch.Tensor, List):
+    def sample(self, parameters: torch.Tensor) -> Tuple[torch.Tensor, List]:
         z0, mean, log_var = self._reparameterise(parameters)
 
         # The above is identical to gaussian case, now apply flow transformations

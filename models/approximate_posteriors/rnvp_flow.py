@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.distributions as tdist
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 class RNVPPosterior(_ApproximatePosterior, _BaseFlow):
 
@@ -62,7 +62,7 @@ class RNVPPosterior(_ApproximatePosterior, _BaseFlow):
             z_partition = self.activation(layer(z_partition))
         return z_partition
 
-    def forward(self, z0: torch.Tensor) -> (torch.Tensor, torch.Tensor):
+    def forward(self, z0: torch.Tensor) -> Tuple[torch.Tensor]:
 
         z1 = z0[:, :self.input_dimension]
         z2 = z0[:, self.input_dimension:]
@@ -92,7 +92,7 @@ class RNVPPosterior(_ApproximatePosterior, _BaseFlow):
 
         return z, log_det_jacobian
 
-    def sample(self, parameters: torch.Tensor) -> (torch.Tensor, List):
+    def sample(self, parameters: torch.Tensor) -> Tuple[torch.Tensor, List]:
         dimensions = parameters.shape[1] // 2
         mean = parameters[:, :dimensions]
         log_var = parameters[:, dimensions:]

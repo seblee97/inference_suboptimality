@@ -8,7 +8,7 @@ from typing import Dict
 
 class _BaseFlow(nn.Module, ABC):
 
-    def __init__(self, config: Dict) -> None:
+    def __init__(self, config: Dict):
 
         nn.Module.__init__(self)
 

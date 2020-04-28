@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.distributions as tdist
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 class PlanarPosterior(_ApproximatePosterior, _BaseFlow):
 
@@ -16,7 +16,7 @@ class PlanarPosterior(_ApproximatePosterior, _BaseFlow):
 
     https://arxiv.org/pdf/1505.05770.pdf"""
 
-    def __init__(self, config: Dict) -> None:
+    def __init__(self, config: Dict):
 
         # get architecture of flows from config
         self.num_flow_transformations = config.get(["flow", "num_flow_transformations"])
@@ -41,7 +41,7 @@ class PlanarPosterior(_ApproximatePosterior, _BaseFlow):
         self.flow_w_modules = self._initialise_weights(nn.Linear(2 * self.latent_dimension, self.num_flow_transformations * self.latent_dimension))
         self.flow_b_modules = self._initialise_weights(nn.Linear(2 * self.latent_dimension, self.num_flow_transformations))
 
-    def _reparameterise(self, raw_vector: torch.Tensor) -> (torch.Tensor, torch.Tensor, torch.Tensor):
+    def _reparameterise(self, raw_vector: torch.Tensor) -> Tuple[torch.Tensor]:
         dimensions = raw_vector.shape[1] // 2
         mean = raw_vector[:, :dimensions]
         log_var = raw_vector[:, dimensions:]
@@ -61,7 +61,7 @@ class PlanarPosterior(_ApproximatePosterior, _BaseFlow):
         u_hat = u + ((m_uw - uw) * w / w_norm_sq) # (u^T)
         return u_hat
 
-    def forward(self, zk: torch.Tensor, u: torch.Tensor, w: torch.Tensor, b: torch.Tensor) -> (torch.Tensor, torch.Tensor):
+    def forward(self, zk: torch.Tensor, u: torch.Tensor, w: torch.Tensor, b: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass. Assumes amortized u, w and b. Conditions on diagonals of u and w for invertibility
         will be be satisfied inside this function. Computes the following transformation:
@@ -95,7 +95,7 @@ class PlanarPosterior(_ApproximatePosterior, _BaseFlow):
 
         return z_out, log_det_jacobian
 
-    def sample(self, parameters: torch.Tensor) -> (torch.Tensor, List):
+    def sample(self, parameters: torch.Tensor) -> Tuple[torch.Tensor, List]:
         # reparameterization trick
         z0, mean, log_var = self._reparameterise(parameters)
         log_det_jacobian = torch.zeros(z0.shape[0])
