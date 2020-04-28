@@ -28,7 +28,7 @@ model:
     hidden_dimensions:                [200, 200]              # Layer dimensions in the decoder network (excluding output dimensions).
 
 training:
-  learning_rate:                    0.0001                    # Learning rate for gradient descent.
+  learning_rate:                    0.001                    # Learning rate for gradient descent.
   lr_scheduler:                     True                     # at 3^i epoch, multiply learning rate by 10^-i/7, for MNIST and Fashio_MNIST (CIFAR has a fixed learning rate)
   optimiser:
     type:                           adam                      # Gradient descent optimizer (e.g., ADAM, Adagrad, SGD, etc.).
