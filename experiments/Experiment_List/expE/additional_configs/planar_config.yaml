@@ -4,4 +4,5 @@ flow:
   num_flow_transformations:           2
   flow_layers:                        [100, 100]
   nonlinearity:                       tanh
-  weight_initialisation:              default
+  weight_initialisation:              normal
+  weight_initialisation_std:          0.0001
