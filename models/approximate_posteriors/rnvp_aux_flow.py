@@ -135,7 +135,7 @@ class RNVPAux(_ApproximatePosterior, _BaseFlow):
         auxillary_forward_output = self._mapping_forward(mapping_network=self.auxillary_forward_map, z_partition=z0)
 
         # reparameterise auxillary forward output
-        v, _, _ = self._reparameterise(auxillary_forward_output)
+        v, mean_v, logvar_v = self._reparameterise(auxillary_forward_output)
 
         z1 = z0
         z2 = v
@@ -156,12 +156,12 @@ class RNVPAux(_ApproximatePosterior, _BaseFlow):
         # reparamterise auxillary reverse output
         rv, rv_mean, rv_log_var = self._reparameterise(auxillary_reverse_output)
 
-        return z, log_det_jacobian, rv, rv_mean, rv_log_var
+        return z, log_det_jacobian, rv, rv_mean, rv_log_var, v, mean_v, logvar_v
 
     def sample(self, parameters: torch.Tensor) -> Tuple[torch.Tensor, List]:
         z0, mean, log_var = self._reparameterise(parameters)
 
         # The above is identical to gaussian case, now apply flow transformations
-        z, log_det_jacobian, rv, rv_mean, rv_log_var = self.forward(z0)
+        z, log_det_jacobian, rv, rv_mean, rv_log_var, v, mean_v, logvar_v = self.forward(z0)
 
-        return z, [mean, log_var, z0, log_det_jacobian, rv, rv_mean, rv_log_var]
+        return z, [mean, log_var, z0, log_det_jacobian, rv, rv_mean, rv_log_var, v, mean_v, logvar_v]
