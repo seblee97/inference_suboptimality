@@ -75,7 +75,7 @@ Standalone experiments can be run from the experiment folder using the main.py s
 
 Running a specific experiment from the paper can be done by accessing the relevant hard coded configuration files in the Experiment_List folder, which have been made to match the specifications of the paper. For example to reproduce the configuration of a fully-factorised gaussian approximate posterior with an amortised inference network (`𝓛(VAE[q]) | qFFG` from Table 2. in the paper), run from the experiments folder:
 
-```python main.py -config Experiment_List/Exp2/base_config.yaml -additional_configs Experiment_List/Exp2/additional_configs/```
+```python main.py -config experiment_list/expA/base_config.yaml -additional_configs experiment_list/expA/additional_configs/```
 
 Alternatively, all results from a given experiment can be run at once in sequence using the bash script in the relevant experiment folder.
 
@@ -111,13 +111,14 @@ Below is the structure of the relevant files in our repository.
 │    │   ├── local_optimisation_config.yaml
 │    │   └── planar_config.yaml
 │    │
-│    ├── Experiment_List (bash scripts for paper experiments)
+│    ├── experiment_list (bash scripts for paper experiments)
 │    │   │
-│    │   ├── Exp2
-│    │   ├── Exp3
-│    │   ├── Exp3B
-│    │   ├── Exp6
-│    │   └── ExpPlanar
+│    │   ├── expA
+│    │   ├── expB
+│    │   ├── expB
+│    │   ├── expC
+│    │   ├── expD
+│    │   └── expE
 │    │
 │    ├── plotting
 │    │   │
