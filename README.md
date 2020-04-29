@@ -2,14 +2,17 @@
 
 Things we should polish on our code base before we submit. Most of this is cosmetic so I suggest we wait until at least the experiments are finished to absolutely minimise risk of breaking something.
 
-- [ ] Spelling mistakes (e.g. ammortise -> amortise)
+- [x] Spelling mistakes (e.g. ammortise -> amortise)
 - [ ] Anonymise (e.g. authors below but let's make sure there are no other traces)
 - [ ] Linked to the above: squash commits. I suggest we copy this code over to the anonymised repos and squash them there since the commit history is useful to have here.
-- [ ] Renaming of stuff (e.g. feedforward and feedbackward)
+- [x] Capitalise class names
+- [x] Underscore base class names
+- [x] Renaming of stuff (e.g. feedforward and feedbackward)
 - [ ] Make Experiment_List lower case? I've weirdly grown to like it, given it contains all the hard coded stuff
-- [ ] Remove files that aren't used (math_operations? Sylv Flows if we don't get around to them? Do we use the other base configs in the experiment dir?)
+- [x] Remove files that aren't used (math_operations? Sylv Flows if we don't get around to them? Do we use the other base configs in the experiment dir?)
 - [ ] Linked to above I think early one some pycache folders etc. creeped in before we firmed up the gitignore, we should remove these
 - [ ] Run another lint session and get all the type hinting and docstrings etc. in there 
+- [ ] docstrings/removed todos and dud comments
 - [ ] Unify the naming conventions in the [experiments/results](experiments/results) directory. 
 - [ ] Clean up the script commands that run each experiment (e.g., adding the `--ldo True` flag for local optimisation).
 - [ ] Actually run `mypy` over the codebase to make sure our types are consistent.
@@ -105,7 +108,7 @@ Below is the structure of the relevant files in our repository.
 │    │   ├── aux_flow_config.yaml
 │    │   ├── esimator_config.yaml
 │    │   ├── flow_config.yaml
-│    │   ├── local_ammortisation_config.yaml
+│    │   ├── local_optimisation_config.yaml
 │    │   └── planar_config.yaml
 │    │
 │    ├── Experiment_List (bash scripts for paper experiments)
@@ -157,14 +160,14 @@ Below is the structure of the relevant files in our repository.
 │    │   ├── iwae_estimator.yaml
 │    │   └── max_estimator.yaml
 │    │
-│    ├── local_ammortisation_modules
+│    ├── local_optimisation_modules
 │    │   │
 │    │   ├── __init__.py
 │    │   │
-│    │   ├── base_local_ammortisation.py
-│    │   ├── gaussian_local_ammortisation.py
-│    │   ├── rnvp_aux_flow_local_ammortisation.py
-│    │   └── rnvp_flow_local_ammortisation.py
+│    │   ├── base_local_optimisation.py
+│    │   ├── gaussian_local_optimisation.py
+│    │   ├── rnvp_aux_flow_local_optimisation.py
+│    │   └── rnvp_flow_local_optimisation.py
 │    │
 │    ├── loss_modules
 │    │   │
@@ -183,8 +186,8 @@ Below is the structure of the relevant files in our repository.
 │    │   ├── base_network.py
 │    │   ├── convolutional.py
 │    │   ├── deconvolutional.py
-│    │   ├── feedbackward.py
-│    │   └── feedforward.py
+│    │   ├── fc_encoder.py
+│    │   └── fc_decoder.py
 │    │
 │    ├── decoder.py
 │    ├── encoder.py

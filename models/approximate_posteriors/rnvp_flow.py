@@ -1,14 +1,14 @@
-from .base_norm_flow import BaseFlow
-from .base_approximate_posterior import approximatePosterior
+from .base_norm_flow import _BaseFlow
+from .base_approximate_posterior import _ApproximatePosterior
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.distributions as tdist
 
-from typing import Dict
+from typing import Dict, List, Tuple
 
-class RNVPPosterior(approximatePosterior, BaseFlow):
+class RNVPPosterior(_ApproximatePosterior, _BaseFlow):
 
     """Applied Real-NVP normalising flows (Dinh et al https://arxiv.org/abs/1605.08803)"""
 
@@ -30,10 +30,10 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
 
         self.noise_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([1]))
 
-        approximatePosterior.__init__(self, config)
-        BaseFlow.__init__(self, config)
+        _ApproximatePosterior.__init__(self, config)
+        _BaseFlow.__init__(self, config)
 
-    def _construct_layers(self):
+    def _construct_layers(self) -> None:
 
         self.flow_sigma_modules = nn.ModuleList([])
         self.flow_mu_modules = nn.ModuleList([])
@@ -62,7 +62,7 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
             z_partition = self.activation(layer(z_partition))
         return z_partition
 
-    def forward(self, z0: torch.Tensor):
+    def forward(self, z0: torch.Tensor) -> Tuple[torch.Tensor]:
 
         z1 = z0[:, :self.input_dimension]
         z2 = z0[:, self.input_dimension:]
@@ -92,10 +92,7 @@ class RNVPPosterior(approximatePosterior, BaseFlow):
 
         return z, log_det_jacobian
 
-    def sample(self, parameters):
-        # There are two dimensions to |parameters|; the second one consists of two halves:
-        #   1. The first half represents the multidimensional mean of the Gaussian posterior.
-        #   2. The second half represents the multidimensional log variance of the Gaussian posterior.
+    def sample(self, parameters: torch.Tensor) -> Tuple[torch.Tensor, List]:
         dimensions = parameters.shape[1] // 2
         mean = parameters[:, :dimensions]
         log_var = parameters[:, dimensions:]

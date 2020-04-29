@@ -44,9 +44,9 @@ parser.add_argument('-IWAE_samples', '--IWAEs', type=float, default=None)
 parser.add_argument('-IWAE_batch_size', '--IWAEbs', type=float, default=None)
 parser.add_argument('-AIS_batch_size', '--AISbs', type=float, default=None)
 
-# Local amortisation
+# Local optimisation
 parser.add_argument('-optimise_local', '--ol', type=str, default=None)
-parser.add_argument('-local_ammortisation_posterior', '--lap', type=str, default=None)
+parser.add_argument('-local_optimisation_posterior', '--lap', type=str, default=None)
 parser.add_argument('-local_num_batches', '--lnb', type=int, default=None)
 parser.add_argument('-load_decoder_only', '--ldo', type=str, default=None)
 parser.add_argument('-use_balanced_dataset', '--ubd', type=str, default=None)
@@ -54,13 +54,8 @@ parser.add_argument('-use_balanced_dataset', '--ubd', type=str, default=None)
 # Saved model for local optimisation (if none provided, will attempt to find one from hash of config)
 parser.add_argument('-local_opt_saved_model', '--losm', type=str, help="path to saved model file for use in local optimisation", default=None)
 
-# Flows
-
-# Auxiliary Flows
-
 # Analysis
 parser.add_argument('-analyse', action='store_true', default=None)
-
 
 args = parser.parse_args()
 
@@ -148,7 +143,7 @@ if __name__ == "__main__":
     if args.dur:
         inference_gap_parameters._config["model"]["decoder"]["decoder_unfreeze_ratio"] = args.dur
 
-    # Local amortisation level
+    # Local optimisation level
     if args.ol:
         if args.ol == "True":
             args.ol = True
@@ -159,14 +154,14 @@ if __name__ == "__main__":
 
     optimise_local = inference_gap_parameters.get(["model", "optimise_local"])
     if optimise_local:
-        local_opt_config_path = os.path.join(supplementary_configs_path, 'local_ammortisation_config.yaml')
+        local_opt_config_path = os.path.join(supplementary_configs_path, 'local_optimisation_config.yaml')
         local_opt_config_full_path = os.path.join(main_file_path, local_opt_config_path)
         with open(local_opt_config_full_path, 'r') as yaml_file:
             specific_params = yaml.load(yaml_file, yaml.SafeLoader)
 
         # update base-parameters with specific parameters
         inference_gap_parameters.update(specific_params)
-        approximate_posterior_configuration = args.lap or inference_gap_parameters.get(["local_ammortisation", "approximate_posterior"])
+        approximate_posterior_configuration = args.lap or inference_gap_parameters.get(["local_optimisation", "approximate_posterior"])
 
     else:
         approximate_posterior_configuration = inference_gap_parameters.get(["model", "approximate_posterior"])
@@ -208,14 +203,14 @@ if __name__ == "__main__":
 
     if optimise_local:
         if args.lap:
-            inference_gap_parameters._config["local_ammortisation"]["approximate_posterior"] = args.lap
+            inference_gap_parameters._config["local_optimisation"]["approximate_posterior"] = args.lap
                 # Saved model path for local optimisation
         if args.losm:
-            inference_gap_parameters._config["local_ammortisation"]["manual_saved_model_path"] = args.losm
+            inference_gap_parameters._config["local_optimisation"]["manual_saved_model_path"] = args.losm
         if args.lnb:
-            inference_gap_parameters._config["local_ammortisation"]["num_batches"] = args.lnb
+            inference_gap_parameters._config["local_optimisation"]["num_batches"] = args.lnb
         if args.ubd:
-            inference_gap_parameters._config["local_ammortisation"]["use_balanced_dataset"] = args.ubd.lower() == 'true'
+            inference_gap_parameters._config["local_optimisation"]["use_balanced_dataset"] = args.ubd.lower() == 'true'
     
     # Override the decoder loading setting.
     if args.ldo:

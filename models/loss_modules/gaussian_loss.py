@@ -1,26 +1,16 @@
-from .base_loss import baseLoss
+from .base_loss import _BaseLoss
 
-from typing import Dict
+from typing import Dict, Tuple
 
 import torch.nn.functional as F
 import torch
 
-class gaussianLoss(baseLoss):
+class GaussianLoss(_BaseLoss):
 
     def __init__(self):
-        baseLoss.__init__(self)
+        _BaseLoss.__init__(self)
 
-    # def compute_loss2(self, x, vae_output):
-    #     vae_reconstruction = vae_output['x_hat']
-    #     mean, log_var = vae_output['params']
-
-    #     # Assuming a normal Gaussian prior and a fully-factorized Gaussian approximation,
-    #     # the loss function is detailed in https://arxiv.org/pdf/1907.08956.pdf.
-    #     reconstruction_loss = F.binary_cross_entropy(vae_reconstruction, x, reduction='mean')
-    #     kl_loss = torch.sum(torch.exp(log_var) + mean**2 - 1 - log_var) / 2
-    #     return reconstruction_loss + kl_loss
-
-    def compute_loss(self, x, vae_output, warm_up=1) -> (torch.Tensor, Dict, torch.Tensor):
+    def compute_loss(self, x, vae_output, warm_up=1) -> Tuple[torch.Tensor, Dict, torch.Tensor]:
         """
         Computes the loss between the network input and output assuming the
         approximate posterior is a fully-factorized Gaussian.
@@ -41,7 +31,7 @@ class gaussianLoss(baseLoss):
         log_p_xz = -F.binary_cross_entropy_with_logits(vae_reconstruction, x, reduction='none').view(x.shape[0], -1).sum(1)
         log_p_z = -0.5 * vae_latent.pow(2).sum(1)
         log_q_zx = -0.5 * (log_var.sum(1) + ((vae_latent - mean).pow(2) / torch.exp(log_var)).sum(1))
-        # TODO: Add a warm-up constant to the last term (only that one).
+
         log_p_x = log_p_xz + log_p_z - warm_up * log_q_zx
 
         # The ELBO is defined to be the mean of the logs in the batch.

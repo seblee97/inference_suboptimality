@@ -16,14 +16,15 @@ model:
   latent_dimension:                 50                        # Number of latent dimensions.
   is_estimator:                     False                     # Use a log-likelihood estimator.
   optimise_local:                   False
+  run_frozen_decoder:               False
 
   encoder:
-    network_type:                     feedforward             # Type of encoder network (i.e., feedforward or convolutional).
+    network_type:                     fully_connected             # Type of encoder network (i.e., fully_connected or convolutional).
     output_dimension_factor:          2                       # multiple of latent dimensions required for output of first part of inference network. Generally 2, but 1 for auxillary flows.
     hidden_dimensions:                [200, 200]              # Layer dimensions in the encoder network (excluding the input dimensions and final latent dimensions).
 
   decoder:
-    network_type:                     feedbackward            # Type of decoder network (i.e. feedforward or (de)convolutional)
+    network_type:                     fully_connected            # Type of decoder network (i.e. fully_connected or deconvolutional)
     hidden_dimensions:                [200, 200]              # Layer dimensions in the decoder network (excluding output dimensions).
 
 training:
@@ -37,7 +38,7 @@ training:
   num_epochs:                       3280                      # Number of training epochs.
   warm_up_program:                  400                       # Limit of linear entropy-annealing (= warm-up) program (set to 0 if no entropy annealing wanted). 400 is the default
   mc_samples:                       1                         # Number of samples to take in the ELBO expectation.
-  early_stopping_enabled:           True                      # Terminate training prematurely if the test loss appears to be regressing.
+  early_stopping_enabled:           False                     # Terminate training prematurely if the test loss appears to be regressing.
   early_stopping_patience:          10                        # Number of consecutive early stopping check failures before training is aborted.
   early_stopping_frequency:         10                        # Number of training epochs between early stopping checks.
 

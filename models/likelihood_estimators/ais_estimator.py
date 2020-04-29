@@ -1,10 +1,10 @@
-from .base_estimator import BaseEstimator
-from models.loss_modules import baseLoss
+from .base_estimator import _BaseEstimator
+from models.loss_modules import _BaseLoss
 
 import torch
 
 
-class AISEstimator(BaseEstimator):
+class AISEstimator(_BaseEstimator):
 
     def __init__(self, num_chains: float, batch_size: int, latent_size: int, num_dists: int, num_leapfrog_steps: int):
         """
@@ -17,14 +17,14 @@ class AISEstimator(BaseEstimator):
         :param num_dists: Number of intermediate distributions
         :param num_leapfrog_steps: Number of leapfrog steps in the HMC simulation
         """
-        BaseEstimator.__init__(self)
+        _BaseEstimator.__init__(self)
         self._num_chains = num_chains
         self._batch_size = batch_size
         self._latent_size = latent_size
         self._num_dists = num_dists
         self._num_leapfrog_steps = num_leapfrog_steps
 
-    def estimate_log_likelihood_loss(self, batch_input: torch.Tensor, vae: torch.nn.Module, _: baseLoss) -> torch.Tensor:
+    def estimate_log_likelihood_loss(self, batch_input: torch.Tensor, vae: torch.nn.Module, _: _BaseLoss) -> torch.Tensor:
         """
         Estimates the average log-likelihood loss of the given input batch using
         the provided VAE and loss module.

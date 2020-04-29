@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Dict
 import torch
 
-class baseLoss(ABC):
+class _BaseLoss(ABC):
 
     def __init__(self):
         pass

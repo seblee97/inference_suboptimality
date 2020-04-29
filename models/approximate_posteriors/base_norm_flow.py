@@ -4,9 +4,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class BaseFlow(nn.Module, ABC):
+from typing import Dict
 
-    def __init__(self, config):
+class _BaseFlow(nn.Module, ABC):
+
+    def __init__(self, config: Dict):
 
         nn.Module.__init__(self)
 
@@ -25,10 +27,12 @@ class BaseFlow(nn.Module, ABC):
             self.activation_derivative = self.tanh_derivative
 
     @abstractmethod
-    def _construct_layers(self):
+    def _construct_layers(self) -> None:
+        """
+        """
         raise NotImplementedError("Base class method")
 
-    def _initialise_weights(self, layer) -> None:
+    def _initialise_weights(self, layer: torch.Tensor) -> torch.Tensor:
         """
         Weight initialisation method for given layer
         """
@@ -48,7 +52,7 @@ class BaseFlow(nn.Module, ABC):
 
         return layer
 
-    def tanh_derivative(self, x):
+    def tanh_derivative(self, x: torch.Tensor) -> torch.Tensor:
         return 1 - self.activation(x) ** 2
 
     def elu_derivative(self, x):

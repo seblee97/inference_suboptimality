@@ -1,9 +1,10 @@
-from .base_network import baseNetwork
+from .base_network import _BaseNetwork
 from typing import List, Dict
 
+import torch
 import torch.nn as nn
 
-class convNetwork(baseNetwork):
+class ConvNetwork(_BaseNetwork):
 
     def __init__(self, config: Dict):
         """
@@ -30,9 +31,9 @@ class convNetwork(baseNetwork):
         self.latent_dimension = config.get(["model", "latent_dimension"])
         self.hidden_dimensions = config.get(["model", "encoder", "hidden_dimensions"])
         #super(convNetwork, self).__init__()
-        baseNetwork.__init__(self, config=config)
+        _BaseNetwork.__init__(self, config=config)
     
-    def _construct_layers(self):
+    def _construct_layers(self) -> None:
         self.layers = nn.ModuleList([])
         self.bn_layers = nn.ModuleList([])
         
@@ -55,7 +56,7 @@ class convNetwork(baseNetwork):
         hidden_to_latent_layer = self._initialise_weights(nn.Linear(param[0], param[1]))
         self.layers.append(hidden_to_latent_layer)
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         """
         Forward pass
         

@@ -1,12 +1,12 @@
-from .base_estimator import BaseEstimator
-from models.loss_modules import baseLoss
+from .base_estimator import _BaseEstimator
+from models.loss_modules import _BaseLoss
 from utils import partition_batch
 
 import torch
 import torch.nn as nn
 
 
-class IWAEEstimator(BaseEstimator):
+class IWAEEstimator(_BaseEstimator):
 
     def __init__(self, num_samples: float, batch_size: int):
         """
@@ -17,11 +17,11 @@ class IWAEEstimator(BaseEstimator):
         :param num_samples: number of samples
         :param batch_size: batch size
         """
-        BaseEstimator.__init__(self)
+        _BaseEstimator.__init__(self)
         self._num_samples = num_samples
         self._batch_size = batch_size
 
-    def estimate_log_likelihood_loss(self, batch_input: torch.Tensor, vae: nn.Module, loss_module: baseLoss) -> torch.Tensor:
+    def estimate_log_likelihood_loss(self, batch_input: torch.Tensor, vae: nn.Module, loss_module: _BaseLoss) -> torch.Tensor:
         """
         Estimates the log-likelihood loss of the given input batch using the
         provided VAE and loss module.
