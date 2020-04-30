@@ -1,0 +1,69 @@
+checkpoint_frequency: 1000
+device: cpu
+df_log_path: /Users/sebastianlee/Dropbox/Documents/Research/Projects/Oxford2020AdvML/experiments/results/2020-04-28-21-47-44/test/data_logger.csv
+experiment_name: test
+experiment_timestamp: 2020-04-28-21-47-44
+flow:
+  auxillary_forward_dimensions:
+  - 100
+  - 100
+  auxillary_reverse_dimensions:
+  - 100
+  - 100
+  flow_layers:
+  - 100
+  - 100
+  nonlinearity: elu
+  num_flow_passes: 2
+  num_flow_transformations: 2
+  weight_initialisation: default
+load_decoder_only: false
+log_path: /Users/sebastianlee/Dropbox/Documents/Research/Projects/Oxford2020AdvML/experiments/results/2020-04-28-21-47-44/test
+log_to_df: true
+model:
+  approximate_posterior: rnvp_aux_flow
+  decoder:
+    hidden_dimensions:
+    - 200
+    - 200
+    network_type: fully_connected
+  encoder:
+    hidden_dimensions:
+    - 200
+    - 200
+    network_type: fully_connected
+    output_dimension_factor: 1
+  initialisation: xavier_uniform
+  initialisation_std: 0.1
+  input_dimension: 784
+  is_estimator: false
+  latent_dimension: 50
+  nonlinearity: elu
+  optimise_local: false
+  run_frozen_decoder: false
+relative_data_path: ../data/
+saved_models_path: saved_models/
+seed: 1
+testing:
+  batch_size: 10000
+  mc_samples: 1
+  test_frequency: 100
+  visualise: true
+training:
+  batch_size: 100
+  dataset: binarised_mnist
+  early_stopping_enabled: false
+  early_stopping_frequency: 10
+  early_stopping_patience: 10
+  learning_rate: 0.001
+  lr_scheduler: true
+  mc_samples: 1
+  num_epochs: 3280
+  optimiser:
+    params:
+    - 0.9
+    - 0.999
+    - 0.0001
+    type: adam
+  warm_up_program: 400
+use_gpu: true
