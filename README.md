@@ -1,25 +1,4 @@
-# TODO
-
-Things we should polish on our code base before we submit. Most of this is cosmetic so I suggest we wait until at least the experiments are finished to absolutely minimise risk of breaking something.
-
-- [x] Spelling mistakes (e.g. ammortise -> amortise)
-- [ ] Anonymise (e.g. authors below but let's make sure there are no other traces)
-- [ ] Linked to the above: squash commits. I suggest we copy this code over to the anonymised repos and squash them there since the commit history is useful to have here.
-- [x] Capitalise class names
-- [x] Underscore base class names
-- [x] Renaming of stuff (e.g. feedforward and feedbackward)
-- [ ] Make Experiment_List lower case? I've weirdly grown to like it, given it contains all the hard coded stuff
-- [x] Remove files that aren't used (math_operations? Sylv Flows if we don't get around to them? Do we use the other base configs in the experiment dir?)
-- [ ] Linked to above I think early one some pycache folders etc. creeped in before we firmed up the gitignore, we should remove these
-- [ ] Run another lint session and get all the type hinting and docstrings etc. in there 
-- [ ] docstrings/removed todos and dud comments
-- [ ] Unify the naming conventions in the [experiments/results](experiments/results) directory. 
-- [ ] Clean up the script commands that run each experiment (e.g., adding the `--ldo True` flag for local optimisation).
-- [ ] Actually run `mypy` over the codebase to make sure our types are consistent.
-- [ ] Add tests to functions that are easy to test.
-- [ ] ...
-
-# Oxford2020AdvML
+# Inference Suboptimality in Variational Autoencoders
 This repository contains code for a project undertaken as part of the Advanced Topics in Machine Learning course (HT 2020) at Oxford. The code here was written by Mikhail Andrenkov, Maxence Draguet, Sebastian Lee, and Diane Magnin.
 
 It is a reproduction of the code for the paper [_Inference Suboptimality in Variational Autoencoders_](https://arxiv.org/pdf/1801.03558.pdf) by Cremer, Li & Duvenaud. 
